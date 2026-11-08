@@ -27,7 +27,7 @@ const fmt=(v,d=0)=>Number.isFinite(Number(v))?Number(v).toLocaleString('en-US',{
 function setPage(page){if(page==='journal')page='strategy';document.querySelectorAll('.page').forEach(el=>el.classList.toggle('hidden',el.id!==page+'Page'));document.querySelectorAll('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===page));document.body.classList.toggle('chart-focus',page==='charts');window.scrollTo({top:0,behavior:'instant'});if(page==='overview'){mountOverview();renderOverview()}if(page==='charts')renderCharts();if(page==='cycle')renderCycle();if(page==='sentiment')renderSentiment();if(page==='macro')mountMacro();if(page==='strategy'){renderStrategy();renderJournal()};if(page==='journal')renderJournal();if(page==='settings')renderSources();if(page==='community')renderCommunity()}
 function initNav(){document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.goto)));$('exportAll').onclick=downloadBackup;$('backupBtn').onclick=downloadBackup;$('restoreInput').onchange=restoreBackup;$('clearLocal').onclick=()=>{if(confirm('Delete all saved chart layouts, strategies, decision records, and cached prices?')){localStorage.removeItem(KEY);location.reload()}}}
 function applyTheme(){state.light=false;document.body.classList.remove('light');const b=$('themeBtn');if(b)b.textContent='☾ Dark Mode'}
-function tv(target,chart){target.replaceChildren();let wrapper=document.createElement('div');wrapper.className='tradingview-widget-container';let inner=document.createElement('div');inner.className='tradingview-widget-container__widget';let credit=document.createElement('div');credit.className='tv-attribution';let link=document.createElement('a');link.href='https://www.tradingview.com/';link.target='_blank';link.rel='noopener nofollow';link.textContent='Chart by TradingView';credit.append(link);wrapper.append(inner,credit);target.append(wrapper);const sc=document.createElement('script');sc.async=true;sc.type='text/javascript';sc.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';sc.textContent=JSON.stringify({autosize:true,symbol:chart.symbol,interval:chart.interval,timezone:'Asia/Seoul',theme:'dark',style:'1',locale:'en',allow_symbol_change:!!chart.mini,hide_side_toolbar:!!chart.mini,hide_top_toolbar:!!chart.mini,hide_volume:false,withdateranges:!chart.mini,save_image:true,support_host:'https://www.tradingview.com'});wrapper.append(sc)}
+function tv(target,chart){target.replaceChildren();let wrapper=document.createElement('div');wrapper.className='tradingview-widget-container';let inner=document.createElement('div');inner.className='tradingview-widget-container__widget';let credit=document.createElement('div');credit.className='tv-attribution';let link=document.createElement('a');link.href='https://www.tradingview.com/';link.target='_blank';link.rel='noopener nofollow';link.textContent='Chart by TradingView';credit.append(link);wrapper.append(inner,credit);target.append(wrapper);const sc=document.createElement('script');sc.async=true;sc.type='text/javascript';sc.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';sc.textContent=JSON.stringify({autosize:true,symbol:chart.symbol,interval:chart.interval,timezone:'Asia/Seoul',theme:'dark',style:'1',locale:'en',allow_symbol_change:chart.allowSymbolChange??!!chart.mini,hide_side_toolbar:!!chart.mini,hide_top_toolbar:!!chart.mini,hide_volume:false,withdateranges:!chart.mini,save_image:true,support_host:'https://www.tradingview.com'});wrapper.append(sc)}
 let overviewMounted=false,macroMounted=false,overviewObserver=null;
 function mountOverview(force=false){
  const target=$('overviewTv');if(!target)return;
@@ -41,7 +41,54 @@ function mountOverview(force=false){
   target.innerHTML='<div class="plot-placeholder">The TradingView chart will load when you reach this section.</div>';
   setTimeout(load,2500);
  }
-}function mountMacro(force=false){if(macroMounted&&!force)return;const data=[['US Dollar Index / DXY','TVC:DXY'],['US 10-Year Treasury Yield','TVC:US10Y'],['Nasdaq 100','NASDAQ:NDX'],['S&P 500','SP:SPX'],['Gold / XAUUSD','OANDA:XAUUSD'],['Bitcoin / BTCUSDT','BINANCE:BTCUSDT']];const grid=$('macroGrid');grid.replaceChildren();data.forEach(([name,symbol])=>{const card=document.createElement('div');card.className='macro-card';const head=document.createElement('div');head.className='macro-head';const label=document.createElement('strong');label.textContent=name;const code=document.createElement('span');code.textContent=symbol;head.append(label,code);const slot=document.createElement('div');slot.className='tv-slot';card.append(head,slot);grid.append(card);tv(slot,{symbol,interval:'D',mini:true})});macroMounted=true}
+}function mountMacro(force=false){
+ const grid=$('macroGrid');if(!grid)return;
+ if(macroMounted&&!force)return;
+ if(window.macroChartObserver){window.macroChartObserver.disconnect();window.macroChartObserver=null}
+ const data=[
+  ['S&P 500 / SPX','SP:SPX','US EQUITIES'],
+  ['Nasdaq 100 / NDQ','NASDAQ:NDX','US TECHNOLOGY'],
+  ['Gold / XAUUSD','OANDA:XAUUSD','SAFE-HAVEN ASSET'],
+  ['Brent Crude / BR1!','ICEEUR:BRN1!','ENERGY FUTURES'],
+  ['US 10-Year Yield','TVC:US10Y','TREASURY YIELD'],
+  ['USD / KRW','FX_IDC:USDKRW','FOREIGN EXCHANGE']
+ ];
+ grid.replaceChildren();
+ const targets=[];
+ data.forEach(([name,symbol,category],i)=>{
+  const card=document.createElement('article');card.className='macro-card';
+  const head=document.createElement('div');head.className='macro-head';
+  const heading=document.createElement('div');heading.className='macro-identity';
+  const eyebrow=document.createElement('span');eyebrow.className='macro-category';eyebrow.textContent=category;
+  const label=document.createElement('strong');label.textContent=name;
+  heading.append(eyebrow,label);
+  const tools=document.createElement('div');tools.className='macro-actions';
+  const code=document.createElement('span');code.className='macro-symbol';code.textContent=symbol;
+  const link=document.createElement('a');link.textContent='Open chart ↗';
+  link.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(symbol);
+  link.rel='noopener noreferrer';link.target='_blank';link.className='macro-external';
+  tools.append(code,link);head.append(heading,tools);
+  const slot=document.createElement('div');slot.className='tv-slot';
+  slot.innerHTML='<div class="macro-load-note">Loading '+name+' market chart…</div>';
+  card.append(head,slot);grid.append(card);targets.push({slot,symbol});
+ });
+ macroMounted=true;
+ // Load the first visible TradingView widgets on demand, not six at once.
+ // Limits bandwidth and avoids simultaneous iframe-heavy work on mobile.
+ const load=(entry)=>{
+  if(entry.done)return;entry.done=true;
+  tv(entry.slot,{symbol:entry.symbol,interval:'D',mini:true,allowSymbolChange:false});
+ };
+ if('IntersectionObserver' in window){
+  const observer=new IntersectionObserver(entries=>{
+   for(const e of entries){if(!e.isIntersecting)continue;const row=targets.find(r=>r.slot===e.target);if(row){load(row);observer.unobserve(e.target)}}
+  },{rootMargin:'240px 0px',threshold:0.01});
+  window.macroChartObserver=observer;
+  for(const entry of targets)observer.observe(entry.slot);
+ }else{
+  targets.forEach((entry,i)=>setTimeout(()=>load(entry),i*350));
+ }
+}
 function renderCharts(){const grid=$('chartGrid');grid.replaceChildren();$('preset').value=state.preset;$('layout').value=String(state.cols);$('chartHeight').value=String(state.height);grid.style.setProperty('--cols',String(state.cols));grid.style.setProperty('--chart-height',state.height+'px');$('chartCount').textContent=state.charts.length+' CHARTS';state.charts.forEach((entry,i)=>{const card=document.createElement('article');card.className='chart-card';const head=document.createElement('div');head.className='chart-head';const symbol=document.createElement('input');symbol.type='text';symbol.value=entry.symbol;symbol.setAttribute('aria-label','Chart '+(i+1)+' Symbol');const interval=document.createElement('select');for(const [value,label] of [['15','15 min'],['60','1 hour'],['240','4 hours'],['D','Daily'],['W','Weekly'],['M','Monthly']]){interval.add(new Option(label,value))}interval.value=entry.interval;const apply=btn('Apply',()=>{const val=symbol.value.trim().toUpperCase();if(!validSymbol(val))return toast('Use a symbol such as BINANCE:BTCUSDT.');state.charts[i]={symbol:val,interval:interval.value};state.preset='custom';$('preset').value='custom';tv(body,state.charts[i]);persist()});symbol.addEventListener('keydown',e=>{if(e.key==='Enter')apply.click()});symbol.addEventListener('change',()=>apply.click());interval.addEventListener('change',()=>apply.click());const before=btn('←',()=>swap(i,i-1),'secondary');before.disabled=i===0;const after=btn('→',()=>swap(i,i+1),'secondary');after.disabled=i===state.charts.length-1;const remove=btn('×',()=>{state.charts.splice(i,1);state.preset='custom';renderCharts();persist()},'secondary remove');remove.disabled=state.charts.length===1;const body=document.createElement('div');body.className='chart-body tv-slot';head.append(symbol,interval,apply,before,after,remove);card.append(head,body);grid.append(card);tv(body,entry)});function swap(a,b){[state.charts[a],state.charts[b]]=[state.charts[b],state.charts[a]];state.preset='custom';renderCharts();persist()}}
 function btn(text,action,cls='secondary'){const b=document.createElement('button');b.type='button';b.className='btn '+cls;b.textContent=text;b.onclick=action;return b}
 function initCharts(){ $('preset').onchange=e=>{const name=e.target.value;state.preset=name;if(presets[name])state.charts=presets[name].map(([symbol,interval])=>({symbol,interval}));renderCharts();persist()};$('layout').onchange=e=>{state.cols=Number(e.target.value);$('chartGrid').style.setProperty('--cols',state.cols);persist()};$('chartHeight').onchange=e=>{state.height=Number(e.target.value);$('chartGrid').style.setProperty('--chart-height',state.height+'px');persist()};$('applyAllInterval').onclick=()=>{const interval=$('allInterval').value;state.charts.forEach(c=>c.interval=interval);state.preset='custom';renderCharts();persist()};$('addChart').onclick=()=>{if(state.charts.length>=16)return toast('You can have up to 16 charts.');state.charts.push({symbol:'BINANCE:BTCUSDT',interval:'D'});state.preset='custom';renderCharts();persist()};$('resetCharts').onclick=()=>{if(confirm('Reset all charts to the default layout?')){Object.assign(state,{charts:defaults().charts,cols:2,height:360,preset:'crypto'});renderCharts();persist()}};$('saveCharts').onclick=()=>persist(true)}
