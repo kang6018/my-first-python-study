@@ -497,7 +497,35 @@ const m=computedBtcMeasures();
 }
 function initSentiment(){$('refreshSentiment').onclick=()=>Promise.allSettled([fetchFear(),fetchDerivatives()]).then(()=>toast('Sentiment metrics refreshed.'));$('fearRange').onchange=renderSentiment}
 function initMacro(){ /* Macro charts are read-only; journal features live in Strategy. */ }
-function renderStrategy(){const s=state.strategy;for(const f of ['phase','mood','riskExposure','reviewDate','thesis','invalidations','riskPlan'])$(f).value=s[f]??'';const matrix=$('strategyMatrix');matrix.replaceChildren();s.rules.forEach((r,i)=>{const item=document.createElement('div');item.className='rule';const line=document.createElement('div');line.className='rule-row';const a=document.createElement('input');a.value=r.phase||'';a.placeholder='Cycle phase';const b=document.createElement('input');b.value=r.mood||'';b.placeholder='Sentiment condition';const c=document.createElement('input');c.value=r.action||'';c.placeholder='Action to consider';const drop=btn('Delete',()=>{s.rules.splice(i,1);renderStrategy();persist()},'secondary remove');[a,b,c].forEach((input,j)=>input.addEventListener('input',()=>{r[['phase','mood','action'][j]]=input.value}));line.append(a,b);const line2=document.createElement('div');line2.className='rule-row';line2.append(c,drop);item.append(line,line2);matrix.append(item)})}
+function strategyKoDisplay(value){
+ const translations={
+  'Early Expansion':'상승 초기','Mid Expansion':'상승 중반','Late Expansion':'상승 후반',
+  'Bear Market':'하락 국면','Wait and Observe':'관망',
+  'Extreme Fear':'극단적 공포','Extreme Greed':'극단적 탐욕',
+  'Fear':'공포','Neutral':'중립','Greed':'탐욕',
+  'Review gradual entry (example)':'분할 매수 검토 (예시)',
+  'Review risk reduction (example)':'위험 비중 축소 검토 (예시)',
+  'Manage liquidity and observe basing (example)':'현금 비중 관리 및 저점 형성 관찰 (예시)',
+  'Not configured':'선택 안 함'
+ };
+ return translations[value]||value||'';
+}
+function renderStrategy(){
+ const s=state.strategy;
+ for(const f of ['phase','mood','riskExposure','reviewDate','thesis','invalidations','riskPlan'])$(f).value=s[f]??'';
+ const matrix=$('strategyMatrix');matrix.replaceChildren();
+ s.rules.forEach((r,i)=>{
+  const item=document.createElement('div');item.className='rule';
+  const line=document.createElement('div');line.className='rule-row';
+  const a=document.createElement('input');a.value=strategyKoDisplay(r.phase);a.placeholder='사이클 국면';
+  const b=document.createElement('input');b.value=strategyKoDisplay(r.mood);b.placeholder='시장 심리';
+  const c=document.createElement('input');c.value=strategyKoDisplay(r.action);c.placeholder='대응 전략';
+  const drop=btn('삭제',()=>{if(!confirm('이 판단 기준을 삭제할까요?'))return;s.rules.splice(i,1);renderStrategy();persist()},'secondary remove');
+  [a,b,c].forEach((input,j)=>input.addEventListener('input',()=>{r[['phase','mood','action'][j]]=input.value}));
+  line.append(a,b);const line2=document.createElement('div');line2.className='rule-row';line2.append(c,drop);
+  item.append(line,line2);matrix.append(item)
+ })
+}
 function initStrategy(){$('addRule').onclick=()=>{state.strategy.rules.push({phase:'',mood:'',action:''});renderStrategy();persist()};$('saveStrategy').onclick=()=>{for(const k of ['phase','mood','riskExposure','reviewDate','thesis','invalidations','riskPlan'])state.strategy[k]=$(k).value;persist(true);renderOverview()}}
 function journalForm(record){const r=record||{id:'',date:localDateTime(),phase:'Wait and Observe',price:'',horizon:'30',title:'',evidence:'',action:'',review:''};for(const k of ['id','date','phase','price','horizon','title','evidence','action','review'])$('journal'+k[0].toUpperCase()+k.slice(1)).value=r[k]??'';$('journalDirection').value=r.direction||'';$('journalEditorTitle').textContent=record?'Edit decision':'New decision'}
 function localDateTime(){const date=new Date();return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16)}
