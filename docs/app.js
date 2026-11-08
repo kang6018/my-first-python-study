@@ -5,12 +5,12 @@ const defaults=()=>({charts:presets.crypto.map(([symbol,interval])=>({symbol,int
 let state=defaults(),price=null,fear=[],funding=null,oi=null,history=[],historySource='',fetched={},lastHistoryRefresh=0,refreshBusy=false;
 function readStorage(){try{const parsed=JSON.parse(localStorage.getItem(KEY));if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)){const initial=defaults();state={...initial,...parsed,strategy:{...initial.strategy,...(parsed.strategy||{})}};if(!Array.isArray(state.charts)||!state.charts.length||state.charts.length>16)state.charts=initial.charts;if(!Array.isArray(state.journal))state.journal=[];if(!Array.isArray(state.strategy.rules))state.strategy.rules=initial.strategy.rules;if(!Array.isArray(state.history))state.history=[]}else{const old=JSON.parse(localStorage.getItem(OLD));if(old&&Array.isArray(old.charts)&&old.charts.length<=16&&old.charts.length>0){state.charts=old.charts;state.cols=old.cols||2;state.height=old.height||360;state.preset=old.preset||'custom';state.light=!!old.light;const memo=localStorage.getItem('cycle-terminal-journal-'+(window.__CT_ACCOUNT_ID__||'guest'));if(memo)state.journal=[{id:String(Date.now()),date:new Date().toISOString().slice(0,16),title:'Imported V1 note',phase:'Wait and Observe',price:'',horizon:'30',evidence:memo,action:'',review:''}]}}}catch(e){console.warn('Unable to read saved settings:',e)}// Translate only known legacy sample defaults; never rewrite free-form user notes.
  const terms={
-  '초기 상승':'Early Expansion','상승 중반':'Mid Expansion','상승 후반':'Late Expansion',
-  '하락 국면':'Bear Market','판단 유보':'Wait and Observe','극단적 공포':'Extreme Fear',
-  '극단적 탐욕':'Extreme Greed','공포':'Fear','탐욕':'Greed','중립':'Neutral',
-  '미설정':'Not configured','분할 매수 후보 검토 (예시)':'Review gradual entry (example)',
-  '위험 축소 후보 검토 (예시)':'Review risk reduction (example)',
-  '현금 관리 및 저점 형성 관찰 (예시)':'Manage liquidity and observe basing (example)'
+  '\ucd08\uae30 \uc0c1\uc2b9':'Early Expansion','\uc0c1\uc2b9 \uc911\ubc18':'Mid Expansion','\uc0c1\uc2b9 \ud6c4\ubc18':'Late Expansion',
+  '\ud558\ub77d \uad6d\uba74':'Bear Market','\ud310\ub2e8 \uc720\ubcf4':'Wait and Observe','\uadf9\ub2e8\uc801 \uacf5\ud3ec':'Extreme Fear',
+  '\uadf9\ub2e8\uc801 \ud0d0\uc695':'Extreme Greed','\uacf5\ud3ec':'Fear','\ud0d0\uc695':'Greed','\uc911\ub9bd':'Neutral',
+  '\ubbf8\uc124\uc815':'Not configured','\ubd84\ud560 \ub9e4\uc218 \ud6c4\ubcf4 \uac80\ud1a0 (\uc608\uc2dc)':'Review gradual entry (example)',
+  '\uc704\ud5d8 \ucd95\uc18c \ud6c4\ubcf4 \uac80\ud1a0 (\uc608\uc2dc)':'Review risk reduction (example)',
+  '\ud604\uae08 \uad00\ub9ac \ubc0f \uc800\uc810 \ud615\uc131 \uad00\ucc30 (\uc608\uc2dc)':'Manage liquidity and observe basing (example)'
  };
  const norm=x=>terms[x]||x;
  if(state.strategy){
