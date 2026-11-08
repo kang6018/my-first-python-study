@@ -889,3 +889,57 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  #macroPage .macro-fred-visual{padding:10px}
  #macroPage .macro-fred-image{height:auto;flex:1;min-height:165px}
 }
+
+/* V8.7 / Balanced cinematic hero — bring the Bitcoin object into the composition */
+@media(min-width:1181px){
+ .ct-story-hero{
+  padding-left:clamp(40px,5.7vw,112px)!important;
+  padding-right:clamp(40px,5.7vw,112px)!important;
+  min-height:min(800px,calc(100svh - 62px))!important;
+ }
+ .ct-story-hero .ct-hero-content{
+  width:60%!important;
+  max-width:940px!important;
+ }
+ .ct-story-hero .ct-headline{
+  font-size:clamp(88px,8.0vw,164px)!important;
+  letter-spacing:-.088em!important;
+ }
+ .ct-story-hero .ct-intro{
+  font-size:clamp(15px,1.1vw,18px)!important;
+  max-width:610px!important;
+ }
+ .ct-story-hero .ct-scene{
+  right:5%!important;
+  top:3%!important;
+  width:min(47vw,830px)!important;
+  height:98%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+ }
+ .ct-story-hero .ct-scene-inner{
+  width:min(43vw,720px)!important;
+  height:min(43vw,720px)!important;
+  flex:0 0 auto;
+ }
+ .ct-hero-bottom{
+  left:clamp(40px,5.7vw,112px)!important;
+  right:clamp(40px,5.7vw,112px)!important;
+ }
+}
+@media(min-width:1181px) and (max-width:1450px){
+ .ct-story-hero .ct-hero-content{width:62%!important}
+ .ct-story-hero .ct-scene{right:0!important;width:48vw!important}
+ .ct-story-hero .ct-scene-inner{width:46vw!important;height:46vw!important}
+ .ct-story-hero .ct-headline{font-size:clamp(78px,8vw,118px)!important}
+}
+@media(min-width:701px) and (max-width:1180px){
+ .ct-story-hero .ct-scene{right:-14%!important;top:9%!important;opacity:.75!important}
+ .ct-story-hero .ct-hero-content{width:78%!important;max-width:700px!important}
+ .ct-story-hero .ct-headline{font-size:clamp(70px,9.1vw,112px)!important}
+}
+@media(max-width:700px){
+ .ct-story-hero .ct-hero-content{max-width:100%!important}
+ .ct-story-hero .ct-scene{right:-55%!important;top:26%!important}
+}
