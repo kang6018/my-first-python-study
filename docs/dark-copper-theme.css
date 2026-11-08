@@ -828,3 +828,37 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  #sentimentPage .sentiment-columns #sentimentPlot{min-height:280px!important;padding:3px!important}
  #sentimentPage .sentiment-columns #sentimentPlot svg{min-height:280px!important;height:300px!important}
 }
+
+/* V8.5 macro data availability and native FRED yield visualization */
+#macroPage .macro-identity .macro-data-note{
+ display:block;color:#bc9f87!important;font-family:'Manrope',sans-serif!important;
+ font-size:10px!important;font-weight:500!important;line-height:1.5!important;
+ margin-top:4px;max-width:380px
+}
+#macroPage .macro-native-chart{
+ width:100%;height:100%;display:flex;flex-direction:column;
+ padding:20px 18px 10px;box-sizing:border-box;
+ background:radial-gradient(ellipse at 76% 10%,rgba(247,147,26,.13),transparent 65%),#17110f
+}
+#macroPage .macro-native-summary{
+ display:flex;justify-content:space-between;align-items:center;
+ flex-wrap:wrap;gap:10px;border-bottom:1px solid #5b3e2b;padding-bottom:12px
+}
+#macroPage .macro-native-summary strong{color:#ffbd69!important;font-size:27px!important;font-weight:800!important;letter-spacing:-.04em}
+#macroPage .macro-native-summary span{color:#ccb39d!important;font-size:11px;font-weight:600}
+#macroPage .macro-native-chart svg{width:100%;height:calc(100% - 60px);min-height:210px;margin-top:9px;display:block;overflow:visible}
+#macroPage .macro-native-error{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ height:100%;padding:22px;box-sizing:border-box;text-align:center;
+ background:linear-gradient(155deg,#211711,#130f0c)
+}
+#macroPage .macro-native-error strong{font-size:18px!important;color:#ffe2c2!important}
+#macroPage .macro-native-error p{font-size:12px!important;color:#bda18a!important;line-height:1.7;max-width:360px}
+#macroPage .macro-native-error a{
+ color:#ffc078!important;font-size:12px!important;font-weight:700!important;
+ text-decoration:none;border:1px solid #794923;padding:11px 16px;border-radius:10px
+}
+@media(max-width:640px){
+ #macroPage .macro-native-chart{padding:12px 8px}
+ #macroPage .macro-native-summary strong{font-size:22px!important}
+}
