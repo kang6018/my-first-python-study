@@ -76,6 +76,32 @@ jobs:
               json.dump({"status":"ok","source":source,"asOf":rows[-1]["date"],"rows":rows},output,ensure_ascii=False,separators=(',',':'))
           print("BTC observations:",len(rows),"source:",source,"latest:",rows[-1]["date"])
           PY
+      - name: Download Federal Reserve US ten-year Treasury yield observations
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import csv, datetime, io, json, os, urllib.request
+          url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
+          req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0 (compatible; CycleTerminal/8.5)"})
+          with urllib.request.urlopen(req, timeout=25) as response:
+              text = response.read().decode("utf-8-sig")
+          rows=[]
+          for rec in csv.DictReader(io.StringIO(text)):
+              date = rec.get("observation_date") or rec.get("DATE") or rec.get("date")
+              val = rec.get("DGS10")
+              if not date or not val or val.strip() in ("", "."): continue
+              try:
+                  datetime.date.fromisoformat(date)
+                  value = float(val)
+                  if -1 <= value <= 25: rows.append({"date": date, "value": value})
+              except (ValueError, TypeError): continue
+          rows.sort(key=lambda r:r["date"])
+          if len(rows)<100: raise RuntimeError("FRED DGS10 returned too few valid observations")
+          os.makedirs("docs/data",exist_ok=True)
+          with open("docs/data/us10y.json","w",encoding="utf-8") as fp:
+              json.dump({"status":"ok","source":"Federal Reserve Bank of St. Louis FRED DGS10","asOf":rows[-1]["date"],"rows":rows[-1000:]},fp,separators=(',',':'))
+          print("DGS10 rows:",len(rows),"latest:",rows[-1]["date"])
+          PY
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload static website
