@@ -6,12 +6,12 @@ const mainNav=document.getElementById('navigation');
 function closeMobileMenu(){
  if(!mobileMenu||!mainNav)return;
  mobileMenu.setAttribute('aria-expanded','false');mainNav.classList.remove('ct-open');
- mobileMenu.setAttribute('aria-label','전체 메뉴 열기');
+ mobileMenu.setAttribute('aria-label','Open navigation menu');
 }
 mobileMenu?.addEventListener('click',()=>{
  const expanded=mobileMenu.getAttribute('aria-expanded')==='true';
  mobileMenu.setAttribute('aria-expanded',String(!expanded));
- mobileMenu.setAttribute('aria-label',expanded?'전체 메뉴 열기':'전체 메뉴 닫기');
+ mobileMenu.setAttribute('aria-label',expanded?'Open navigation menu':'Close navigation menu');
  mainNav?.classList.toggle('ct-open',!expanded);
 });
 mainNav?.querySelectorAll('[data-page]').forEach(button=>button.addEventListener('click',closeMobileMenu));
@@ -22,10 +22,10 @@ const price=document.getElementById('btcPrice'),live=document.getElementById('ct
 const status=document.getElementById('ctLiveConnection');
 function syncPrice(){
  if(!price||!live)return;
- live.textContent=price.textContent==='—'?'시세 연결 중':price.textContent;
- liveChange.textContent=change?.textContent||'자동 갱신';
+ live.textContent=price.textContent==='—'?'Connecting to market feed':price.textContent;
+ liveChange.textContent=change?.textContent||'Automatically refreshed';
  const source=document.getElementById('btcSource')?.textContent||'';
- if(status)status.textContent=/Coinbase/.test(source)?'● COINBASE / LIVE':/Binance/.test(source)?'● BINANCE / 5S':'● 연결 확인 중';
+ if(status)status.textContent=/Coinbase/.test(source)?'● COINBASE / LIVE':/Binance/.test(source)?'● BINANCE / 5S':'● Checking connection';
 }
 if(price&&window.MutationObserver)new MutationObserver(syncPrice).observe(price,{childList:true,subtree:true,characterData:true});
 syncPrice();
