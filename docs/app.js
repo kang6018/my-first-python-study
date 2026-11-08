@@ -45,49 +45,89 @@ function mountOverview(force=false){
  const grid=$('macroGrid');if(!grid)return;
  if(macroMounted&&!force)return;
  if(window.macroChartObserver){window.macroChartObserver.disconnect();window.macroChartObserver=null}
+ // Public widget data and underlying exchange indices are not interchangeable.
+ // Four external-chart-restricted instruments use broker CFDs / cash proxies.
+ // The US10Y yield uses source-labelled FRED daily observations, not a surrogate ETF.
  const data=[
-  ['S&P 500 / SPX','SP:SPX','US EQUITIES'],
-  ['Nasdaq 100 / NDQ','NASDAQ:NDX','US TECHNOLOGY'],
-  ['Gold / XAUUSD','OANDA:XAUUSD','SAFE-HAVEN ASSET'],
-  ['Brent Crude / BR1!','ICEEUR:BRN1!','ENERGY FUTURES'],
-  ['US 10-Year Yield','TVC:US10Y','TREASURY YIELD'],
-  ['USD / KRW','FX_IDC:USDKRW','FOREIGN EXCHANGE']
+  {name:'S&P 500 · Cash CFD',symbol:'FOREXCOM:SPXUSD',category:'US EQUITIES',description:'FOREX.com cash CFD · indicative, not official index prints',original:'SP:SPX'},
+  {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'US TECHNOLOGY',description:'FOREX.com cash CFD · may differ from official NDX',original:'NASDAQ:NDX'},
+  {name:'Gold / XAUUSD',symbol:'OANDA:XAUUSD',category:'SAFE-HAVEN ASSET',description:'OANDA spot-gold quote'},
+  {name:'Brent Crude · Cash CFD',symbol:'OANDA:BCOUSD',category:'ENERGY',description:'OANDA Brent crude CFD · not BR1! continuous futures',original:'ICEEUR:BRN1!'},
+  {name:'US 10Y Treasury Yield',symbol:'FRED:DGS10',category:'US INTEREST RATES',description:'FRED DGS10 daily closing yield · delayed observation',native:true,original:'TVC:US10Y'},
+  {name:'USD / KRW',symbol:'FX_IDC:USDKRW',category:'FOREIGN EXCHANGE',description:'FX_IDC indicative USD/KRW quote'}
  ];
  grid.replaceChildren();
  const targets=[];
- data.forEach(([name,symbol,category],i)=>{
+ data.forEach(item=>{
   const card=document.createElement('article');card.className='macro-card';
   const head=document.createElement('div');head.className='macro-head';
   const heading=document.createElement('div');heading.className='macro-identity';
-  const eyebrow=document.createElement('span');eyebrow.className='macro-category';eyebrow.textContent=category;
-  const label=document.createElement('strong');label.textContent=name;
-  heading.append(eyebrow,label);
+  const eyebrow=document.createElement('span');eyebrow.className='macro-category';eyebrow.textContent=item.category;
+  const label=document.createElement('strong');label.textContent=item.name;
+  const desc=document.createElement('small');desc.className='macro-data-note';desc.textContent=item.description;
+  heading.append(eyebrow,label,desc);
   const tools=document.createElement('div');tools.className='macro-actions';
-  const code=document.createElement('span');code.className='macro-symbol';code.textContent=symbol;
-  const link=document.createElement('a');link.textContent='Open chart ↗';
-  link.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(symbol);
+  const code=document.createElement('span');code.className='macro-symbol';code.textContent=item.native?'FRED · DGS10':item.symbol;
+  const link=document.createElement('a');link.textContent='Open source ↗';
+  link.href=item.native?'https://fred.stlouisfed.org/series/DGS10':'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(item.original||item.symbol);
   link.rel='noopener noreferrer';link.target='_blank';link.className='macro-external';
   tools.append(code,link);head.append(heading,tools);
   const slot=document.createElement('div');slot.className='tv-slot';
-  slot.innerHTML='<div class="macro-load-note">Loading '+name+' market chart…</div>';
-  card.append(head,slot);grid.append(card);targets.push({slot,symbol});
+  const loading=document.createElement('div');loading.className='macro-load-note';loading.textContent='Loading '+item.name+'…';slot.append(loading);
+  card.append(head,slot);grid.append(card);targets.push({slot,item,done:false});
  });
  macroMounted=true;
- // Load the first visible TradingView widgets on demand, not six at once.
- // Limits bandwidth and avoids simultaneous iframe-heavy work on mobile.
- const load=(entry)=>{
+ const load=entry=>{
   if(entry.done)return;entry.done=true;
-  tv(entry.slot,{symbol:entry.symbol,interval:'D',mini:true,allowSymbolChange:false});
+  if(entry.item.native){renderTreasuryYield(entry.slot);return}
+  // Avoid pop-up failures from exchanges that TradingView does not license for third-party widgets.
+  tv(entry.slot,{symbol:entry.item.symbol,interval:'D',mini:true,allowSymbolChange:false});
  };
  if('IntersectionObserver' in window){
   const observer=new IntersectionObserver(entries=>{
    for(const e of entries){if(!e.isIntersecting)continue;const row=targets.find(r=>r.slot===e.target);if(row){load(row);observer.unobserve(e.target)}}
   },{rootMargin:'240px 0px',threshold:0.01});
   window.macroChartObserver=observer;
-  for(const entry of targets)observer.observe(entry.slot);
- }else{
-  targets.forEach((entry,i)=>setTimeout(()=>load(entry),i*350));
- }
+  targets.forEach(t=>observer.observe(t.slot));
+ }else targets.forEach((t,i)=>setTimeout(()=>load(t),i*350));
+}
+async function renderTreasuryYield(slot){
+ const fallback=(msg)=>{
+  slot.replaceChildren();
+  const box=document.createElement('div');box.className='macro-native-error';
+  const heading=document.createElement('strong');heading.textContent='FRED yield data unavailable';
+  const desc=document.createElement('p');desc.textContent=msg;
+  const link=document.createElement('a');link.href='https://fred.stlouisfed.org/series/DGS10';link.target='_blank';link.rel='noopener noreferrer';link.textContent='View official US 10Y yield ↗';
+  box.append(heading,desc,link);slot.append(box);
+ };
+ try{
+  const response=await fetch('data/us10y.json',{cache:'no-cache'});
+  if(!response.ok)throw Error('Historical yield dataset has not been published yet');
+  const data=await response.json(),rows=(Array.isArray(data?.rows)?data.rows:[]).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&Number.isFinite(Number(r.value))).slice(-400);
+  if(rows.length<60)throw Error('Not enough validated observations');
+  const W=850,H=360,L=66,R=22,T=30,B=46;
+  const vals=rows.map(r=>Number(r.value)),lo=Math.min(...vals),hi=Math.max(...vals),spread=Math.max(.25,hi-lo),min=Math.max(0,lo-spread*.13),max=hi+spread*.13;
+  const X=i=>L+i/Math.max(1,rows.length-1)*(W-L-R),Y=v=>T+(max-v)/(max-min)*(H-T-B);
+  const ns='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','US ten-year Treasury daily yield observations supplied by FRED, percent');
+  const element=(tag,attrs,txt)=>{const n=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))n.setAttribute(key,String(value));if(txt!==undefined)n.textContent=txt;svg.append(n);return n};
+  for(let j=0;j<5;j++){
+   const value=min+(max-min)*j/4,y=Y(value);
+   element('line',{x1:L,x2:W-R,y1:y,y2:y,stroke:'#6b4a32','stroke-opacity':'.42','stroke-dasharray':'3 5'});
+   element('text',{x:L-12,y:y+4,fill:'#c5aa91','font-size':12,'text-anchor':'end'},value.toFixed(2)+'%');
+  }
+  for(let j=0;j<5;j++){const i=Math.round(j*(rows.length-1)/4);element('text',{x:X(i),y:H-18,fill:'#c5aa91','font-size':12,'text-anchor':'middle'},rows[i].date.slice(0,7))}
+  const path=vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(2)+' '+Y(v).toFixed(2)).join(' ');
+  element('path',{d:path,fill:'none',stroke:'#f7931a','stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round'});
+  const last=vals.at(-1);
+  element('circle',{cx:X(vals.length-1),cy:Y(last),r:5,fill:'#ffc27a',stroke:'#f7931a','stroke-width':2});
+  const wrapper=document.createElement('div');wrapper.className='macro-native-chart';
+  const summary=document.createElement('div');summary.className='macro-native-summary';
+  const value=document.createElement('strong');value.textContent=last.toFixed(2)+'%';
+  const date=document.createElement('span');date.textContent='Last FRED observation: '+rows.at(-1).date+' · not live';
+  summary.append(value,date);wrapper.append(summary,svg);
+  slot.replaceChildren();slot.append(wrapper);
+ }catch(e){fallback(e.message||'FRED data fetch failed')}
 }
 function renderCharts(){const grid=$('chartGrid');grid.replaceChildren();$('preset').value=state.preset;$('layout').value=String(state.cols);$('chartHeight').value=String(state.height);grid.style.setProperty('--cols',String(state.cols));grid.style.setProperty('--chart-height',state.height+'px');$('chartCount').textContent=state.charts.length+' CHARTS';state.charts.forEach((entry,i)=>{const card=document.createElement('article');card.className='chart-card';const head=document.createElement('div');head.className='chart-head';const symbol=document.createElement('input');symbol.type='text';symbol.value=entry.symbol;symbol.setAttribute('aria-label','Chart '+(i+1)+' Symbol');const interval=document.createElement('select');for(const [value,label] of [['15','15 min'],['60','1 hour'],['240','4 hours'],['D','Daily'],['W','Weekly'],['M','Monthly']]){interval.add(new Option(label,value))}interval.value=entry.interval;const apply=btn('Apply',()=>{const val=symbol.value.trim().toUpperCase();if(!validSymbol(val))return toast('Use a symbol such as BINANCE:BTCUSDT.');state.charts[i]={symbol:val,interval:interval.value};state.preset='custom';$('preset').value='custom';tv(body,state.charts[i]);persist()});symbol.addEventListener('keydown',e=>{if(e.key==='Enter')apply.click()});symbol.addEventListener('change',()=>apply.click());interval.addEventListener('change',()=>apply.click());const before=btn('←',()=>swap(i,i-1),'secondary');before.disabled=i===0;const after=btn('→',()=>swap(i,i+1),'secondary');after.disabled=i===state.charts.length-1;const remove=btn('×',()=>{state.charts.splice(i,1);state.preset='custom';renderCharts();persist()},'secondary remove');remove.disabled=state.charts.length===1;const body=document.createElement('div');body.className='chart-body tv-slot';head.append(symbol,interval,apply,before,after,remove);card.append(head,body);grid.append(card);tv(body,entry)});function swap(a,b){[state.charts[a],state.charts[b]]=[state.charts[b],state.charts[a]];state.preset='custom';renderCharts();persist()}}
 function btn(text,action,cls='secondary'){const b=document.createElement('button');b.type='button';b.className='btn '+cls;b.textContent=text;b.onclick=action;return b}
