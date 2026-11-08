@@ -228,10 +228,55 @@ function renderEmissionChart(){
  ].map(([year,value,note])=>'<div class="emission-era"><small>'+year+'</small><strong>'+value+'</strong><span>'+note+'</span></div>').join('');
 }
 
+// Live countdown is based on the latest observed block height and a 10-minute-per-block estimate.
+const HALVING_TARGET=1050000;
+const HALVING_2024_UTC=Date.parse('2024-04-20T00:00:00Z');
+let projectedHalvingAt=Date.parse('2028-04-17T00:00:00+09:00');
+let countdownInterval=null,cycleElapsedAnimated=false;
+const two=n=>String(Math.max(0,Math.floor(n))).padStart(2,'0');
+function projectedKoreanDate(d){
+ return new Intl.DateTimeFormat('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'Asia/Seoul'}).format(d);
+}
+function shiftedProjectDate(ms,months){
+ const d=new Date(ms+9*3600000);
+ const day=d.getUTCDate();
+ d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+months);
+ d.setUTCDate(Math.min(day,new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate()));
+ return projectedKoreanDate(new Date(d.getTime()-9*3600000));
+}
+function syncHalvingBanner(){
+ const now=Date.now(),diff=Math.max(0,projectedHalvingAt-now),days=Math.floor(diff/86400000);
+ const hours=Math.floor(diff%86400000/3600000),minutes=Math.floor(diff%3600000/60000),seconds=Math.floor(diff%60000/1000);
+ if($('nextHalvingHeroDate'))$('nextHalvingHeroDate').textContent=projectedKoreanDate(new Date(projectedHalvingAt));
+ for(const [id,value] of [['halvingTimerDays',String(days)],['halvingTimerHours',two(hours)],['halvingTimerMinutes',two(minutes)],['halvingTimerSeconds',two(seconds)]]){
+  if($(id)&&$(id).textContent!==value)$(id).textContent=value;
+ }
+ if($('halvingBeforeDate'))$('halvingBeforeDate').textContent=shiftedProjectDate(projectedHalvingAt,-18);
+ if($('halvingAfterDate'))$('halvingAfterDate').textContent=shiftedProjectDate(projectedHalvingAt,18);
+ if($('halvingHeightHero'))$('halvingHeightHero').textContent=chainTip?fmt(chainTip)+' / '+fmt(HALVING_TARGET):'Live block data pending';
+ if($('halvingProgress'))$('halvingProgress').style.width=Math.max(0,Math.min(100,chainTip?(chainTip-840000)/(HALVING_TARGET-840000)*100:0))+'%';
+}
+function beginHalvingCountdown(){
+ syncHalvingBanner();
+ if(countdownInterval===null)countdownInterval=setInterval(()=>{if(!document.hidden)syncHalvingBanner()},1000);
+}
+function animateElapsedDays(){
+ const target=$('cycleDays');if(!target)return;
+ const days=Math.max(0,Math.floor((Date.now()-HALVING_2024_UTC)/86400000));
+ if(cycleElapsedAnimated||!window.requestAnimationFrame){target.textContent=fmt(days)+' days';return}
+ cycleElapsedAnimated=true;
+ const beginning=performance.now(),duration=1150;
+ const step=t=>{
+  const n=Math.min(1,(t-beginning)/duration),ease=1-(1-n)**4;
+  target.textContent=fmt(Math.round(days*ease))+' days';
+  if(n<1)requestAnimationFrame(step);else target.textContent=fmt(days)+' days';
+ };
+ requestAnimationFrame(step);
+}
 let chainTip=null,chainFetchedAt=0;
-async function refreshBlockHeight(){const el=$('liveBlockHeight'),count=$('nextHalvingBlocks'),eta=$('nextHalvingEstimate'),source=$('blockHeightStatus');if(!el)return;try{const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),11000);let response;try{response=await fetch('https://mempool.space/api/blocks/tip/height',{signal:controller.signal,cache:'no-store'});}finally{clearTimeout(timer)}if(!response.ok)throw Error('HTTP '+response.status);const height=Number((await response.text()).trim());if(!Number.isInteger(height)||height<840000||height>1049999)throw Error('Block height validation failed');chainTip=height;chainFetchedAt=Date.now();const remaining=1050000-height;el.textContent=fmt(height)+' blocks';count.textContent=fmt(remaining)+' blocks';const est=new Date(Date.now()+remaining*600000);eta.textContent=est.toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'});source.textContent='mempool.space · fetched at '+new Date(chainFetchedAt).toLocaleTimeString('en-US')+' · forecast assumes 10 minutes per block';source.dataset.status='ok';fetched.block='Connected · '+new Date(chainFetchedAt).toLocaleTimeString('en-US');}catch(e){if(!chainTip){el.textContent='Unavailable';count.textContent='Unavailable';eta.textContent='Estimated 2028';}source.textContent='Network block API unavailable · '+e.message;source.dataset.status='stale';fetched.block='Connection failed ('+e.message+')'}renderSources()}
+async function refreshBlockHeight(){const el=$('liveBlockHeight'),count=$('nextHalvingBlocks'),eta=$('nextHalvingEstimate'),source=$('blockHeightStatus');if(!el)return;try{const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),11000);let response;try{response=await fetch('https://mempool.space/api/blocks/tip/height',{signal:controller.signal,cache:'no-store'});}finally{clearTimeout(timer)}if(!response.ok)throw Error('HTTP '+response.status);const height=Number((await response.text()).trim());if(!Number.isInteger(height)||height<840000||height>1049999)throw Error('Block height validation failed');chainTip=height;chainFetchedAt=Date.now();const remaining=1050000-height;projectedHalvingAt=Date.now()+remaining*600000;syncHalvingBanner();if($('halvingEstimateSource'))$('halvingEstimateSource').textContent='mempool.space · last updated '+new Date(chainFetchedAt).toLocaleTimeString('en-US');el.textContent=fmt(height)+' blocks';count.textContent=fmt(remaining)+' blocks';const est=new Date(projectedHalvingAt);eta.textContent=projectedKoreanDate(est);source.textContent='mempool.space · fetched at '+new Date(chainFetchedAt).toLocaleTimeString('en-US')+' · forecast assumes 10 minutes per block';source.dataset.status='ok';fetched.block='Connected · '+new Date(chainFetchedAt).toLocaleTimeString('en-US');}catch(e){if(!chainTip){el.textContent='Unavailable';count.textContent='Unavailable';eta.textContent='Estimated 2028';}if($('halvingEstimateSource'))$('halvingEstimateSource').textContent='Block API unavailable · reference estimate shown';source.textContent='Network block API unavailable · '+e.message;source.dataset.status='stale';fetched.block='Connection failed ('+e.message+')'}renderSources()}
 
-function renderCycle(){const days=Math.max(0,dayNum(new Date().toISOString().slice(0,10))-dayNum('2024-04-20'));$('halvingDays').textContent=fmt(days)+' days';$('cycleDays').textContent=fmt(days)+' days';$('cycleYear').textContent='Since the halving: '+(days/365.25).toFixed(2)+' years';$('historyCount').textContent=history.length?fmt(history.length)+' records':'None';$('historySource').textContent=historySource||'API request or CSV upload required';const range=Number($('cycleRange').value),rows=[],chart=[];const current=cycleSeries('2024','2024-04-20',Math.max(range,days));if(current){const observed=interpolateNearest(history,dayNum(new Date().toISOString().slice(0,10)),7)||history[history.length-1];const y=observed.price/current.start.price*100-100;$('cycleReturn').textContent=(y>=0?'+':'')+fmt(y,1)+'%';$('cycleReturn').className='stat-value '+(y<0?'negative':'positive')}else{$('cycleReturn').textContent='—';$('cycleReturn').className='stat-value'}
+function renderCycle(){const days=Math.max(0,dayNum(new Date().toISOString().slice(0,10))-dayNum('2024-04-20'));$('halvingDays').textContent=fmt(days)+' days';animateElapsedDays();beginHalvingCountdown();$('cycleYear').textContent='Since the halving: '+(days/365.25).toFixed(2)+' years';$('historyCount').textContent=history.length?fmt(history.length)+' records':'None';$('historySource').textContent=historySource||'API request or CSV upload required';const range=Number($('cycleRange').value),rows=[],chart=[];const current=cycleSeries('2024','2024-04-20',Math.max(range,days));if(current){const observed=interpolateNearest(history,dayNum(new Date().toISOString().slice(0,10)),7)||history[history.length-1];const y=observed.price/current.start.price*100-100;$('cycleReturn').textContent=(y>=0?'+':'')+fmt(y,1)+'%';$('cycleReturn').className='stat-value '+(y<0?'negative':'positive')}else{$('cycleReturn').textContent='—';$('cycleReturn').className='stat-value'}
 for(const [year,date,color] of HALVINGS){const s=cycleSeries(year,date,range);if(s&&s.series.length>1)chart.push({label:year,color,points:s.series});if(!s){rows.push(`<tr><td>${year}</td><td>—</td><td>—</td><td>—</td><td>Data unavailable</td></tr>`);continue}const elapsed=Math.min(days,range);const comparable=s.series.filter(r=>r.x<=elapsed);const at=comparable[comparable.length-1];const max=s.series.reduce((acc,item)=>Math.max(acc,item.y),0);rows.push(`<tr><td>${year}</td><td>${money(s.start.price)}</td><td>${at?(at.y-100>=0?'+':'')+fmt(at.y-100,1)+'%':'—'}</td><td>+${fmt(max-100,1)}%</td><td>${s.series.length} observations</td></tr>`)}$('cycleTable').innerHTML=rows.join('');renderEmissionChart();renderSeasonality();}
 function parseCsv(content){const lines=content.trim().split(/\r?\n/);if(lines.length<2)throw Error('Not enough CSV rows');let cols=lines[0].replace(/^\uFEFF/,'').split(',').map(s=>s.trim().toLowerCase().replaceAll('"',''));const ix=cols.findIndex(x=>['date','timestamp','time'].includes(x)),iy=cols.findIndex(x=>['close','price','value'].includes(x));if(ix===-1||iy===-1)throw Error('Required columns: date,close or timestamp,price');const output=[];for(const line of lines.slice(1)){const c=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));let date=c[ix];if(/^\d{10,13}$/.test(date))date=new Date(Number(date)*(date.length===10?1000:1)).toISOString().slice(0,10);else if(/^\d{4}\/\d{2}\/\d{2}$/.test(date))date=date.replaceAll('/','-');output.push({date,price:Number(c[iy])})}return normalizeHistory(output)}
 function initCycle(){$('loadHistory').onclick=()=>fetchHistory(true);$('cycleRange').onchange=renderCycle;$('historyFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{setHistory(parseCsv(await file.text()),'CSV: '+file.name);toast('Imported '+history.length+' CSV observations.')}catch(err){toast('CSV read failed: '+err.message)}e.target.value=''};$('downloadCsvTemplate').onclick=()=>download('btc-price-template.csv','date,close\n','text/csv');$('exportHistory').onclick=()=>{if(!history.length)return toast('There is no historical data to export.');download('btc-history.csv','date,close\n'+history.map(r=>r.date+','+r.price).join('\n'),'text/csv')}}
