@@ -160,7 +160,7 @@ function renderEmissionChart(){
  const asMillions=n=>(n/1e6).toFixed(3)+'M BTC';
  const at2024=issuanceAtHeight(840000),at2028=issuanceAtHeight(1050000),at2049=supplyAtTime(t1);
  const futureStart=X(split),futureY=Y(supplyAtTime(split));
- root.innerHTML='<div class="issuance-key"><span><i class="key-line actual"></i>Issuance schedule to date</span><span><i class="key-line projected"></i>Projected issuance</span><span><i class="key-line maximum"></i>21M theoretical cap</span></div>'+
+ root.innerHTML='<div class="issuance-key"><span><i class="key-line actual"></i>Modeled issuance to date</span><span><i class="key-line projected"></i>Projected issuance</span><span><i class="key-line maximum"></i>21M theoretical cap</span></div>'+
  '<svg class="emission-svg issuance-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Bitcoin cumulative issuance grows from zero in 2009 and gradually approaches the 21 million supply cap through 2049. Forecast dates are estimates." preserveAspectRatio="xMidYMid meet">'+
  '<defs><linearGradient id="btcSupplyStroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c4792e"/><stop offset=".58" stop-color="#f7931a"/><stop offset="1" stop-color="#ffc471"/></linearGradient><linearGradient id="btcSupplyFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7931a" stop-opacity=".23"/><stop offset="1" stop-color="#f7931a" stop-opacity=".015"/></linearGradient></defs>'+
  '<text x="'+L+'" y="22" font-size="12" fill="#efb579" font-weight="700">TOTAL ISSUED / MILLION BTC</text>'+
@@ -175,7 +175,7 @@ function renderEmissionChart(){
  '<text x="'+L+'" y="'+(H-5)+'" fill="#9b8575" font-size="11">2009 · NETWORK LAUNCH</text><text x="'+(W-R)+'" y="'+(H-5)+'" text-anchor="end" fill="#9b8575" font-size="11">2049 · PROJECTION</text></svg>';
  legend.innerHTML=[
   ['2009 · Genesis','0 BTC','Start of scheduled issuance'],
-  ['2024 · 4th halving',asMillions(at2024),'20M+ already issued'],
+  ['2024 · 4th halving',asMillions(at2024),'93.75% of theoretical cap'],
   ['2028 · estimated',asMillions(at2028),'Block 1,050,000'],
   ['2049 · projection',asMillions(at2049),(at2049/cap*100).toFixed(2)+'% of 21M cap']
  ].map(([year,value,note])=>'<div class="emission-era"><small>'+year+'</small><strong>'+value+'</strong><span>'+note+'</span></div>').join('');
