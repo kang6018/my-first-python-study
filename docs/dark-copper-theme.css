@@ -862,3 +862,30 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  #macroPage .macro-native-chart{padding:12px 8px}
  #macroPage .macro-native-summary strong{font-size:22px!important}
 }
+
+/* V8.6 · resilient official FRED DGS10 chart when static feed is unavailable */
+#macroPage .macro-fred-visual{
+ height:100%;width:100%;box-sizing:border-box;
+ background:radial-gradient(ellipse 70% 60% at 60% 25%,rgba(247,147,26,.13),transparent),#17110f;
+ display:flex;flex-direction:column;align-items:stretch;justify-content:center;
+ padding:15px;gap:10px;
+}
+#macroPage .macro-fred-label{
+ color:#ffbf7b;font-size:11px;font-weight:800;letter-spacing:.055em;
+}
+#macroPage .macro-fred-image{
+ display:block;width:100%;height:calc(100% - 86px);min-height:185px;
+ object-fit:contain;background:#fff;border-radius:10px;
+}
+#macroPage .macro-fred-caption{font-size:10px;color:#c4a990;line-height:1.5}
+#macroPage .macro-fred-visual>a{
+ align-self:flex-start;border:1px solid #80512b;border-radius:10px;
+ color:#ffca8c!important;font-weight:750;font-size:11px;
+ padding:8px 13px;text-decoration:none;background:#352217;
+}
+#macroPage .macro-fred-visual>a:hover{background:#503018}
+#macroPage .macro-fred-error{color:#d1b6a0;font-size:12px;line-height:1.7;margin:12px 0}
+@media(max-width:650px){
+ #macroPage .macro-fred-visual{padding:10px}
+ #macroPage .macro-fred-image{height:auto;flex:1;min-height:165px}
+}
