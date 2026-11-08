@@ -663,3 +663,168 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  #chartsPage .toolbar label{min-width:130px}
  #sentimentPage .sentiment-chart-card,#sentimentPage .sentiment-analysis-card{padding:15px!important}
 }
+
+/* V8.4 FINAL · remove obsolete editorial label; align charts & sentiment panels */
+.app-content::before,.app-content:before{content:none!important;display:none!important}
+.topbar .version{display:none!important}
+
+/* Multi Charts — properly aligned editorial banner */
+#chartsPage>.charts-page-banner{
+ display:flex!important;
+ align-items:center!important;
+ justify-content:space-between!important;
+ flex-wrap:wrap!important;
+ gap:24px!important;
+ padding:18px 24px 24px!important;
+ margin:0 0 20px!important;
+ width:100%!important;
+ box-sizing:border-box!important;
+ background:
+   radial-gradient(ellipse 46% 120% at 100% 0%,rgba(247,147,26,.15),transparent 80%),
+   linear-gradient(115deg,rgba(43,28,19,.9),rgba(24,18,15,.86))!important;
+ border:1px solid rgba(224,142,72,.24)!important;
+ border-radius:20px!important;
+ box-shadow:0 18px 44px rgba(0,0,0,.22)!important;
+}
+#chartsPage .charts-page-heading{
+ display:flex!important;flex-direction:column!important;gap:7px!important;
+ align-items:flex-start!important;min-width:0!important;flex:1 1 310px!important
+}
+#chartsPage .charts-page-banner .eyebrow{
+ margin:0!important;
+ color:#f4a858!important;font-weight:800!important;
+ font-size:10px!important;line-height:1.4!important;letter-spacing:.18em!important
+}
+#chartsPage .charts-page-banner h1{
+ font-family:'Manrope',system-ui,sans-serif!important;
+ font-size:clamp(30px,3.5vw,50px)!important;
+ line-height:1.1!important;
+ font-weight:800!important;
+ letter-spacing:-.075em!important;
+ color:#fff1e5!important;
+ margin:0!important
+}
+#chartsPage .charts-heading-dot{color:#f7931a!important}
+#chartsPage .charts-page-banner p{
+ display:block!important;
+ margin:3px 0 0!important;max-width:560px!important;
+ font-size:13px!important;line-height:1.7!important;
+ font-weight:500!important;color:#c7b2a1!important
+}
+#chartsPage .charts-banner-actions{
+ display:flex;flex-direction:column;align-items:flex-end;
+ justify-content:center;gap:12px;flex:0 0 auto
+}
+#chartsPage .charts-auto-save{
+ color:#bca38c;font-size:10px;font-weight:800;letter-spacing:.13em;
+ display:inline-flex;align-items:center;gap:8px;white-space:nowrap
+}
+#chartsPage .charts-auto-dot{
+ width:6px;height:6px;display:inline-block;border-radius:50%;
+ background:#d18a3a;box-shadow:0 0 0 4px rgba(245,158,67,.10)
+}
+#chartsPage .charts-banner-actions #saveCharts{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ gap:18px!important;padding:13px 18px!important;min-height:44px!important;
+ border:1px solid rgba(255,178,91,.45)!important;
+ border-radius:12px!important;font-size:12px!important;font-weight:800!important;
+ box-shadow:0 10px 24px rgba(247,147,26,.18)!important
+}
+#chartsPage>.toolbar{
+ box-sizing:border-box!important;
+ padding:15px 18px!important;
+ margin:0 0 15px!important;
+ display:flex!important;gap:12px 16px!important;
+ flex-wrap:wrap!important;align-items:center!important;
+ border-radius:16px!important;
+ background:linear-gradient(120deg,#261b16,#1c1512)!important;
+ border:1px solid rgba(216,139,75,.23)!important
+}
+#chartsPage>.toolbar label{
+ display:flex!important;align-items:center!important;gap:8px!important;
+ color:#d9bba2!important;font-size:12px!important;white-space:nowrap!important;
+ min-width:0!important
+}
+#chartsPage>.toolbar select{
+ background:#19120f!important;color:#ffecda!important;
+ border:1px solid rgba(206,142,88,.28)!important;border-radius:9px!important;
+ min-height:36px!important;padding:7px 12px!important;font-size:12px!important
+}
+#chartsPage>.toolbar button{min-height:36px!important;padding:8px 13px!important;font-size:11px!important}
+#chartsPage>.notice{margin:0 0 14px!important;color:#bea18a!important}
+
+/* Target the precise high-specificity light-theme selector: #sentimentPage .sentiment-columns .card */
+#sentimentPage .sentiment-columns>.card,
+#sentimentPage .sentiment-columns>.sentiment-chart-card,
+#sentimentPage .sentiment-columns>.sentiment-analysis-card{
+ background:
+  radial-gradient(circle at 82% 7%,rgba(245,151,44,.11),transparent 45%),
+  linear-gradient(145deg,#291d17,#181210 74%)!important;
+ color:#f3e2d1!important;
+ border:1px solid #6e492e!important;
+ border-radius:20px!important;
+ box-shadow:0 20px 50px rgba(0,0,0,.29),inset 0 1px 0 rgba(255,217,168,.035)!important;
+ min-width:0!important;
+ padding:24px!important
+}
+#sentimentPage .sentiment-columns .card-head,
+#sentimentPage .sentiment-columns .card-head h2,
+#sentimentPage .sentiment-columns .card-head h3,
+#sentimentPage .sentiment-columns .sentiment-analysis-card h3{
+ color:#fbead8!important
+}
+#sentimentPage .sentiment-columns .card-head h2{
+ font-size:15px!important;letter-spacing:.03em!important;
+ font-weight:800!important
+}
+#sentimentPage .sentiment-columns .card-head p,
+#sentimentPage .sentiment-columns .data-footer,
+#sentimentPage .sentiment-columns .data-footer a{
+ color:#ceb29a!important
+}
+#sentimentPage .sentiment-columns .data-footer a{color:#ffc080!important}
+#sentimentPage .sentiment-columns #sentimentPlot{
+ background:transparent!important;color:#cbb196!important;
+ border:1px solid rgba(243,154,66,.10)!important;
+ border-radius:14px!important;overflow:hidden!important;
+ margin:10px 0 0!important;
+ padding:10px 9px!important;box-sizing:border-box!important;
+ width:100%!important;min-height:370px!important
+}
+#sentimentPage .sentiment-columns #sentimentPlot svg{
+ display:block!important;
+ background:transparent!important;
+ color:#bfa58c!important;
+ width:100%!important;height:100%!important;
+ max-height:425px!important;
+ overflow:visible!important;
+}
+#sentimentPage .sentiment-columns .sentiment-analysis-card .divider{background:#64452e!important}
+#sentimentPage .sentiment-columns .sentiment-analysis-card .checklist label{
+ color:#dbc2aa!important;line-height:1.6!important
+}
+#sentimentPage .sentiment-columns .sentiment-analysis-card .checklist input{
+ accent-color:#f7931a!important
+}
+#sentimentPage .sentiment-columns .sentiment-observation{
+ background:#32221a!important;border:1px solid #694831!important;
+ border-radius:12px!important;box-shadow:none!important
+}
+#sentimentPage .sentiment-columns .sentiment-observation .obs-label{color:#ffb876!important}
+#sentimentPage .sentiment-columns .sentiment-observation strong{color:#fff0df!important}
+#sentimentPage .sentiment-columns .sentiment-observation .obs-note{color:#d3b69b!important}
+@media(max-width:1050px){
+ #sentimentPage .sentiment-columns{grid-template-columns:1fr!important}
+ #chartsPage .charts-banner-actions{align-items:flex-start!important}
+}
+@media(max-width:650px){
+ #chartsPage>.charts-page-banner{padding:20px 17px!important;gap:15px!important}
+ #chartsPage .charts-page-banner h1{font-size:36px!important}
+ #chartsPage .charts-banner-actions{width:100%!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;flex-wrap:wrap!important}
+ #chartsPage>.toolbar{padding:13px!important}
+ #chartsPage>.toolbar label{width:100%!important;justify-content:space-between!important}
+ #chartsPage>.toolbar select{flex:1!important;max-width:260px!important}
+ #sentimentPage .sentiment-columns>.card{padding:17px!important}
+ #sentimentPage .sentiment-columns #sentimentPlot{min-height:280px!important;padding:3px!important}
+ #sentimentPage .sentiment-columns #sentimentPlot svg{min-height:280px!important;height:300px!important}
+}
