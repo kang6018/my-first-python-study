@@ -28,6 +28,18 @@ jobs:
     steps:
       - name: Checkout public static site
         uses: actions/checkout@v4
+      - name: Validate English-only interface and JavaScript syntax
+        run: |
+          node --check docs/app.js
+          node --check docs/motion.js
+          python3 - <<'PY'
+          import pathlib,re
+          for name in ('index.html','app.js','motion.js'):
+              text=pathlib.Path('docs',name).read_text(encoding='utf-8')
+              if re.search(r'[\uAC00-\uD7A3]', text):
+                  raise SystemExit('Korean interface text remains in '+name)
+          print('UI language checks passed')
+          PY
       - name: Download source-labelled historic BTC prices
         continue-on-error: true
         run: |
