@@ -943,3 +943,154 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  .ct-story-hero .ct-hero-content{max-width:100%!important}
  .ct-story-hero .ct-scene{right:-55%!important;top:26%!important}
 }
+
+/* V8.8 — Premium glass command bar; consistent with the dark copper cinematic hero */
+.topbar.ct-console-header{
+ position:sticky!important;top:0!important;z-index:1000!important;
+ display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
+ gap:clamp(14px,1.3vw,30px)!important;
+ height:72px!important;min-height:72px!important;
+ padding:0 clamp(18px,2.3vw,42px)!important;
+ border:0!important;border-bottom:1px solid rgba(247,147,26,.14)!important;
+ background:
+ radial-gradient(ellipse at 60% -60%,rgba(247,147,26,.10),transparent 73%),
+ linear-gradient(180deg,rgba(18,13,11,.96),rgba(15,11,10,.87))!important;
+ backdrop-filter:blur(24px) saturate(125%)!important;
+ -webkit-backdrop-filter:blur(24px) saturate(125%)!important;
+ box-shadow:0 12px 40px rgba(0,0,0,.19)!important
+}
+.topbar.ct-console-header::after{
+ content:"";position:absolute;left:4%;right:4%;bottom:0;height:1px;
+ background:linear-gradient(90deg,transparent,rgba(247,147,26,.20),rgba(255,198,127,.17),transparent);
+ pointer-events:none
+}
+.ct-console-header .ct-header-brand{
+ display:flex;flex:0 0 auto;gap:9px!important;align-items:center!important;
+ font-family:'Manrope',sans-serif!important;font-size:14px!important;font-weight:850!important;
+ letter-spacing:-.055em!important;color:#fff1e6!important;white-space:nowrap
+}
+.ct-console-header .ct-header-brand .brand-icon{
+ display:grid!important;place-items:center!important;width:31px!important;height:31px!important;
+ padding:0!important;border-radius:50%!important;
+ font-size:17px!important;line-height:1!important;font-weight:800!important;
+ color:#62310a!important;
+ background:radial-gradient(circle at 32% 27%,#ffe0a1,#f6a338 45%,#b9620b 100%)!important;
+ box-shadow:inset 0 1px 2px rgba(255,255,255,.5),0 5px 21px rgba(247,147,26,.23)!important;
+}
+.ct-console-header .ct-header-brand .accent{color:#ffaf56!important}
+.ct-console-header .ct-console-nav{
+ flex:1 1 auto!important;min-width:0!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ overflow-x:auto!important;overflow-y:hidden!important;
+ scrollbar-width:none!important;-ms-overflow-style:none;
+ height:48px!important;padding:5px!important;gap:3px!important;
+ border:1px solid rgba(246,163,84,.13)!important;
+ border-radius:999px!important;
+ background:linear-gradient(155deg,rgba(57,37,26,.38),rgba(19,15,13,.34))!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+.ct-console-header .ct-console-nav::-webkit-scrollbar{display:none}
+.ct-console-header .ct-console-nav .nav-link{
+ position:relative!important;flex:0 0 auto!important;
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ min-height:36px!important;height:36px!important;
+ padding:0 clamp(10px,.8vw,16px)!important;
+ margin:0!important;border:1px solid transparent!important;
+ border-radius:999px!important;background:transparent!important;
+ box-shadow:none!important;
+ font-family:'Manrope',sans-serif!important;font-size:11px!important;
+ font-weight:700!important;letter-spacing:-.015em!important;
+ line-height:1.15!important;color:#cdb8a6!important;white-space:nowrap!important;
+ transition:background .2s,color .2s,box-shadow .2s,transform .2s!important;
+}
+.ct-console-header .ct-console-nav .nav-link:hover{
+ color:#fff4e8!important;background:rgba(255,180,95,.09)!important;transform:translateY(-1px)!important
+}
+.ct-console-header .ct-console-nav .nav-link.active{
+ color:#24150b!important;border-color:rgba(255,200,131,.62)!important;
+ background:linear-gradient(122deg,#ed9227,#ffc477)!important;
+ box-shadow:inset 0 1px 0 rgba(255,246,223,.4),0 5px 18px rgba(247,147,26,.20)!important
+}
+.ct-console-header .ct-header-utilities{
+ display:flex!important;flex:0 0 auto!important;align-items:center!important;justify-content:flex-end!important;
+ gap:15px!important;min-width:0!important
+}
+.ct-console-header .ct-status-stack{
+ display:flex;flex-direction:column;align-items:flex-end;gap:4px;
+ min-width:0!important;max-width:215px!important
+}
+.ct-console-header .ct-status-label{
+ font-size:9px;font-weight:800;line-height:1;
+ letter-spacing:.18em;color:#a98a72!important
+}
+.ct-console-header .ct-status-stack .live-dot{
+ display:block!important;max-width:215px!important;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ font-size:10px!important;color:#c7b4a1!important;line-height:1.3
+}
+.ct-console-header .ct-status-stack .live-dot.ok{color:#a8d7b8!important}
+.ct-console-header .ct-backup-action{
+ display:inline-flex!important;align-items:center;justify-content:center;gap:8px;
+ height:37px!important;min-height:37px!important;padding:0 15px!important;
+ border:1px solid rgba(245,165,89,.26)!important;border-radius:999px!important;
+ background:rgba(255,181,97,.04)!important;box-shadow:none!important;
+ font-family:'Manrope',sans-serif!important;font-size:11px!important;font-weight:750!important;
+ color:#edc4a0!important;white-space:nowrap
+}
+.ct-console-header .ct-backup-action:hover{
+ border-color:rgba(245,165,89,.55)!important;
+ background:rgba(255,181,97,.10)!important;color:#fff0df!important
+}
+.ct-console-header .ct-mobile-menu{display:none!important}
+@media(max-width:1590px){
+ .ct-console-header .ct-status-stack{display:none!important}
+ .ct-console-header .ct-console-nav{justify-content:flex-start!important}
+}
+@media(max-width:1280px){
+ .topbar.ct-console-header{height:66px!important;min-height:66px!important;padding:0 17px!important;gap:15px!important}
+ .ct-console-header .ct-console-nav{height:44px!important}
+ .ct-console-header .ct-console-nav .nav-link{font-size:10px!important;padding:0 11px!important}
+ .ct-console-header .ct-header-brand{font-size:13px!important}
+}
+@media(max-width:900px){
+ .topbar.ct-console-header{height:64px!important;min-height:64px!important;gap:10px!important;padding:0 14px!important}
+ .ct-console-header .ct-header-brand{font-size:13px!important}
+ .ct-console-header .ct-mobile-menu{
+  display:flex!important;order:3!important;margin-left:auto!important;
+  flex:0 0 42px!important;width:42px!important;height:42px!important;
+  background:#291b14!important;border:1px solid #6a4429!important
+ }
+ .ct-console-header .ct-console-nav{
+  display:none!important;position:absolute!important;
+  left:12px!important;right:12px!important;top:calc(100% + 8px)!important;
+  z-index:1001!important;width:auto!important;height:auto!important;max-height:70vh!important;
+  overflow-y:auto!important;overflow-x:hidden!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important;padding:12px!important;
+  background:linear-gradient(145deg,#281b15,#16100e)!important;
+  border:1px solid #6b452c!important;border-radius:17px!important;
+  box-shadow:0 24px 65px rgba(0,0,0,.6)!important
+ }
+ .ct-console-header .ct-console-nav.ct-open{display:grid!important}
+ .ct-console-header .ct-console-nav .nav-link{
+  display:flex!important;min-width:0!important;height:auto!important;
+  min-height:45px!important;padding:12px!important;
+  justify-content:flex-start!important;text-align:left!important;
+  white-space:normal!important;font-size:12px!important;
+  border:1px solid rgba(247,147,26,.14)!important;border-radius:11px!important;
+  color:#e3cbb5!important;background:#332218!important
+ }
+ .ct-console-header .ct-console-nav .nav-link.active{
+  color:#2b180b!important;background:linear-gradient(120deg,#ee9633,#ffc57d)!important
+ }
+ .ct-console-header .ct-header-utilities{margin-left:auto!important;gap:7px!important;order:2!important}
+ .ct-console-header .ct-backup-action{display:inline-flex!important;padding:0 11px!important;height:35px!important}
+}
+@media(max-width:480px){
+ .ct-console-header .ct-header-brand{font-size:12px!important}
+ .ct-console-header .ct-header-brand .brand-icon{width:27px!important;height:27px!important;font-size:15px!important}
+ .ct-console-header .ct-backup-action{font-size:10px!important;padding:0 10px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .ct-console-header .ct-console-nav .nav-link{transition:none!important}
+}
