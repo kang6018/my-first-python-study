@@ -472,7 +472,7 @@ footer{color:#c6a78b!important}
 html,body{width:100%;min-width:0;overflow-x:hidden}
 .app-content{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
 .app-content>.page:not(.ct-home){
- box-sizing:border-box!important;width:min(100% - 48px,1580px)!important;
+ box-sizing:border-box!important;width:min(calc(100% - 48px),1580px)!important;
  max-width:1580px!important;margin:0 auto!important;
  padding:32px 0 80px!important;min-width:0!important;
  grid-template-columns:minmax(0,1fr)!important;gap:22px!important;
@@ -636,7 +636,7 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  #macroPage .macro-grid{gap:15px!important}
 }
 @media(max-width:1000px){
- .app-content>.page:not(.ct-home){width:min(100% - 28px,1580px)!important;padding:18px 0 50px!important}
+ .app-content>.page:not(.ct-home){width:min(calc(100% - 28px),1580px)!important;padding:18px 0 50px!important}
  #sentimentPage>.content-columns{grid-template-columns:1fr!important}
  #sentimentPage .sentiment-chart-card,#sentimentPage .sentiment-analysis-card{min-height:0!important}
  #sentimentPage #sentimentPlot,#sentimentPage #sentimentPlot svg{min-height:330px!important;height:330px!important}
