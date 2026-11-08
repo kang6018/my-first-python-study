@@ -1,0 +1,75 @@
+name: Publish Cycle Terminal to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  schedule:
+    - cron: "17 0,12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: cycle-terminal-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout public static site
+        uses: actions/checkout@v4
+      - name: Download source-labelled historic BTC prices
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request, datetime
+          def fetch(url):
+              req = urllib.request.Request(url, headers={"User-Agent":"CycleTerminalStatic/6.2","Accept":"application/json"})
+              with urllib.request.urlopen(req, timeout=17) as response:
+                  return json.load(response)
+          data = []
+          source = None
+          try:
+              to_ts = int(time.time())
+              for _ in range(4):
+                  url = "https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD&limit=2000&toTs="+str(to_ts)
+                  page = fetch(url).get("Data",{}).get("Data",[])
+                  if len(page)<100: raise RuntimeError("Insufficient candles")
+                  data = page + data
+                  earliest = int(page[0]["time"])
+                  if earliest < 1353283200: break
+                  to_ts = earliest - 86400
+              rows = [{"date":datetime.datetime.fromtimestamp(int(item["time"]),datetime.timezone.utc).date().isoformat(),"price":float(item["close"])} for item in data if float(item.get("close",0))>0]
+              source = "CryptoCompare BTC/USD historical daily close"
+          except Exception as err:
+              print("CryptoCompare unavailable:",str(err)[:160])
+              data = fetch("https://api.blockchain.info/charts/market-price?timespan=all&format=json&sampled=true").get("values",[])
+              rows = [{"date":datetime.datetime.fromtimestamp(int(item["x"]),datetime.timezone.utc).date().isoformat(),"price":float(item["y"])} for item in data if float(item.get("y",0))>0]
+              source = "Blockchain.com BTC/USD sampled market-price"
+          unique = {item["date"]:item for item in rows}
+          rows = [unique[key] for key in sorted(unique)]
+          if len(rows)<350: raise RuntimeError("Not enough verified price observations")
+          os.makedirs("docs/data",exist_ok=True)
+          with open("docs/data/btc-history.json","w",encoding="utf-8") as output:
+              json.dump({"status":"ok","source":source,"asOf":rows[-1]["date"],"rows":rows},output,ensure_ascii=False,separators=(',',':'))
+          print("BTC observations:",len(rows),"source:",source,"latest:",rows[-1]["date"])
+          PY
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload static website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
+      - name: Publish website
+        id: deployment
+        uses: actions/deploy-pages@v4
