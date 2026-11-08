@@ -28,17 +28,22 @@ jobs:
     steps:
       - name: Checkout public static site
         uses: actions/checkout@v4
-      - name: Validate English-only interface and JavaScript syntax
+      - name: Validate JavaScript and Korean-only strategy page
         run: |
           node --check docs/app.js
           node --check docs/motion.js
           python3 - <<'PY'
           import pathlib,re
-          for name in ('index.html','app.js','motion.js'):
-              text=pathlib.Path('docs',name).read_text(encoding='utf-8')
-              if re.search(r'[\uAC00-\uD7A3]', text):
-                  raise SystemExit('Korean interface text remains in '+name)
-          print('UI language checks passed')
+          html=pathlib.Path('docs/index.html').read_text(encoding='utf-8')
+          motion=pathlib.Path('docs/motion.js').read_text(encoding='utf-8')
+          start=html.index('id="strategyPage"')
+          end=html.index('id="communityPage"',start)
+          rest=html[:start]+html[end:]
+          if re.search(r'[\uAC00-\uD7A3]',rest):
+              raise SystemExit('Korean text unexpectedly found outside Strategy page')
+          if re.search(r'[\uAC00-\uD7A3]',motion):
+              raise SystemExit('Korean text unexpectedly found in shared navigation')
+          print('JavaScript syntax and mixed-language scope checks passed')
           PY
       - name: Download source-labelled historic BTC prices
         continue-on-error: true
