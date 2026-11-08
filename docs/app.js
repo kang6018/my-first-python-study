@@ -102,18 +102,84 @@ function interpolateNearest(rows,target,window=5){let best=null,dist=Infinity;fo
 function cycleSeries(year,base,maxDays){const origin=dayNum(base),start=interpolateNearest(history,origin,7);if(!start)return null;const x0=dayNum(start.date);const series=history.filter(r=>{const x=dayNum(r.date)-origin;return x>=0&&x<=maxDays}).map(r=>({x:dayNum(r.date)-origin,y:r.price/start.price*100}));if(!series.length)return null;return {year,start,series,origin,availableDays:series[series.length-1].x}}
 
 function renderEmissionChart(){
- const root=$('cyclePlot'), legend=$('cycleLegend');if(!root||!legend)return;
- const data=[{year:2009,month:'01',reward:50,block:'0',label:'Genesis'},{year:2012,month:'11',reward:25,block:'210,000',label:'First'},{year:2016,month:'07',reward:12.5,block:'420,000',label:'Second'},{year:2020,month:'05',reward:6.25,block:'630,000',label:'Third'},{year:2024,month:'04',reward:3.125,block:'840,000',label:'Fourth'},{year:2028,month:'Estimated',reward:1.5625,block:'1,050,000',label:'Fifth (estimated)'}];
- const W=1120,H=350,left=73,right=30,top=38,bottom=77;const chartW=W-left-right,chartH=H-top-bottom;
- const px=i=>left+(i/(data.length-1))*chartW, py=r=>top+(1-r/50)*chartH;
- let steps='M '+left+' '+py(50);
- for(let i=0;i<data.length-1;i++){const nextX=px(i+1);steps+=' H '+nextX+' V '+py(data[i+1].reward)}
- const groups=data.map((d,i)=>{const x=px(i),y=py(d.reward),forecast=i===5;return `<line x1="${x}" y1="${top}" x2="${x}" y2="${H-bottom}" stroke="${forecast?'#8e774d':'#3a3129'}" stroke-width="1" stroke-dasharray="3 5"/><circle cx="${x}" cy="${y}" r="5" fill="${forecast?'#8d7958':'#d3b477'}"/><text x="${x}" y="${H-bottom+25}" fill="${forecast?'#aa9274':'#e1d2b9'}" font-size="13" font-weight="600" text-anchor="middle">${d.year}.${d.month}</text><text x="${x}" y="${H-bottom+43}" fill="#938575" font-size="10" text-anchor="middle">${d.label}</text><text x="${x+(i===0?11:i===5?-11:0)}" y="${Math.max(top+13,y-14)}" text-anchor="${i===0?'start':i===5?'end':'middle'}" font-size="12" fill="${forecast?'#ae987b':'#f1e0bd'}">${d.reward} BTC</text><title>${d.year}.${d.month}: block reward ${d.reward} BTC · block ${d.block}${forecast?' (Estimated)':''}</title>`}).join('');
- const ticks=[0,12.5,25,37.5,50].map(r=>`<line x1="${left}" y1="${py(r)}" x2="${W-right}" y2="${py(r)}" stroke="#352b23"/><text x="${left-15}" y="${py(r)+4}" font-size="11" text-anchor="end" fill="#988c7c">${r}</text>`).join('');
- root.innerHTML=`<svg class="emission-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Step chart showing reward reductions from 50 BTC in 2009 to an estimated 1.5625 BTC in 2028"><text x="${left}" y="18" font-size="11" fill="#baa789">BLOCK REWARD / BTC</text>${ticks}<path d="${steps}" fill="none" stroke="#d5b37a" stroke-width="3" stroke-linejoin="miter"/>${groups}</svg>`;
- legend.innerHTML=data.map((d,i)=>`<div class="emission-era ${i===5?'forecast':''}"><small>${d.year}.${d.month}${i===5?' (estimated)':''}</small><strong>${d.reward} BTC</strong><span>About ${fmt(d.reward*144*365.25,0)} BTC per year*</span></div>`).join('');
+ const root=$('cyclePlot'),legend=$('cycleLegend');
+ if(!root||!legend)return;
+ // Historical halving dates are actual calendar dates; dates from 2028 onward are illustrative estimates.
+ // Cumulative issuance is calculated from the Bitcoin block-subsidy schedule (210,000 blocks/epoch).
+ const milestones=[
+  {date:'2009-01-03',height:0,name:'Genesis',actual:true},
+  {date:'2012-11-28',height:210000,name:'1st halving',actual:true},
+  {date:'2016-07-09',height:420000,name:'2nd halving',actual:true},
+  {date:'2020-05-11',height:630000,name:'3rd halving',actual:true},
+  {date:'2024-04-20',height:840000,name:'4th halving',actual:true},
+  {date:'2028-04-17',height:1050000,name:'5th halving',actual:false},
+  {date:'2032-04-17',height:1260000,name:'6th halving',actual:false},
+  {date:'2036-04-17',height:1470000,name:'7th halving',actual:false},
+  {date:'2040-04-17',height:1680000,name:'8th halving',actual:false},
+  {date:'2044-04-17',height:1890000,name:'9th halving',actual:false},
+  {date:'2048-04-17',height:2100000,name:'10th halving',actual:false},
+  {date:'2052-04-17',height:2310000,name:'11th halving',actual:false}
+ ];
+ const cap=21000000,subsidyAt=epoch=>Math.floor((50e8)/Math.pow(2,epoch))/1e8;
+ function issuanceAtHeight(height){
+  let total=0,remaining=Math.max(0,height);
+  for(let epoch=0;epoch<33&&remaining>0;epoch++){
+   const count=Math.min(210000,remaining);
+   total+=count*subsidyAt(epoch);remaining-=count;
+  }
+  return total;
+ }
+ const t0=Date.parse('2009-01-03T00:00:00Z'),t1=Date.parse('2049-01-01T00:00:00Z'),today=Date.now();
+ const asTime=d=>Date.parse(d+'T00:00:00Z');
+ const supplyAtTime=t=>{
+  let i=0;while(i<milestones.length-2&&t>asTime(milestones[i+1].date))i++;
+  const left=milestones[i],right=milestones[i+1];
+  const frac=Math.max(0,Math.min(1,(t-asTime(left.date))/(asTime(right.date)-asTime(left.date))));
+  return issuanceAtHeight(left.height+(right.height-left.height)*frac);
+ };
+ const W=1150,H=410,L=78,R=34,T=53,B=66;
+ const chartWidth=W-L-R,chartHeight=H-T-B;
+ const X=t=>L+(t-t0)/(t1-t0)*chartWidth,Y=s=>T+(1-s/cap)*chartHeight;
+ const pathFor=(from,to,count)=>{
+  const points=[];for(let i=0;i<=count;i++){const t=from+(to-from)*i/count;points.push((i?'L':'M')+X(t).toFixed(2)+' '+Y(supplyAtTime(t)).toFixed(2))}
+  return points.join(' ');
+ };
+ const split=Math.max(t0,Math.min(t1,today));
+ const historic=pathFor(t0,split,180),future=split<t1?pathFor(split,t1,190):'';
+ const grid=[0,5,10,15,20,21].map(v=>{
+  const y=Y(v*1e6);return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="'+(v===21?'#d9913860':'#72503945')+'" stroke-dasharray="'+(v===21?'6 5':'2 6')+'"/><text x="'+(L-14)+'" y="'+(y+4)+'" fill="#bda68e" text-anchor="end" font-size="12">'+v+'M</text>';
+ }).join('');
+ const years=[2009,2014,2019,2024,2029,2034,2039,2044,2049].map(yr=>{
+  const x=X(asTime(yr+'-01-01'));return '<text x="'+x+'" y="'+(H-28)+'" text-anchor="middle" fill="#bfa78f" font-size="12">'+yr+'</text>';
+ }).join('');
+ const checkpoints=[0,1,2,3,4,5,6,8,10].map(i=>{
+  const d=milestones[i],t=asTime(d.date);if(t>t1)return '';
+  const s=issuanceAtHeight(d.height),x=X(t),y=Y(s),actual=d.actual;
+  return '<circle cx="'+x+'" cy="'+y+'" r="'+(i===4?5:3.6)+'" fill="'+(actual?'#ffc279':'#342015')+'" stroke="#f5a544" stroke-width="1.5"><title>'+d.date+' · '+(s/1e6).toFixed(3)+'M BTC · block '+d.height.toLocaleString('en-US')+(actual?'':' · estimated')+'</title></circle>';
+ }).join('');
+ const asMillions=n=>(n/1e6).toFixed(3)+'M BTC';
+ const at2024=issuanceAtHeight(840000),at2028=issuanceAtHeight(1050000),at2049=supplyAtTime(t1);
+ const futureStart=X(split),futureY=Y(supplyAtTime(split));
+ root.innerHTML='<div class="issuance-key"><span><i class="key-line actual"></i>Issuance schedule to date</span><span><i class="key-line projected"></i>Projected issuance</span><span><i class="key-line maximum"></i>21M theoretical cap</span></div>'+
+ '<svg class="emission-svg issuance-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Bitcoin cumulative issuance grows from zero in 2009 and gradually approaches the 21 million supply cap through 2049. Forecast dates are estimates." preserveAspectRatio="xMidYMid meet">'+
+ '<defs><linearGradient id="btcSupplyStroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c4792e"/><stop offset=".58" stop-color="#f7931a"/><stop offset="1" stop-color="#ffc471"/></linearGradient><linearGradient id="btcSupplyFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7931a" stop-opacity=".23"/><stop offset="1" stop-color="#f7931a" stop-opacity=".015"/></linearGradient></defs>'+
+ '<text x="'+L+'" y="22" font-size="12" fill="#efb579" font-weight="700">TOTAL ISSUED / MILLION BTC</text>'+
+ grid+years+
+ '<path d="'+historic+' L '+X(split).toFixed(2)+' '+(H-B)+' L '+L+' '+(H-B)+' Z" fill="url(#btcSupplyFill)" opacity=".7"/>'+
+ '<path d="'+historic+'" fill="none" stroke="url(#btcSupplyStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>'+
+ (future?'<path d="'+future+'" fill="none" stroke="#ffb256" stroke-width="3.5" stroke-dasharray="10 7" stroke-linecap="round" stroke-linejoin="round"/>':'')+
+ (future?'<circle cx="'+futureStart+'" cy="'+futureY+'" r="5" stroke="#ffcf90" stroke-width="2" fill="#f7931a"/>':'')+
+ checkpoints+
+ '<text x="'+(W-R-2)+'" y="'+(Y(cap)-13)+'" fill="#ffbd69" text-anchor="end" font-size="14" font-weight="800">21,000,000 BTC MAX</text>'+
+ '<text x="'+(W-R-2)+'" y="'+(Y(at2049)+24)+'" fill="#ffd9ad" text-anchor="end" font-size="12">2049 projection: '+(at2049/1e6).toFixed(3)+'M</text>'+
+ '<text x="'+L+'" y="'+(H-5)+'" fill="#9b8575" font-size="11">2009 · NETWORK LAUNCH</text><text x="'+(W-R)+'" y="'+(H-5)+'" text-anchor="end" fill="#9b8575" font-size="11">2049 · PROJECTION</text></svg>';
+ legend.innerHTML=[
+  ['2009 · Genesis','0 BTC','Start of scheduled issuance'],
+  ['2024 · 4th halving',asMillions(at2024),'20M+ already issued'],
+  ['2028 · estimated',asMillions(at2028),'Block 1,050,000'],
+  ['2049 · projection',asMillions(at2049),(at2049/cap*100).toFixed(2)+'% of 21M cap']
+ ].map(([year,value,note])=>'<div class="emission-era"><small>'+year+'</small><strong>'+value+'</strong><span>'+note+'</span></div>').join('');
 }
-
 
 let chainTip=null,chainFetchedAt=0;
 async function refreshBlockHeight(){const el=$('liveBlockHeight'),count=$('nextHalvingBlocks'),eta=$('nextHalvingEstimate'),source=$('blockHeightStatus');if(!el)return;try{const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),11000);let response;try{response=await fetch('https://mempool.space/api/blocks/tip/height',{signal:controller.signal,cache:'no-store'});}finally{clearTimeout(timer)}if(!response.ok)throw Error('HTTP '+response.status);const height=Number((await response.text()).trim());if(!Number.isInteger(height)||height<840000||height>1049999)throw Error('Block height validation failed');chainTip=height;chainFetchedAt=Date.now();const remaining=1050000-height;el.textContent=fmt(height)+' blocks';count.textContent=fmt(remaining)+' blocks';const est=new Date(Date.now()+remaining*600000);eta.textContent=est.toLocaleDateString('en-US',{year:'numeric',month:'2-digit',day:'2-digit'});source.textContent='mempool.space · fetched at '+new Date(chainFetchedAt).toLocaleTimeString('en-US')+' · forecast assumes 10 minutes per block';source.dataset.status='ok';fetched.block='Connected · '+new Date(chainFetchedAt).toLocaleTimeString('en-US');}catch(e){if(!chainTip){el.textContent='Unavailable';count.textContent='Unavailable';eta.textContent='Estimated 2028';}source.textContent='Network block API unavailable · '+e.message;source.dataset.status='stale';fetched.block='Connection failed ('+e.message+')'}renderSources()}
