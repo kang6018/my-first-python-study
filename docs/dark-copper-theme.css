@@ -467,3 +467,199 @@ footer{color:#c6a78b!important}
  #cyclePage .issuance-svg{min-width:670px}
  #cyclePage .issuance-key{min-width:670px}
 }
+
+/* V8.3 / Universal analytical layout + halving hero */
+html,body{width:100%;min-width:0;overflow-x:hidden}
+.app-content{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+.app-content>.page:not(.ct-home){
+ box-sizing:border-box!important;width:min(100% - 48px,1580px)!important;
+ max-width:1580px!important;margin:0 auto!important;
+ padding:32px 0 80px!important;min-width:0!important;
+ grid-template-columns:minmax(0,1fr)!important;gap:22px!important;
+}
+.app-content>.page:not(.ct-home)>.page-header{
+ width:100%;padding:9px 0 24px!important;
+ border-bottom:1px solid rgba(247,147,26,.23)!important;
+ align-items:center!important;gap:20px!important
+}
+.app-content>.page:not(.ct-home)>.page-header h1{
+ font-family:'Manrope',sans-serif!important;
+ font-size:clamp(28px,2.5vw,42px)!important;
+ font-weight:800!important;letter-spacing:-.055em!important;
+ line-height:1.15!important
+}
+.app-content>.page:not(.ct-home)>.page-header p{font-size:13px!important;line-height:1.7;color:#ccb49e!important}
+.app-content>.page:not(.ct-home) .card,
+.app-content>.page:not(.ct-home) .intel-section,
+.app-content>.page:not(.ct-home) .v4-section{min-width:0!important;width:100%!important;box-sizing:border-box!important}
+#sentimentPage>.content-columns{display:grid!important;grid-template-columns:minmax(0,1.13fr) minmax(0,1fr)!important;align-items:stretch!important;gap:20px!important}
+#sentimentPage .sentiment-chart-card,
+#sentimentPage .sentiment-analysis-card{
+ background:linear-gradient(145deg,#271b15,#15100e)!important;
+ border:1px solid #704729!important;border-radius:22px!important;
+ box-shadow:0 18px 48px #0004!important;min-width:0!important;min-height:590px!important;
+ padding:24px!important
+}
+#sentimentPage .sentiment-chart-card .card-head h2,
+#sentimentPage .sentiment-analysis-card .card-head h2{color:#ffeedf!important}
+#sentimentPage .sentiment-chart-card .card-head p{color:#cbb39d!important}
+#sentimentPage #sentimentPlot,#sentimentPage #sentimentPlot svg{
+ background:transparent!important;color:#e5ceaf!important;
+ width:100%!important;min-height:385px!important
+}
+#sentimentPage .sentiment-chart-card .data-footer{color:#be9d7e!important}
+#sentimentPage .sentiment-analysis-card .divider{background:#58402c!important}
+#sentimentPage .sentiment-analysis-card .checklist label{color:#d3bda6!important}
+#sentimentPage .sentiment-analysis-card .checklist input{accent-color:#f7931a}
+#sentimentPage .sentiment-observation,
+#sentimentPage .sentiment-analysis-card .sentiment-observation{
+ background:#312119!important;border:1px solid #67432b!important;
+ border-radius:13px!important;box-shadow:none!important
+}
+#sentimentPage .sentiment-observation .obs-label{color:#ffb46e!important}
+#sentimentPage .sentiment-observation strong{color:#fff1e1!important}
+#sentimentPage .sentiment-observation .obs-note{color:#ccb7a1!important}
+#sentimentPage .sentiment-observations{gap:10px!important}
+#sentimentPage .indicator-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#sentimentPage .intel-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important}
+#sentimentPage .intel-panel,#cyclePage .intel-panel,
+#sentimentPage .intel-section,#cyclePage .intel-section{
+ background:linear-gradient(150deg,#281c16,#191210)!important;
+ border:1px solid #6b492f!important;border-radius:20px!important;
+ box-shadow:0 18px 45px #0003!important;color:#f5e7d8!important;
+ min-width:0!important
+}
+#sentimentPage .intel-panel h3,#sentimentPage .intel-section h2,
+#cyclePage .intel-panel h3,#cyclePage .intel-section h2{color:#fff0e0!important}
+#sentimentPage .intel-panel strong,#cyclePage .intel-panel strong{color:#f9e5cf!important}
+#sentimentPage .intel-svg,
+#cyclePage .intel-svg,.intel-svg,
+#etfFlowPlot,#sentimentPage #etfFlowPlot,
+#sentimentPage .v4-plot,#cyclePage .v4-plot{
+ background:linear-gradient(160deg,#251913,#19120f)!important;
+ border:1px solid #513725!important;
+ border-radius:12px!important;
+ color:#dfc8af!important
+}
+#etfFlowPlot svg{background:transparent!important;color:#e1c9ad!important}
+#sentimentPage .intel-reading,#cyclePage .intel-reading{background:#34231a!important}
+#sentimentPage .intel-label,#cyclePage .intel-label{color:#d4bba4!important}
+#sentimentPage .treasury-line,#sentimentPage .treasury-line b{color:#eadac8!important}
+#sentimentPage .treasury-track{background:#392b24!important}
+#sentimentPage .treasury-track i{background:linear-gradient(90deg,#c37c32,#ffc078)!important}
+#macroPage .macro-grid{
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:22px!important;width:100%!important
+}
+#macroPage .macro-card{
+ padding:16px!important;border-radius:19px!important;min-width:0!important;
+ background:linear-gradient(155deg,#281b14,#18110e)!important;border-color:#634329!important;
+ box-shadow:0 18px 45px #0004!important
+}
+#macroPage .macro-head{
+ display:flex!important;align-items:center!important;justify-content:space-between!important;
+ gap:12px!important;flex-wrap:wrap!important;
+ padding:3px 4px 14px!important;margin:0!important;
+}
+#macroPage .macro-identity{display:grid;gap:5px;min-width:0}
+#macroPage .macro-category{
+ font-family:'Manrope',sans-serif!important;color:#e99d53!important;font-size:10px!important;
+ font-weight:800!important;letter-spacing:.16em!important
+}
+#macroPage .macro-head strong{color:#ffeddf!important;font-size:16px!important;font-weight:800!important;letter-spacing:-.02em}
+#macroPage .macro-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#macroPage .macro-symbol{color:#d0af8a!important;font-size:10px!important;font-weight:600!important}
+#macroPage .macro-external{color:#ffc17b!important;text-decoration:none;font-size:11px!important;font-weight:750!important}
+#macroPage .macro-external:hover{text-decoration:underline}
+#macroPage .macro-card .tv-slot{
+ height:clamp(310px,29vw,445px)!important;min-height:310px!important;
+ width:100%!important;overflow:hidden!important;border-radius:12px!important;
+ border:1px solid #4c3424!important;background:#0a0a0a!important
+}
+#macroPage .macro-load-note{height:100%;display:grid;place-items:center;padding:16px;color:#c09e7c;font-size:12px;text-align:center}
+#macroPage .macro-card .tradingview-widget-container{height:100%!important}
+#chartsPage .chart-grid{width:100%!important;min-width:0!important;gap:20px!important}
+#chartsPage .chart-card{border:1px solid #60452f!important;border-radius:17px!important;min-width:0!important;box-shadow:0 18px 44px #0004!important}
+#chartsPage .chart-body{min-height:300px!important;background:#080808!important}
+#chartsPage .chart-head{min-height:52px!important;padding:9px!important;gap:8px!important}
+#chartsPage .toolbar{position:relative!important;top:auto!important;z-index:15!important;gap:12px!important;align-items:center!important}
+#chartsPage .toolbar label{font-weight:700!important}
+#chartsPage .page-header+.toolbar{margin-top:0!important}
+#cyclePage .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:15px!important}
+#strategyPage .content-columns,#communityPage .content-columns{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:22px!important}
+#strategyPage .form-grid{gap:15px!important}
+#macroPage>.card{margin-top:8px!important}
+#macroPage #macroMemo{width:100%!important;min-height:120px!important}
+#cyclePage .halving-dashboard{
+ width:100%;box-sizing:border-box;
+ background:radial-gradient(ellipse at 83% 4%,rgba(232,121,24,.17),transparent 52%),
+ linear-gradient(132deg,#291a13,#17100d 68%,#24150e);
+ border:1px solid #87502b;border-radius:24px;overflow:hidden;
+ box-shadow:0 25px 65px #0006,inset 0 1px 0 #ffb86921;padding:27px;
+}
+.halving-banner-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;margin-bottom:22px}
+.halving-kicker{display:block;color:#efae67;font-size:10px;letter-spacing:.17em;font-weight:800;margin-bottom:9px}
+.halving-banner-top h2{margin:0!important;color:#fff0df!important;font-size:clamp(23px,2.4vw,39px)!important;letter-spacing:-.06em!important;line-height:1.15!important}
+.halving-banner-top h2 em{font-style:normal;color:#ffa42d!important}
+.halving-target-pill{display:inline-block;background:#3a2415;border:1px solid #995a2b;border-radius:999px;color:#ffc483;font-size:11px;font-weight:800;padding:9px 15px;white-space:nowrap}
+.halving-banner-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.halving-banner-card{
+ display:flex;flex-direction:column;gap:10px;min-width:0;
+ border:1px solid #644129;border-radius:15px;
+ padding:19px;background:linear-gradient(155deg,rgba(35,23,17,.95),rgba(19,14,12,.95));
+}
+.halving-stat-label{color:#dfad7d;font-size:10px;font-weight:800;letter-spacing:.13em}
+.halving-banner-card strong{color:#fff0df;letter-spacing:-.04em;line-height:1.2}
+.halving-banner-card .halving-date{font-size:clamp(23px,2vw,32px)!important;font-weight:800!important}
+.halving-banner-card .halving-next-date{color:#ffad4a!important}
+.halving-banner-card .halving-elapsed{font-size:clamp(26px,2.4vw,39px)!important;color:#ffbd71!important;font-variant-numeric:tabular-nums}
+.halving-stat-info{color:#bfa38b!important;font-size:11px;line-height:1.55}
+.halving-banner-divider{border-top:1px solid #4f3526;margin:4px 0}
+.halving-data-number{font-size:16px!important;line-height:1.4!important;font-variant-numeric:tabular-nums}
+.halving-timer{display:grid;grid-template-columns:1.35fr repeat(3,minmax(0,1fr));gap:7px;margin:10px 0 8px}
+.halving-timer>div{display:grid;justify-items:center;gap:10px;min-width:0;background:#382316;border:1px solid #7f4d2a;border-radius:10px;padding:14px 3px}
+.halving-timer strong{font-size:clamp(19px,2.1vw,32px)!important;color:#ffb359!important;font-variant-numeric:tabular-nums}
+.halving-timer span{color:#d1a477;font-size:9px;font-weight:800;letter-spacing:.08em}
+.halving-timer-bar{width:100%;height:5px;background:#3d2a1e;border-radius:6px;overflow:hidden;margin-top:auto}
+.halving-timer-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ad631f,#ffb45c);border-radius:6px;transition:width .9s ease}
+.halving-window{display:grid;gap:6px;background:#281b14;border:1px solid #4f3324;border-radius:10px;padding:12px 13px}
+.halving-window>span{font-size:10px;color:#dfaa76;font-weight:800;letter-spacing:.06em}
+.halving-window strong{font-size:clamp(16px,1.5vw,22px)!important}
+.halving-window small{font-size:10px;color:#bba08a}
+.halving-banner-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;padding-top:19px;margin-top:22px;border-top:1px solid #533521}
+.halving-banner-foot>div{display:grid;gap:6px}
+.halving-banner-foot>div span{font-size:10px;color:#dcaa79;font-weight:800;letter-spacing:.1em}
+.halving-banner-foot>div strong{font-size:19px;color:#ffd09a;font-variant-numeric:tabular-nums}
+.halving-banner-foot>div small,.halving-banner-foot p{font-size:10px;color:#b99d85;max-width:360px;line-height:1.6;margin:0}
+@media(max-width:1270px){
+ .halving-banner-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #macroPage .macro-grid{gap:15px!important}
+}
+@media(max-width:1000px){
+ .app-content>.page:not(.ct-home){width:min(100% - 28px,1580px)!important;padding:18px 0 50px!important}
+ #sentimentPage>.content-columns{grid-template-columns:1fr!important}
+ #sentimentPage .sentiment-chart-card,#sentimentPage .sentiment-analysis-card{min-height:0!important}
+ #sentimentPage #sentimentPlot,#sentimentPage #sentimentPlot svg{min-height:330px!important;height:330px!important}
+ #strategyPage .content-columns,#communityPage .content-columns{grid-template-columns:1fr!important}
+ #macroPage .macro-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:13px!important}
+ #cyclePage .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:660px){
+ .app-content>.page:not(.ct-home){width:calc(100% - 24px)!important;padding:16px 0 44px!important;gap:14px!important}
+ #macroPage .macro-grid{grid-template-columns:minmax(0,1fr)!important}
+ #macroPage .macro-card .tv-slot{height:310px!important}
+ #sentimentPage .intel-grid{grid-template-columns:minmax(0,1fr)!important}
+ #sentimentPage .indicator-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .halving-banner-grid{grid-template-columns:minmax(0,1fr)}
+ #cyclePage .halving-dashboard{padding:18px!important;border-radius:18px!important}
+ .halving-banner-card{padding:16px!important}
+ .halving-banner-top{gap:13px}
+ .halving-banner-top h2{font-size:28px!important}
+ .halving-timer strong{font-size:29px!important}
+ #cyclePage .stats-grid{grid-template-columns:1fr!important}
+ #chartsPage .chart-grid{grid-template-columns:1fr!important}
+ #chartsPage .chart-body{min-height:310px!important}
+ #chartsPage .toolbar{align-items:stretch!important}
+ #chartsPage .toolbar label{min-width:130px}
+ #sentimentPage .sentiment-chart-card,#sentimentPage .sentiment-analysis-card{padding:15px!important}
+}
