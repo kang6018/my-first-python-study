@@ -92,19 +92,37 @@ function mountOverview(force=false){
  }else targets.forEach((t,i)=>setTimeout(()=>load(t),i*350));
 }
 async function renderTreasuryYield(slot){
- const fallback=(msg)=>{
+ const officialUrl='https://fred.stlouisfed.org/series/DGS10';
+ function showFREDChart(reason){
   slot.replaceChildren();
-  const box=document.createElement('div');box.className='macro-native-error';
-  const heading=document.createElement('strong');heading.textContent='FRED yield data unavailable';
-  const desc=document.createElement('p');desc.textContent=msg;
-  const link=document.createElement('a');link.href='https://fred.stlouisfed.org/series/DGS10';link.target='_blank';link.rel='noopener noreferrer';link.textContent='View official US 10Y yield ↗';
-  box.append(heading,desc,link);slot.append(box);
- };
+  const wrap=document.createElement('div');wrap.className='macro-fred-visual';
+  const heading=document.createElement('div');heading.className='macro-fred-label';
+  heading.textContent='US 10Y Treasury Yield · FRED DGS10';
+  const image=document.createElement('img');image.className='macro-fred-image';
+  image.alt='Official Federal Reserve Economic Data graph of the US 10-year Treasury constant-maturity yield (DGS10).';
+  image.loading='eager';image.decoding='async';image.referrerPolicy='no-referrer';
+  image.src='https://fred.stlouisfed.org/graph/fredgraph.png?id=DGS10&cosd=2025-01-01';
+  const caption=document.createElement('div');caption.className='macro-fred-caption';
+  caption.textContent='Official FRED chart · daily observations · not a live TradingView quote';
+  const link=document.createElement('a');link.href=officialUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open interactive FRED chart ↗';
+  image.onerror=()=>{
+   image.remove();
+   const error=document.createElement('p');error.className='macro-fred-error';
+   error.textContent='The source chart is blocked by your browser or network. Open the original FRED chart below.';
+   wrap.insertBefore(error,caption);
+  };
+  wrap.append(heading,image,caption,link);
+  slot.append(wrap);
+ }
  try{
-  const response=await fetch('data/us10y.json',{cache:'no-cache'});
-  if(!response.ok)throw Error('Historical yield dataset has not been published yet');
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),6500);
+  let response;
+  try{response=await fetch('data/us10y.json',{cache:'no-cache',signal:controller.signal})}
+  finally{clearTimeout(timeout)}
+  if(!response.ok)throw Error('No published yield dataset');
   const data=await response.json(),rows=(Array.isArray(data?.rows)?data.rows:[]).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&Number.isFinite(Number(r.value))).slice(-400);
-  if(rows.length<60)throw Error('Not enough validated observations');
+  if(rows.length<60)throw Error('Not enough valid observations');
   const W=850,H=360,L=66,R=22,T=30,B=46;
   const vals=rows.map(r=>Number(r.value)),lo=Math.min(...vals),hi=Math.max(...vals),spread=Math.max(.25,hi-lo),min=Math.max(0,lo-spread*.13),max=hi+spread*.13;
   const X=i=>L+i/Math.max(1,rows.length-1)*(W-L-R),Y=v=>T+(max-v)/(max-min)*(H-T-B);
@@ -127,7 +145,7 @@ async function renderTreasuryYield(slot){
   const date=document.createElement('span');date.textContent='Last FRED observation: '+rows.at(-1).date+' · not live';
   summary.append(value,date);wrapper.append(summary,svg);
   slot.replaceChildren();slot.append(wrapper);
- }catch(e){fallback(e.message||'FRED data fetch failed')}
+ }catch(e){showFREDChart(e.message||'FRED feed unavailable')}
 }
 function renderCharts(){const grid=$('chartGrid');grid.replaceChildren();$('preset').value=state.preset;$('layout').value=String(state.cols);$('chartHeight').value=String(state.height);grid.style.setProperty('--cols',String(state.cols));grid.style.setProperty('--chart-height',state.height+'px');$('chartCount').textContent=state.charts.length+' CHARTS';state.charts.forEach((entry,i)=>{const card=document.createElement('article');card.className='chart-card';const head=document.createElement('div');head.className='chart-head';const symbol=document.createElement('input');symbol.type='text';symbol.value=entry.symbol;symbol.setAttribute('aria-label','Chart '+(i+1)+' Symbol');const interval=document.createElement('select');for(const [value,label] of [['15','15 min'],['60','1 hour'],['240','4 hours'],['D','Daily'],['W','Weekly'],['M','Monthly']]){interval.add(new Option(label,value))}interval.value=entry.interval;const apply=btn('Apply',()=>{const val=symbol.value.trim().toUpperCase();if(!validSymbol(val))return toast('Use a symbol such as BINANCE:BTCUSDT.');state.charts[i]={symbol:val,interval:interval.value};state.preset='custom';$('preset').value='custom';tv(body,state.charts[i]);persist()});symbol.addEventListener('keydown',e=>{if(e.key==='Enter')apply.click()});symbol.addEventListener('change',()=>apply.click());interval.addEventListener('change',()=>apply.click());const before=btn('←',()=>swap(i,i-1),'secondary');before.disabled=i===0;const after=btn('→',()=>swap(i,i+1),'secondary');after.disabled=i===state.charts.length-1;const remove=btn('×',()=>{state.charts.splice(i,1);state.preset='custom';renderCharts();persist()},'secondary remove');remove.disabled=state.charts.length===1;const body=document.createElement('div');body.className='chart-body tv-slot';head.append(symbol,interval,apply,before,after,remove);card.append(head,body);grid.append(card);tv(body,entry)});function swap(a,b){[state.charts[a],state.charts[b]]=[state.charts[b],state.charts[a]];state.preset='custom';renderCharts();persist()}}
 function btn(text,action,cls='secondary'){const b=document.createElement('button');b.type='button';b.className='btn '+cls;b.textContent=text;b.onclick=action;return b}
@@ -478,7 +496,7 @@ const m=computedBtcMeasures();
  $('indicators').innerHTML=indicators.map(item=>'<div class="indicator"><strong>'+escapeHTML(item.label)+'</strong><span class="tag '+(item.available?'ok':'off')+'">'+(item.available?'Data available':'Pending')+'</span><div class="indicator-value">'+escapeHTML(item.value)+'</div><small class="indicator-note">'+escapeHTML(item.note)+'</small></div>').join('');
 }
 function initSentiment(){$('refreshSentiment').onclick=()=>Promise.allSettled([fetchFear(),fetchDerivatives()]).then(()=>toast('Sentiment metrics refreshed.'));$('fearRange').onchange=renderSentiment}
-function initMacro(){$('macroMemo').value=state.macroMemo||'';$('saveMacro').onclick=()=>{state.macroMemo=$('macroMemo').value;persist(true)}}
+function initMacro(){ /* Macro charts are read-only; journal features live in Strategy. */ }
 function renderStrategy(){const s=state.strategy;for(const f of ['phase','mood','riskExposure','reviewDate','thesis','invalidations','riskPlan'])$(f).value=s[f]??'';const matrix=$('strategyMatrix');matrix.replaceChildren();s.rules.forEach((r,i)=>{const item=document.createElement('div');item.className='rule';const line=document.createElement('div');line.className='rule-row';const a=document.createElement('input');a.value=r.phase||'';a.placeholder='Cycle phase';const b=document.createElement('input');b.value=r.mood||'';b.placeholder='Sentiment condition';const c=document.createElement('input');c.value=r.action||'';c.placeholder='Action to consider';const drop=btn('Delete',()=>{s.rules.splice(i,1);renderStrategy();persist()},'secondary remove');[a,b,c].forEach((input,j)=>input.addEventListener('input',()=>{r[['phase','mood','action'][j]]=input.value}));line.append(a,b);const line2=document.createElement('div');line2.className='rule-row';line2.append(c,drop);item.append(line,line2);matrix.append(item)})}
 function initStrategy(){$('addRule').onclick=()=>{state.strategy.rules.push({phase:'',mood:'',action:''});renderStrategy();persist()};$('saveStrategy').onclick=()=>{for(const k of ['phase','mood','riskExposure','reviewDate','thesis','invalidations','riskPlan'])state.strategy[k]=$(k).value;persist(true);renderOverview()}}
 function journalForm(record){const r=record||{id:'',date:localDateTime(),phase:'Wait and Observe',price:'',horizon:'30',title:'',evidence:'',action:'',review:''};for(const k of ['id','date','phase','price','horizon','title','evidence','action','review'])$('journal'+k[0].toUpperCase()+k.slice(1)).value=r[k]??'';$('journalDirection').value=r.direction||'';$('journalEditorTitle').textContent=record?'Edit decision':'New decision'}
