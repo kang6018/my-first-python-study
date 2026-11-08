@@ -183,3 +183,7 @@ body::before{display:none!important}
   .app-content>.page:not(.ct-home){padding:16px 13px 58px!important}
 }
 @media(prefers-reduced-motion:reduce){.ct-home-stats .stat,.app-content>.page:not(.ct-home) .card{transition:none}}
+
+/* Keep the page-wide gradient visible beneath every story section. */
+.ct-home,.ct-home.hidden ~ .page,.app-content{background:transparent!important}
+.ct-home-stats .stat,.ct-insight-chapter .card,.ct-chart-frame{backdrop-filter:blur(12px)}
