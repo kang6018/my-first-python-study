@@ -53,7 +53,7 @@ function mountOverview(force=false){
   {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'US TECHNOLOGY',description:'FOREX.com cash CFD · may differ from official NDX',original:'NASDAQ:NDX'},
   {name:'Gold / XAUUSD',symbol:'OANDA:XAUUSD',category:'SAFE-HAVEN ASSET',description:'OANDA spot-gold quote'},
   {name:'Brent Crude · Cash CFD',symbol:'OANDA:BCOUSD',category:'ENERGY',description:'OANDA Brent crude CFD · not BR1! continuous futures',original:'ICEEUR:BRN1!'},
-  {name:'KOSPI Composite Index',symbol:'TVC:KOSPI',category:'KOREAN EQUITIES',description:'TradingView composite KOSPI index · data may be delayed',original:'KRX:KOSPI'},
+  {name:'KOSPI Composite Index',symbol:'KRX:KOSPI',category:'KOREAN EQUITIES',description:'Actual KOSPI index · KS11 historical daily closes · not intraday',native:'kospi',original:'KRX:KOSPI'},
   {name:'USD / KRW',symbol:'FX_IDC:USDKRW',category:'FOREIGN EXCHANGE',description:'FX_IDC indicative USD/KRW quote'}
  ];
  grid.replaceChildren();
@@ -67,9 +67,9 @@ function mountOverview(force=false){
   const desc=document.createElement('small');desc.className='macro-data-note';desc.textContent=item.description;
   heading.append(eyebrow,label,desc);
   const tools=document.createElement('div');tools.className='macro-actions';
-  const code=document.createElement('span');code.className='macro-symbol';code.textContent=item.native?'FRED · DGS10':item.symbol;
+  const code=document.createElement('span');code.className='macro-symbol';code.textContent=item.native==='kospi'?'KOSPI / KS11':(item.native?'FRED · DGS10':item.symbol);
   const link=document.createElement('a');link.textContent='Open source ↗';
-  link.href=item.native?'https://fred.stlouisfed.org/series/DGS10':'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(item.original||item.symbol);
+  link.href=item.native==='kospi'?'https://www.tradingview.com/symbols/KRX-KOSPI/':(item.native?'https://fred.stlouisfed.org/series/DGS10':'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(item.original||item.symbol));
   link.rel='noopener noreferrer';link.target='_blank';link.className='macro-external';
   tools.append(code,link);head.append(heading,tools);
   const slot=document.createElement('div');slot.className='tv-slot';
@@ -79,7 +79,7 @@ function mountOverview(force=false){
  macroMounted=true;
  const load=entry=>{
   if(entry.done)return;entry.done=true;
-  if(entry.item.native){renderTreasuryYield(entry.slot);return}
+  if(entry.item.native==='kospi'){renderKospiIndex(entry.slot);return}if(entry.item.native){renderTreasuryYield(entry.slot);return}
   // Avoid pop-up failures from exchanges that TradingView does not license for third-party widgets.
   tv(entry.slot,{symbol:entry.item.symbol,interval:'D',mini:true,allowSymbolChange:false});
  };
@@ -91,7 +91,56 @@ function mountOverview(force=false){
   targets.forEach(t=>observer.observe(t.slot));
  }else targets.forEach((t,i)=>setTimeout(()=>load(t),i*350));
 }
-async function renderTreasuryYield(slot){
+async async function renderKospiIndex(slot){
+ const url='https://www.tradingview.com/symbols/KRX-KOSPI/';
+ const errCard=message=>{
+  slot.replaceChildren();
+  const box=document.createElement('div');box.className='macro-native-error';
+  const title=document.createElement('strong');title.textContent='KOSPI data is temporarily unavailable';
+  const desc=document.createElement('p');desc.textContent=message+' No unrelated stock chart will be shown.';
+  const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open actual KOSPI index ↗';
+  box.append(title,desc,link);slot.append(box);
+ };
+ try{
+  const response=await fetch('data/kospi.json',{cache:'no-cache'});
+  if(!response.ok)throw Error('Historical KOSPI dataset not published yet.');
+  const data=await response.json();
+  if(data.symbol!=='KS11')throw Error('Unexpected data source.');
+  const rows=(Array.isArray(data.rows)?data.rows:[]).filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(Number(row.close))&&Number(row.close)>100).slice(-255);
+  if(rows.length<40)throw Error('Insufficient KOSPI observations.');
+  const W=850,H=355,L=65,R=22,T=25,B=45,ns='http://www.w3.org/2000/svg';
+  const values=rows.map(row=>Number(row.close)),low=Math.min(...values),high=Math.max(...values);
+  const range=Math.max(high-low,50),min=Math.max(0,low-range*.13),max=high+range*.13;
+  const X=i=>L+(i/(rows.length-1))*(W-L-R),Y=v=>T+(max-v)/(max-min)*(H-T-B);
+  const svg=document.createElementNS(ns,'svg');
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('role','img');
+  svg.setAttribute('aria-label','Actual KOSPI closing index levels; historical daily data, not an intraday price');
+  svg.setAttribute('preserveAspectRatio','none');
+  const node=(tag,attrs,label)=>{
+   const el=document.createElementNS(ns,tag);for(const [key,val] of Object.entries(attrs))el.setAttribute(key,String(val));
+   if(label!==undefined)el.textContent=label;svg.append(el);return el;
+  };
+  for(let k=0;k<=4;k++){
+   const level=min+(max-min)*k/4,y=Y(level);
+   node('line',{x1:L,y1:y,x2:W-R,y2:y,stroke:'#7b5638','stroke-opacity':'.40','stroke-dasharray':'3 5'});
+   node('text',{x:L-10,y:y+4,'text-anchor':'end','font-size':'12',fill:'#c4a58d'},fmt(level,0));
+  }
+  for(let k=0;k<=4;k++){
+   const i=Math.round(k*(rows.length-1)/4);
+   node('text',{x:X(i),y:H-18,'text-anchor':'middle','font-size':12,fill:'#c4a58d'},rows[i].date.slice(0,7));
+  }
+  const line=values.map((value,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(value).toFixed(1)).join(' ');
+  node('path',{d:line,stroke:'#f7931a','stroke-width':3,fill:'none','stroke-linejoin':'round','stroke-linecap':'round'});
+  node('circle',{cx:X(values.length-1),cy:Y(values.at(-1)),r:5,fill:'#ffc079'});
+  const wrap=document.createElement('div');wrap.className='macro-native-chart';
+  const header=document.createElement('div');header.className='macro-native-summary';
+  const level=document.createElement('strong');level.textContent=fmt(values.at(-1),2);
+  const timestamp=document.createElement('span');timestamp.textContent='KOSPI close · '+rows.at(-1).date+' · daily / delayed';
+  header.append(level,timestamp);wrap.append(header,svg);
+  slot.replaceChildren();slot.append(wrap);
+ }catch(e){errCard(String(e.message||e))}
+}
+function renderTreasuryYield(slot){
  const officialUrl='https://fred.stlouisfed.org/series/DGS10';
  function showFREDChart(reason){
   slot.replaceChildren();
