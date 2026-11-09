@@ -779,12 +779,100 @@ metrics.push(v4Metric('200-Week Moving Average',ma?money(ma):'—',ma?`Differenc
 metrics.push(v4Metric('2024 Cycle Peak',peak?money(peak.price):'—',peak?peak.date:'Historical prices not loaded'));
 metrics.push(v4Metric('2024 Cycle Maximum Drawdown',mdd!==null?fmt(mdd,1)+'%':'—','Since the April 2024 peak'));
 $('cycleMetricCards').innerHTML=metrics.join('');$('cycleMetricsBody').innerHTML=rows.join('');$('cycleMetricStatus').textContent=history.length?`${fmt(history.length)} records · ${historySource}`:'Historical price data required';}
-function renderV4Divergence(){if(!$('divergencePlot'))return;const days=Number($('divergenceRange').value||90),priceMap=new Map(history.map(r=>[r.date,r.price]));const paired=fear.map(x=>({date:v4ISO(x.x),fear:x.y,price:priceMap.get(v4ISO(x.x))})).filter(x=>Number.isFinite(x.price)&&x.price>0);const pair=days?paired.slice(-days):paired;
-if(pair.length<10){$('divergenceCards').innerHTML=[v4Metric('Overlapping observation days',pair.length+' days','Measured BTC price and sentiment on the same calendar days'),v4Metric('Comparison Status','Insufficient data','Matched BTC prices and Fear & Greed history required')].join('');v4SetEmpty('divergencePlot','At least ten observations on matching dates are required. Load verified prices or import a CSV.');$('divergenceNote').textContent='No fabricated interpolations or synthetic observations are used.';return;}
-const p0=pair[0].price,f0=pair[0].fear;const last=pair.at(-1),prev=pair[0];const btcChange=(last.price/prev.price-1)*100,fearChange=last.fear-prev.fear;const divergence=(btcChange>0&&fearChange<0)||(btcChange<0&&fearChange>0);const normalized=pair.map((x,i)=>({x:i,btc:x.price/p0*100,fear:x.fear/f0*100}));
-$('divergenceCards').innerHTML=[v4Metric('Matched observations',pair.length+' days',pair[0].date+' ~ '+last.date),v4Metric('BTC Price Change',(btcChange>=0?'+':'')+fmt(btcChange,1)+'%','Relative to the first observation'),v4Metric('Sentiment Change',(fearChange>=0?'+':'')+fmt(fearChange,0)+'p',fmt(prev.fear,0)+' → '+fmt(last.fear,0)),v4Metric('Directional Divergence',divergence?'Observed':'Not observed','Direction measured from window endpoints')].join('');
-drawPlot($('divergencePlot'),[{label:'BTC',color:'#91b7a0',points:normalized.map(x=>({x:x.x,y:x.btc}))},{label:'Fear & Greed',color:'#d8b36c',points:normalized.map(x=>({x:x.x,y:x.fear}))}],{xMin:0,xMax:pair.length-1,xFormat:i=>pair[Math.max(0,Math.min(pair.length-1,Math.round(i)))].date.slice(5)});
-$('divergenceNote').textContent=`Matched dates: ${pair.length} records, ${pair[0].date} ~ ${last.date} · Directional comparison of the first and last observation. Both series start at 100, but use different scales and cannot be compared as equivalent changes.`;}
+function renderV4Divergence(){
+ const target=$('divergencePlot');if(!target)return;
+ const days=Number($('divergenceRange').value||90);
+ const priceMap=new Map(history.map(r=>[r.date,r.price]));
+ const paired=fear.map(x=>({date:v4ISO(x.x),fear:Number(x.y),price:Number(priceMap.get(v4ISO(x.x)))}))
+  .filter(x=>Number.isFinite(x.price)&&x.price>0&&Number.isFinite(x.fear)&&x.fear>=0&&x.fear<=100);
+ const pair=days?paired.slice(-days):paired;
+ if(pair.length<10){
+  $('divergenceCards').innerHTML=[
+   v4Metric('일치하는 관측일',pair.length+'일','BTC 가격과 심리 지수가 모두 있는 날짜'),
+   v4Metric('비교 상태','데이터 부족','동일 날짜의 BTC 종가와 공포·탐욕 기록이 필요합니다')
+  ].join('');
+  v4SetEmpty('divergencePlot','두 자료가 동일한 날짜로 10개 이상 필요합니다. BTC 과거 가격을 가져오거나 CSV를 업로드하세요.');
+  $('divergenceNote').textContent='임의 보간이나 가상의 가격 관측값은 사용하지 않습니다.';
+  return;
+ }
+ const first=pair[0],last=pair.at(-1);
+ const btcChange=(last.price/first.price-1)*100,fearChange=last.fear-first.fear;
+ const divergent=(btcChange>0&&fearChange<0)||(btcChange<0&&fearChange>0);
+ $('divergenceCards').innerHTML=[
+  v4Metric('공통 관측일',pair.length+'일',first.date+' ~ '+last.date),
+  v4Metric('BTC 가격 변화',(btcChange>=0?'+':'')+fmt(btcChange,1)+'%','기간 첫 종가 대비'),
+  v4Metric('공포·탐욕 변화',(fearChange>=0?'+':'')+fmt(fearChange,0)+'p',fmt(first.fear,0)+' → '+fmt(last.fear,0)),
+  v4Metric('방향의 괴리',divergent?'관측됨':'관측되지 않음','기간 처음과 끝의 방향 비교')
+ ].join('');
+ target.replaceChildren();
+ const ns='http://www.w3.org/2000/svg',W=1000,H=400,L=79,R=115,T=44,B=53;
+ const plotW=W-L-R,plotH=H-T-B;
+ const prices=pair.map(p=>p.price),rawMin=Math.min(...prices),rawMax=Math.max(...prices);
+ const pad=Math.max((rawMax-rawMin)*.12,rawMax*.018,1);
+ const priceMin=Math.max(0,rawMin-pad),priceMax=rawMax+pad;
+ const X=i=>L+i/(pair.length-1)*plotW;
+ const YFear=v=>T+(100-v)/100*plotH;
+ const YPrice=v=>T+(priceMax-v)/(priceMax-priceMin)*plotH;
+ const svg=document.createElementNS(ns,'svg');
+ svg.setAttribute('viewBox','0 0 1000 400');
+ svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+ svg.setAttribute('role','img');
+ svg.setAttribute('aria-label','이중 Y축 차트: 공포·탐욕 지수는 왼쪽 0에서 100까지, BTC 달러 가격은 오른쪽');
+ const append=(name,attrs,content)=>{
+  const el=document.createElementNS(ns,name);
+  for(const [key,val] of Object.entries(attrs))el.setAttribute(key,String(val));
+  if(content!==undefined)el.textContent=content;
+  svg.append(el);return el
+ };
+ for(let t=0;t<=5;t++){
+  const score=t*20,y=YFear(score),priceVal=priceMin+(priceMax-priceMin)*(score/100);
+  append('line',{x1:L,y1:y,x2:W-R,y2:y,stroke:'#70513b','stroke-opacity':'.46','stroke-dasharray':'3 6'});
+  append('text',{x:L-15,y:y+5,'text-anchor':'end',fill:'#d8b36c','font-size':14},String(score));
+  append('text',{x:W-R+14,y:y+5,'text-anchor':'start',fill:'#91b7a0','font-size':14},'$'+Math.round(priceVal).toLocaleString('en-US'));
+ }
+ append('text',{x:L,y:22,fill:'#d8b36c','font-size':14,'font-weight':'700'},'공포·탐욕 지수 (0–100)');
+ append('text',{x:W-R,y:22,'text-anchor':'end',fill:'#91b7a0','font-size':14,'font-weight':'700'},'BTC 가격 (USD)');
+ for(let k=0;k<=5;k++){
+  const index=Math.round(k*(pair.length-1)/5);
+  append('text',{x:X(index),y:H-16,'text-anchor':'middle',fill:'#bda28d','font-size':13},pair[index].date.slice(5));
+ }
+ const stroke=(yMap,color)=>{
+  const d=pair.map((p,i)=>(i?'L':'M')+X(i).toFixed(2)+' '+yMap(p).toFixed(2)).join(' ');
+  append('path',{d,fill:'none',stroke:color,'stroke-width':2.9,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'})
+ };
+ stroke(p=>YPrice(p.price),'#91b7a0');
+ stroke(p=>YFear(p.fear),'#d8b36c');
+ const guide=append('line',{x1:L,y1:T,x2:L,y2:H-B,stroke:'#f7d8b3','stroke-width':1,'stroke-opacity':'.68','stroke-dasharray':'4 5',visibility:'hidden'});
+ const btcDot=append('circle',{cx:0,cy:0,r:5,fill:'#91b7a0',stroke:'#1b1511','stroke-width':2,visibility:'hidden'});
+ const fearDot=append('circle',{cx:0,cy:0,r:5,fill:'#d8b36c',stroke:'#1b1511','stroke-width':2,visibility:'hidden'});
+ target.classList.add('ct-dual-axis');
+ const tooltip=document.createElement('div');
+ tooltip.className='ct-dual-tooltip';
+ tooltip.setAttribute('role','status');
+ tooltip.hidden=true;
+ target.append(svg,tooltip);
+ const update=ev=>{
+  const bounds=svg.getBoundingClientRect();
+  if(!bounds.width)return;
+  const px=(ev.clientX-bounds.left)/bounds.width*W;
+  const index=Math.min(pair.length-1,Math.max(0,Math.round((px-L)/plotW*(pair.length-1))));
+  const point=pair[index],cx=X(index);
+  guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);guide.setAttribute('visibility','visible');
+  btcDot.setAttribute('cx',cx);btcDot.setAttribute('cy',YPrice(point.price));btcDot.setAttribute('visibility','visible');
+  fearDot.setAttribute('cx',cx);fearDot.setAttribute('cy',YFear(point.fear));fearDot.setAttribute('visibility','visible');
+  tooltip.textContent=point.date+'   |   BTC $'+point.price.toLocaleString('en-US',{maximumFractionDigits:2})+'   |   공포·탐욕 '+point.fear+'/100';
+  tooltip.hidden=false;
+  const xPct=Math.min(74,Math.max(5,cx/W*100));
+  tooltip.style.left=xPct+'%';
+ };
+ svg.addEventListener('pointermove',update);
+ svg.addEventListener('pointerdown',update);
+ svg.addEventListener('pointerleave',()=>{
+  guide.setAttribute('visibility','hidden');btcDot.setAttribute('visibility','hidden');
+  fearDot.setAttribute('visibility','hidden');tooltip.hidden=true;
+ });
+ $('divergenceNote').textContent='공통 관측일 '+pair.length+'개 · '+first.date+' ~ '+last.date+' · 왼쪽 Y축: 공포·탐욕 0~100 · 오른쪽 Y축: BTC 실제 종가(USD). 각 축의 단위가 다르므로 두 선의 높이를 직접 비교하지 마세요.';
+}
 function v4JournalResult(r){const start=String(r.date||'').slice(0,10),days=Number(r.horizon)||30;if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return {status:'Date invalid'};const target=v4ISO(v4DateUTC(start)+days*DAYS);const recentDay=v4ISO(Date.now());const manual=Number(r.price);const inferred=v4PriceAt(start,3);const base=manual>0?{price:manual,date:start,manual:true}:inferred;if(!base)return {status:'Reference price unavailable',target};if(recentDay<target)return {status:'Awaiting verification',target,base};const end=v4PriceAt(target,3);if(!end||end.date>recentDay)return {status:'End-price unavailable',target,base};return {status:'Verification available',target,base,end,change:(end.price/base.price-1)*100}}
 function renderV4Journal(){const statusKo={'Date invalid':'날짜 오류','Reference price unavailable':'기준 가격 없음','Awaiting verification':'검증 대기','End-price unavailable':'결과 가격 없음','Verification available':'검증 완료'};if(!$('journalReviewRows'))return;const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));let ready=0,pending=0,positive=0,changes=[],scored=0,hits=0;const rows=sorted.map(r=>{const ev=v4JournalResult(r);if(ev.status==='Verification available'&&['up','down','flat'].includes(r.direction)){scored++;const c=ev.change;if((r.direction==='up'&&c>0)||(r.direction==='down'&&c<0)||(r.direction==='flat'&&Math.abs(c)<=5))hits++}if(ev.status==='Verification available'){ready++;if(ev.change>0)positive++;changes.push(ev.change)}else pending++;const v=ev.change;return `<tr><td><b>${escapeHTML(r.date||'')}</b><div class="v4-muted">${escapeHTML(r.title||'제목 없음')}</div></td><td>${escapeHTML(String(r.horizon||30))}일</td><td>${ev.base?money(ev.base.price):'—'}</td><td>${ev.end?`${ev.end.date} / ${money(ev.end.price)}`:'—'}</td><td class="${Number.isFinite(v)?v>=0?'positive':'negative':''}">${Number.isFinite(v)?(v>=0?'+':'')+fmt(v,2)+'%':'—'}</td><td>${escapeHTML(statusKo[ev.status]||ev.status)}</td></tr>`});
 $('journalReviewRows').innerHTML=rows.join('')||'<tr><td colspan="6" class="v4-muted">No decisions yet. Add your first research entry above.</td></tr>';
