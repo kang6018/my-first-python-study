@@ -560,7 +560,7 @@ function renderPsychologyEngine(){
  let headline,summary;
  if(sources<2){headline='최신 분석 근거 부족';summary='최신 데이터를 연결하면 여러 지표를 함께 해석할 수 있습니다. 오래된 자료로 시장 국면을 단정하지 않습니다.';mood='insufficient'}
  else if(recentFear&&latestFear.y<=24&&recentPrice&&measures.return30>0){headline='공포 심리와 BTC 가격 상승의 괴리';summary='대중은 비관적이지만 BTC 가격은 상승하고 있습니다. 자금 흐름과 장기 가격 추세를 함께 확인해야 하며 매수 신호는 아닙니다.';mood='divergence'}
- else if(recentFear&&latestFear.y>=75&&recentPrice&&measures.return30<0){headline='낙관론과 포지션 위험 동반';summary='탐욕이 높은 가운데 가격 약세나 가격 약세가 관측됩니다. 현물 수급과 가격 추세를 확인해야 합니다.';mood='caution'}
+ else if(recentFear&&latestFear.y>=75&&recentPrice&&measures.return30<0){headline='낙관론과 포지션 위험 동반';summary='탐욕이 높은 가운데 BTC 가격 약세가 관측됩니다. 현물 수급과 가격 추세를 확인해야 합니다.';mood='caution'}
  else if(recentFear&&latestFear.y<=24){headline='공포가 우세한 시장';summary='위험 회피 심리가 높습니다. 구조적 하락 추세와 단기 청산 충격을 추가 자료로 구분해야 합니다.';mood='fear'}
  else if(recentFear&&latestFear.y>=75){headline='탐욕이 우세한 시장';summary='낙관적 심리가 높습니다. 가격과 포지션 수급이 같은 방향인지 확인하세요.';mood='caution'}
  else{headline='혼재된 시장 심리';summary='현재 지표만으로 단일 국면을 확정하기 어렵습니다. 지지 근거와 반대 근거를 함께 살펴보세요.';mood='mixed'}
@@ -598,7 +598,7 @@ const sign=n=>n>0?'+':'';
 interpretations.push(observation('현재 시장 심리',`${last.y} / 100 · ${mood}`,`${new Date(last.x).toLocaleDateString('en-US')} 관측일`));
 interpretations.push(observation('최근 7일 심리 변화',d7===null?'데이터 부족':`${sign(d7)}${d7}p`,d7===null?'최소 8개의 관측값 필요':d7>0?'심리 지수 상승':d7<0?'심리 지수 하락':'지수 변화 없음'));
 interpretations.push(observation('최근 30일 심리 변화',d30===null?'데이터 부족':`${sign(d30)}${d30}p`,d30===null?'최소 31개의 관측값 필요':d30>0?'중기 심리 회복':d30<0?'중기 심리 악화':'지수 변화 없음'));
-const interpretation=last.y<=24?'극단적 공포 자체가 매수 신호는 아닙니다. 가격 추세와 레버리지 감소 여부를 확인해야 합니다.':last.y>=75?'극단적 탐욕 자체가 매도 신호는 아닙니다. 펀딩비와 현물 자금 흐름을 확인하세요.':'심리 지수가 중간 범위에 있습니다. 파생상품과 함께 지수의 변화 속도를 관찰하세요.';
+const interpretation=last.y<=24?'극단적 공포 자체가 매수 신호는 아닙니다. 가격 추세와 레버리지 감소 여부를 확인해야 합니다.':last.y>=75?'극단적 탐욕 자체가 매도 신호는 아닙니다. 현물 자금 흐름과 장기 추세를 확인하세요.':'심리 지수가 중간 범위에 있습니다. 가격 추세와 함께 지수의 변화 속도를 관찰하세요.';
 interpretations.push(observation('시장 심리 종합 해석','주요 관측 내용',interpretation+' 4년 사이클 가설과 충돌하는 근거도 함께 확인하세요.',true));
 }else{
 interpretations.push(observation('심리 지수 데이터','연결 대기 중','실제 공포·탐욕 관측값이 연결되면 표시됩니다.',true));
@@ -665,25 +665,23 @@ function renderSources(){
   {name:'TradingView charts',description:'Third-party charts',value:'Available as embeds',kind:'info'},
   {name:'Bitcoin spot price',description:'Live websocket / 5-second fallback',value:fetched.price||'Not checked',kind:/Connected|live|stream/i.test(fetched.price||'')?'ok':'check'},
   {name:'Fear & Greed Index',description:'Alternative.me · daily publication',value:fetched.fear||'Not checked',kind:/Connected|cache/i.test(fetched.fear||'')?'ok':'check'},
-  {name:'Funding rate',description:'Binance futures',value:fetched.funding||'Not checked',kind:/Connected/i.test(fetched.funding||'')?'ok':'check'},
-  {name:'Open interest',description:'Binance futures',value:fetched.oi||'Not checked',kind:/Connected/i.test(fetched.oi||'')?'ok':'check'},
   {name:'BTC daily history',description:'Historical close observations',value:fetched.history||(history.length?'Cached '+history.length+' observations':'Not checked'),kind:/Connected|cached|local/i.test(fetched.history||(history.length?'cached':''))?'ok':'check'},
   {name:'Bitcoin block height',description:'mempool.space',value:fetched.block||'Not checked',kind:/Connected/i.test(fetched.block||'')?'ok':'check'},
   {name:'ETF & institutional holdings',description:'Dated snapshot or external API',value:fetched.institution||'Historical snapshot',kind:/Connected/i.test(fetched.institution||'')?'ok':'snapshot'},
   ...([
-   ['btcHistory','BTC 과거 가격 자동 수집'],
-   ['etfFlows','ETF 자금 흐름 자동 수집'],
+   ['btcHistory','BTC historical price collection'],
+   ['etfFlows','ETF flow collection'],
   ].map(([id,name])=>{
    const v=collectionStatus?.sources?.[id];
-   const observed=v?.lastSavedObservation||'저장된 관측값 없음';
-   const attempted=v?.lastAttemptAt?String(v.lastAttemptAt).slice(0,16).replace('T',' ')+' UTC':'실행 기록 없음';
+   const observed=v?.lastSavedObservation||'No saved observation';
+   const attempted=v?.lastAttemptAt?String(v.lastAttemptAt).slice(0,16).replace('T',' ')+' UTC':'No collection attempt';
    const lastDay=v?.lastSavedObservation?Date.parse(v.lastSavedObservation+'T00:00:00Z'):NaN;
    const ageDays=Number.isFinite(lastDay)?(Date.now()-lastDay)/86400000:Infinity;
    const freshLimit=id==='etfFlows'?7:id==='btcHistory'?4:3;
    const fresh=ageDays>=-1&&ageDays<=freshLimit;
    const healthy=!!v?.lastAttemptSucceeded&&fresh;
-   return {name,description:'수집 실행: '+attempted,
-    value:(healthy?'정상 · ':v?.lastSavedObservation?'지연·점검 필요 · ':'수집 미확인 · ')+observed+(v?.observations?' · '+v.observations+'개':'')+(v?.error?' · '+String(v.error).slice(0,75):''),
+   return {name,description:'Last collection: '+attempted,
+    value:(healthy?'Current · ':v?.lastSavedObservation?'Stale / review · ':'No observation · ')+observed+(v?.observations?' · '+v.observations+' records':'')+(v?.error?' · '+String(v.error).slice(0,75):''),
     kind:healthy?'ok':v?.lastSavedObservation?'snapshot':'check'};
   })),
    {name:'On-chain & liquidations',description:'MVRV, SOPR, liquidation metrics',value:'Separate API required',kind:'missing'}
@@ -1070,7 +1068,7 @@ function renderV4Journal(){const statusKo={'Date invalid':'날짜 오류','Refer
 $('journalReviewRows').innerHTML=rows.join('')||'<tr><td colspan="6" class="v4-muted">No decisions yet. Add your first research entry above.</td></tr>';
 $('journalReviewStats').innerHTML=[v4Metric('전체 판단 기록',sorted.length+'건','현재 브라우저에 저장됨'),v4Metric('검증 가능 기록',ready+'건','결과 확인일의 가격 확보'),v4Metric('방향 예측 적중률',scored?fmt(hits/scored*100,0)+'%':'—',scored?hits+' / '+scored+'건 방향 예측':'방향 예측 기록 없음'),v4Metric('평균 BTC 가격 변동률',changes.length?(changes.reduce((a,b)=>a+b,0)/changes.length>=0?'+':'')+fmt(changes.reduce((a,b)=>a+b,0)/changes.length,2)+'%':'—','검증 완료 기록의 단순 평균 · 실제 매매 수익률 아님')].join('');}
 function v4DataStatus(name,value,note){const ok=/Connected|Fallback connected/.test(value),stale=/snapshot|not connected|separate/.test(value);return `<tr><td>${escapeHTML(name)}</td><td><span class="v4-tag ${ok?'ok':stale?'stale':'bad'}">${ok?'Connected':stale?'Limited':'Check required'}</span></td><td>${escapeHTML(value)}</td><td class="v4-muted">${escapeHTML(note)}</td></tr>`}
-function renderV4Health(){if(!$('dataHealthRows'))return;const lastPrice=price?'Current price · observed at fetch time':'Price unavailable';const lastFear=fear.length?'Latest observation date: '+v4ISO(fear.at(-1).x):'Source refresh required';const lastHistory=history.length?'Last historical observation: '+history.at(-1).date:'CSV import available';$('dataHealthRows').innerHTML=[v4DataStatus('BTC Spot',fetched.price||'Not fetched',lastPrice),v4DataStatus('Fear·Greed',fetched.fear||'Not fetched',lastFear),v4DataStatus('BTC Price History',fetched.history||(history.length?'Local saved history':'Not fetched'),lastHistory),v4DataStatus('Funding',fetched.funding||'Not fetched','Check regional exchange access policy'),v4DataStatus('Open Interest',fetched.oi||'Not fetched','Exchange BTCUSDT product'),v4DataStatus('Block Height',fetched.block||'Not fetched','Block production times can vary'),v4DataStatus('ETF and institutional holdings',fetched.institution||'Snapshot shown · no API connected','Historical snapshot or custom HTTPS API')].join('')}
+function renderV4Health(){if(!$('dataHealthRows'))return;const lastPrice=price?'Current price · observed at fetch time':'Price unavailable';const lastFear=fear.length?'Latest observation date: '+v4ISO(fear.at(-1).x):'Source refresh required';const lastHistory=history.length?'Last historical observation: '+history.at(-1).date:'CSV import available';$('dataHealthRows').innerHTML=[v4DataStatus('BTC Spot',fetched.price||'Not fetched',lastPrice),v4DataStatus('Fear·Greed',fetched.fear||'Not fetched',lastFear),v4DataStatus('BTC Price History',fetched.history||(history.length?'Local saved history':'Not fetched'),lastHistory),v4DataStatus('Block Height',fetched.block||'Not fetched','Block production times can vary'),v4DataStatus('ETF and institutional holdings',fetched.institution||'Snapshot shown · no API connected','Historical snapshot or custom HTTPS API')].join('')}
 function renderV4All(){renderV4Cycle();renderV4Divergence();renderV4Journal();renderV4Health()}
 function initV4(){const divergence=$('divergenceRange');if(divergence)divergence.addEventListener('change',renderV4Divergence);$('recalcJournal')?.addEventListener('click',()=>{renderV4Journal();toast('판단 결과를 실제 BTC 관측 가격으로 다시 계산했습니다.')});renderV4All();
 // Keep fallback fear index history on the same browser without silently replacing newer values.
