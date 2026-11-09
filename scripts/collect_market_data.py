@@ -115,7 +115,7 @@ def collect_etf():
     write_verified(ROOT / "etf-flows.json", "The Commoner Bitcoin ETF Tracker by TFTC (CC BY 4.0), https://www.tftc.io/bitcoin-etf-flows", parsed, "netMillionUsd", limit=1200,
                    extra={"license": "CC BY 4.0", "url": "https://www.tftc.io/bitcoin-etf-flows", "unit": "USD million"})
 
-def collect_derivatives():
+def collect_funding():
     base = "https://fapi.binance.com"
     funding = fetch_json(base + "/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1000")
     if not isinstance(funding, list):
@@ -136,6 +136,9 @@ def collect_derivatives():
         raise ValueError("Funding history has insufficient validated dates")
     write_verified(ROOT / "funding-history.json", "Binance USD-M BTCUSDT funding settlements (daily mean, % per settlement)", series, "fundingPct", limit=900,
                    extra={"unit": "percent per settlement", "product": "BTCUSDT USD-M perpetual"})
+
+def collect_oi():
+    base = "https://fapi.binance.com"
     oi_data = fetch_json(base + "/futures/data/openInterestHist?symbol=BTCUSDT&period=1d&limit=60")
     if not isinstance(oi_data, list):
         raise ValueError("Open-interest response is not a list")
@@ -156,7 +159,7 @@ def collect_derivatives():
                    extra={"unit": "BTC", "product": "BTCUSDT USD-M perpetual"})
 
 def main():
-    for name, job in (("TFTC ETF flows", collect_etf), ("Binance derivatives", collect_derivatives)):
+    for name, job in (("TFTC ETF flows", collect_etf), ("Binance funding rate", collect_funding), ("Binance open interest", collect_oi)):
         try:
             job()
         except Exception as exc:
