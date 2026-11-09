@@ -683,7 +683,20 @@ function renderSources(){
   {name:'BTC daily history',description:'Historical close observations',value:fetched.history||(history.length?'Cached '+history.length+' observations':'Not checked'),kind:/Connected|cached|local/i.test(fetched.history||(history.length?'cached':''))?'ok':'check'},
   {name:'Bitcoin block height',description:'mempool.space',value:fetched.block||'Not checked',kind:/Connected/i.test(fetched.block||'')?'ok':'check'},
   {name:'ETF & institutional holdings',description:'Dated snapshot or external API',value:fetched.institution||'Historical snapshot',kind:/Connected/i.test(fetched.institution||'')?'ok':'snapshot'},
-  {name:'On-chain & liquidations',description:'MVRV, SOPR, liquidation metrics',value:'Separate API required',kind:'missing'}
+  ...([
+   ['btcHistory','BTC 과거 가격 자동 수집'],
+   ['etfFlows','ETF 자금 흐름 자동 수집'],
+   ['fundingHistory','펀딩비 이력 자동 수집'],
+   ['openInterestHistory','미결제약정 이력 자동 수집']
+  ].map(([id,name])=>{
+   const v=collectionStatus?.sources?.[id];
+   const observed=v?.lastSavedObservation||'저장된 관측값 없음';
+   const attempted=v?.lastAttemptAt?String(v.lastAttemptAt).slice(0,16).replace('T',' ')+' UTC':'실행 기록 없음';
+   return {name,description:'수집 실행: '+attempted,
+    value:(v?.lastAttemptSucceeded?'최근 실행 성공 · ':'최근 실행 미확인/실패 · ')+observed+(v?.observations?' · '+v.observations+'개':'')+(v?.error?' · '+String(v.error).slice(0,75):''),
+    kind:v?.lastAttemptSucceeded&&v?.lastSavedObservation?'ok':v?.lastSavedObservation?'snapshot':'check'};
+  })),
+   {name:'On-chain & liquidations',description:'MVRV, SOPR, liquidation metrics',value:'Separate API required',kind:'missing'}
  ];
  const captions={ok:'CONNECTED',check:'CHECK SOURCE',snapshot:'SNAPSHOT',missing:'NOT CONNECTED',info:'EXTERNAL'};
  root.replaceChildren();
@@ -752,7 +765,7 @@ const ETF_SEED=[['2026-10-20',23.2],['2026-10-21',524.8],['2026-10-22',-635.6],[
 const TREASURY_CATEGORY=[['ETF',1468734],['Sovereigns',518526],['Public Companies',1228717],['Private Companies',439005],['Miners',98422],['DeFi',267236]];
 const WEEKLY_TREASURY=[['ETF',-14077],['Public Companies',934],['Sovereigns',0],['Private Companies',0],['Miners',0],['DeFi',0]];
 /* GitHub Pages source data: dated daily observations, never synthetic live readings. */
-let etfAuto=null,fundingSeries=[],oiSeries=[],marketSeriesLastFetch=0;
+let etfAuto=null,fundingSeries=[],oiSeries=[],marketSeriesLastFetch=0,collectionStatus=null;
 function normalizedMarketRows(data,key){
  if(!data||data.status!=='ok'||!Array.isArray(data.rows))throw Error('자료 형식 또는 출처가 유효하지 않습니다.');
  const rows=data.rows.filter(r=>r&&/^\d{4}-\d{2}-\d{2}$/.test(String(r.date))&&Number.isFinite(Number(r[key])))
@@ -763,6 +776,10 @@ function normalizedMarketRows(data,key){
 async function loadMarketSeries(force=false){
  if(!force&&Date.now()-marketSeriesLastFetch<20*60000)return;
  marketSeriesLastFetch=Date.now();
+ try{
+  const manifest=await jsonGet('data/collection-status.json',9000);
+  if(manifest?.version==='10'&&typeof manifest.sources==='object'&&manifest.sources)collectionStatus=manifest;
+ }catch(e){collectionStatus=null}
  const feeds=[['ETF','data/etf-flows.json','netMillionUsd'],['FUNDING','data/funding-history.json','fundingPct'],['OI','data/oi-history.json','openInterestBtc']];
  const results=await Promise.allSettled(feeds.map(async ([name,url,key])=>{
   const response=await jsonGet(url,13000);
