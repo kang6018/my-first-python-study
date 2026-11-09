@@ -524,58 +524,58 @@ function renderPsychologyEngine(){
  let mood='insufficient';
  if(recentFear){
   const value=latestFear.y;
-  if(value<=24){labels.push('Extreme fear');add('support','Crowd fear is elevated','Fear & Greed '+value+'/100. Capitulation or exhaustion is possible, but this alone is not a bottom signal.')}
-  else if(value>=75){labels.push('Extreme greed');add('counter','Crowd optimism is stretched','Fear & Greed '+value+'/100. Strong optimism can accompany momentum or late-stage overheating.')}
-  else{labels.push('Sentiment '+value+'/100');add('support','Sentiment gauge is in its middle range','Fear & Greed '+value+'/100. No sentiment extreme is present.')}
+  if(value<=24){labels.push('극단적 공포');add('support','대중의 공포 심리가 높음','공포·탐욕 지수 '+value+'/100. 투매나 매도 소진 가능성이 있지만 이 값만으로 저점을 단정할 수 없습니다.')}
+  else if(value>=75){labels.push('극단적 탐욕');add('counter','대중의 낙관론이 과도함','공포·탐욕 지수 '+value+'/100. 낙관론은 상승 추세나 과열 국면 모두에서 나타날 수 있습니다.')}
+  else{labels.push('시장 심리 '+value+'/100');add('support','심리가 중립적인 범위에 있음','공포·탐욕 지수 '+value+'/100. 심리의 극단적 과열이나 공포는 관측되지 않습니다.')}
   if(fear.length>=8){
    const prior=fear.at(-8),gap=latestFear.y-prior.y,spacing=latestFear.x-prior.x;
    if(spacing>=5*day&&spacing<=10*day){
-    if(gap<=-15)add('counter','Fear intensified over seven days','Index moved '+gap+' points. Watch whether this confirms a weaker price trend.');
-    if(gap>=15)add('support','Sentiment is improving quickly','Index gained '+gap+' points over roughly seven days; verify with spot and derivatives data.');
+    if(gap<=-15)add('counter','최근 7일간 공포 심리 심화','지수 변화 '+gap+'포인트. 가격 하락 추세와 일치하는지 확인해야 합니다.');
+    if(gap>=15)add('support','심리 지수가 빠르게 회복','지수 상승 '+gap+'포인트(약 7일). 현물과 파생상품 수급을 함께 검증해야 합니다.');
    }
   }
- }else add('counter','Sentiment observation is missing or stale','Alternative.me must have a dated reading from the past three days.');
+ }else add('counter','심리 지수가 누락되었거나 오래됨','Alternative.me의 최근 3일 이내 관측 데이터가 필요합니다.');
  if(recentPrice&&Number.isFinite(measures.return30)){
   const change=measures.return30;
-  labels.push('BTC 30D '+(change>=0?'+':'')+fmt(change,1)+'%');
-  if(change>=10)add('support','BTC 30-day trend is positive','Observed daily-close performance: +'+fmt(change,1)+'%. Sustained price strength should be checked against positioning.');
-  else if(change<=-10)add('counter','BTC 30-day trend is weak','Observed daily-close performance: '+fmt(change,1)+'%. A low fear index may reflect genuine downside risk.');
-  else add('support','BTC is consolidating over 30 days','Observed 30-day change: '+(change>=0?'+':'')+fmt(change,1)+'%. No decisive directional trend from this window alone.');
-  if(recentFear&&latestFear.y<=24&&change>5)add('support','Potential price–sentiment divergence','Extreme fear coincides with positive 30-day BTC performance; monitor whether sentiment catches up.');
-  if(recentFear&&latestFear.y>=75&&change<0)add('counter','Optimism conflicts with price action','High greed accompanies a negative 30-day BTC return. The two measures disagree.');
- }else add('counter','Current trend confirmation unavailable','BTC historical daily-close series is missing, dated too far back, or lacks a 30-day comparison.');
+  labels.push('BTC 30일 '+(change>=0?'+':'')+fmt(change,1)+'%');
+  if(change>=10)add('support','BTC 30일 가격 추세 상승','일일 종가 기준 수익률: +'+fmt(change,1)+'%. 상승세가 파생상품 포지션과 동반되는지 확인해야 합니다.');
+  else if(change<=-10)add('counter','BTC 30일 가격 추세 약세','일일 종가 기준 수익률: '+fmt(change,1)+'%. 낮은 심리 점수는 실제 하락 위험을 반영할 수 있습니다.');
+  else add('support','BTC 30일 가격 횡보','30일 가격 변화: '+(change>=0?'+':'')+fmt(change,1)+'%. 이 기간만으로 뚜렷한 방향을 단정할 수 없습니다.');
+  if(recentFear&&latestFear.y<=24&&change>5)add('support','가격과 투자 심리의 괴리 가능성','극단적 공포와 BTC의 30일 가격 상승이 공존합니다. 심리가 가격을 따라가는지 관찰해야 합니다.');
+  if(recentFear&&latestFear.y>=75&&change<0)add('counter','낙관적 심리와 실제 가격이 충돌','탐욕 지수가 높지만 BTC의 30일 수익률은 음수입니다. 두 지표가 엇갈립니다.');
+ }else add('counter','최근 가격 추세 확인 불가','BTC 과거 일일 종가가 없거나 너무 오래됐거나 30일 비교 구간이 부족합니다.');
  if(recentPrice&&Number.isFinite(measures.rsi14)){
   const rsi=measures.rsi14;
-  if(rsi>=70)add('counter','Daily RSI is elevated','14-day RSI '+fmt(rsi,1)+'; overbought conditions can persist in trending markets.');
-  else if(rsi<=30)add('support','Daily RSI is depressed','14-day RSI '+fmt(rsi,1)+'; oversold conditions do not guarantee a rebound.');
+  if(rsi>=70)add('counter','일일 RSI 과열 가능성','14일 RSI '+fmt(rsi,1)+'; 강한 추세에서는 과매수 구간이 지속될 수 있습니다.');
+  else if(rsi<=30)add('support','일일 RSI 과매도 가능성','14일 RSI '+fmt(rsi,1)+'; 과매도 상태만으로 반등을 보장할 수 없습니다.');
  }
  if(freshFunding){
-  labels.push('Funding '+(funding.value>=0?'+':'')+fmt(funding.value,4)+'%');
-  if(funding.value>=0.025)add('counter','Positive funding points to crowded longs','Funding: +'+fmt(funding.value,4)+'%. High positive rates may amplify a long squeeze; no open-interest trend is inferred.');
-  else if(funding.value<=-0.015)add('support','Negative funding indicates short-side pressure','Funding: '+fmt(funding.value,4)+'%. Confirm whether shorts are crowded before drawing a contrarian conclusion.');
-  else add('support','Funding is not at an extreme threshold','Funding: '+(funding.value>=0?'+':'')+fmt(funding.value,4)+'%. Does not independently imply excessive leverage.');
- }else add('counter','Derivatives positioning lacks a fresh funding reading','Binance funding data must be dated within the past 24 hours.');
- if(freshOI){labels.push('OI observed');add('support','Open-interest level is available',fmt(oi,0)+' BTC at the exchange. A single level cannot establish whether leverage is increasing or decreasing.')}
- else add('counter','Open-interest level not verified','BTC open interest is not currently available. No leverage trend can be established.');
+  labels.push('펀딩비 '+(funding.value>=0?'+':'')+fmt(funding.value,4)+'%');
+  if(funding.value>=0.025)add('counter','양의 펀딩비와 롱 포지션 과밀 위험','펀딩비: +'+fmt(funding.value,4)+'%. 롱 포지션 청산 위험이 커질 수 있지만 미결제약정의 증가 추세를 추정하지는 않습니다.');
+  else if(funding.value<=-0.015)add('support','음의 펀딩비와 숏 포지션 우세','펀딩비: '+fmt(funding.value,4)+'%. 역발상 판단 전 숏 포지션 과밀 여부를 확인해야 합니다.');
+  else add('support','펀딩비가 극단적 수준은 아님','펀딩비: '+(funding.value>=0?'+':'')+fmt(funding.value,4)+'%. 이 수치 하나로 과도한 레버리지를 단정할 수 없습니다.');
+ }else add('counter','최신 펀딩비 자료가 부족함','Binance의 최근 24시간 이내 펀딩비가 필요합니다.');
+ if(freshOI){labels.push('미결제약정 확인');add('support','미결제약정 잔량 확인',fmt(oi,0)+' BTC(해당 거래소 기준). 단일 잔량만으로 레버리지 증가·감소를 판단할 수 없습니다.')}
+ else add('counter','미결제약정 잔량 확인 불가','BTC 미결제약정 데이터를 확인할 수 없어 포지션 증감을 판단하지 않습니다.');
  if(freshEtf){
   const last=liveInstitution.etf.at(-1);
   if(last&&Number.isFinite(Number(last[1]))){
-   const val=Number(last[1]);(val>=0?add('support','Institutional ETF flow is positive','Latest verified custom-feed observation: +'+fmt(val,1)+'M USD, as of '+liveInstitution.asOf+'.'):add('counter','Institutional ETF flow is negative','Latest verified custom-feed observation: '+fmt(val,1)+'M USD, as of '+liveInstitution.asOf+'.'));
+   const val=Number(last[1]);(val>=0?add('support','기관 ETF 자금 순유입','연결된 데이터의 최근 관측값: +'+fmt(val,1)+'백만 달러 · 기준일 '+liveInstitution.asOf+'.'):add('counter','기관 ETF 자금 순유출','연결된 데이터의 최근 관측값: '+fmt(val,1)+'백만 달러 · 기준일 '+liveInstitution.asOf+'.'));
   }
- }else add('counter','ETF flow is a historical snapshot','The November 2026 example or an unverified CSV is not used as evidence of present-day capital flows.');
+ }else add('counter','ETF 순유입 데이터가 과거 스냅샷임','2026년 11월의 예시나 검증되지 않은 CSV를 현재 자금 흐름의 증거로 사용하지 않습니다.');
  let headline,summary;
- if(sources<2){headline='Insufficient fresh evidence';summary='Connect current market data to produce a cross-indicator interpretation. No market regime is assigned from stale snapshots.';mood='insufficient'}
- else if(recentFear&&latestFear.y<=24&&recentPrice&&measures.return30>0){headline='Fear diverges from price strength';summary='Crowd pessimism contrasts with positive BTC price action. Watch for confirmation from flows and derivatives; this is not a buy signal.';mood='divergence'}
- else if(recentFear&&latestFear.y>=75&&((recentPrice&&measures.return30<0)||(freshFunding&&funding.value>=.025))){headline='Optimism meets positioning risk';summary='Elevated greed conflicts with price weakness or high long-side funding. Validate the move with spot volume and changing open interest.';mood='caution'}
- else if(recentFear&&latestFear.y<=24){headline='Fear-dominated market';summary='Risk aversion is elevated. Separate structural downtrends from short-lived liquidation events using additional evidence.';mood='fear'}
- else if(recentFear&&latestFear.y>=75){headline='Greed-dominated market';summary='Optimism is elevated. Assess whether price and positioning remain aligned before interpreting the move.';mood='caution'}
- else{headline='Mixed / transitional signals';summary='The available indicators do not establish one dominant regime. Compare confirming observations and their counter-evidence.';mood='mixed'}
+ if(sources<2){headline='최신 분석 근거 부족';summary='최신 데이터를 연결하면 여러 지표를 함께 해석할 수 있습니다. 오래된 자료로 시장 국면을 단정하지 않습니다.';mood='insufficient'}
+ else if(recentFear&&latestFear.y<=24&&recentPrice&&measures.return30>0){headline='공포 심리와 BTC 가격 상승의 괴리';summary='대중은 비관적이지만 BTC 가격은 상승하고 있습니다. 자금 흐름과 파생상품 데이터로 확인해야 하며 매수 신호는 아닙니다.';mood='divergence'}
+ else if(recentFear&&latestFear.y>=75&&((recentPrice&&measures.return30<0)||(freshFunding&&funding.value>=.025))){headline='낙관론과 포지션 위험 동반';summary='탐욕이 높은 가운데 가격 약세나 높은 롱 펀딩비가 관측됩니다. 현물 거래량과 미결제약정 변화를 확인해야 합니다.';mood='caution'}
+ else if(recentFear&&latestFear.y<=24){headline='공포가 우세한 시장';summary='위험 회피 심리가 높습니다. 구조적 하락 추세와 단기 청산 충격을 추가 자료로 구분해야 합니다.';mood='fear'}
+ else if(recentFear&&latestFear.y>=75){headline='탐욕이 우세한 시장';summary='낙관적 심리가 높습니다. 가격과 포지션 수급이 같은 방향인지 확인하세요.';mood='caution'}
+ else{headline='혼재된 시장 심리';summary='현재 지표만으로 단일 국면을 확정하기 어렵습니다. 지지 근거와 반대 근거를 함께 살펴보세요.';mood='mixed'}
  root.textContent=headline;$('psychSummary').textContent=summary;
- $('psychCoverage').textContent=sources+' / 5 current sources';
+ $('psychCoverage').textContent=sources+' / 5개 최신 데이터 소스';
  $('psychScore').textContent=String(sources);
  $('psychProgress').style.width=(sources/5*100)+'%';
- $('psychAsOf').textContent='Evaluated '+new Date(now).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})+' · local time';
- $('psychReadiness').textContent=sources<3?'Limited evidence · several market feeds unavailable':'Coverage measures availability, not prediction accuracy.';
+ $('psychAsOf').textContent='분석 시각 '+new Date(now).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})+' · 현지 시각';
+ $('psychReadiness').textContent=sources<3?'근거 제한적 · 일부 시장 데이터 연결 필요':'데이터 확보율은 예측 정확도를 나타내지 않습니다.';
  const tags=$('psychTags');tags.replaceChildren();
  for(const item of labels.slice(0,4)){const span=document.createElement('span');span.textContent=item;tags.append(span)}
  const render=(id,items,empty)=>{
@@ -588,10 +588,10 @@ function renderPsychologyEngine(){
    row.append(title,detail);target.append(row);
   }
  };
- render('psychSupporting',support,'No supporting evidence with valid observation dates yet.');
- render('psychCounter',counter,'No opposing evidence from available inputs. This is not proof of safety.');
+ render('psychSupporting',support,'관측 시점이 유효한 지지 근거가 아직 없습니다.');
+ render('psychCounter',counter,'현재 반대 근거가 없다고 위험이 없는 것은 아닙니다.');
  const elapsed=Math.floor((now-Date.parse('2024-04-20T00:00:00Z'))/day);
- $('psychCycleNote').textContent='Halving-cycle context: '+fmt(Math.max(0,elapsed),0)+' calendar days after April 20, 2024. Historical repetition is not assumed.';
+ $('psychCycleNote').textContent='반감기 사이클 참고: '+fmt(Math.max(0,elapsed),0)+'일 경과(2024년 4월 20일 기준). 과거 패턴의 반복을 전제하지 않습니다.';
 }
 function renderSentiment(){const last=fear.at(-1),prev=fear.at(-2);$('sentFear').textContent=last?last.y+'/100':'—';$('sentFearLabel').textContent=last?fearLabel(last.y):'Data feed unavailable';$('sentDelta').textContent=last&&prev?(last.y-prev.y>=0?'+':'')+(last.y-prev.y)+'p':'—';$('fundingValue').textContent=funding?fmt(funding.value,4)+'%':'Connection required';$('fundingTime').textContent=funding?'Binance / '+new Date(funding.time).toLocaleString('en-US'):'Binance public API';$('oiValue').textContent=oi!==null?fmt(oi,0)+' BTC':'Connection required';const n=Number($('fearRange').value),data=n===0?fear:fear.slice(-n);drawPlot($('sentimentPlot'),data.length?[{label:'Fear·Greed',color:'#f0b95e',points:data.map((d,i)=>({x:i,y:d.y}))}]:[],{xMin:0,xMax:Math.max(1,data.length-1),xFormat:i=>{const d=data[Math.min(data.length-1,Math.round(i))];return d?new Date(d.x).toISOString().slice(5,10):''}});const interpretations=[];
 const observation=(label,value,note,wide=false)=>`<div class="sentiment-observation${wide?' wide':''}"><span class="obs-label">${label}</span><strong>${value}</strong><span class="obs-note">${note}</span></div>`;
