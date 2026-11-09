@@ -562,7 +562,7 @@ function renderPsychologyEngine(){
  if(freshEtf){
   const last=etfSeries.at(-1);
   if(last&&Number.isFinite(Number(last[1]))){
-   const val=Number(last[1]);(val>=0?add('support','기관 ETF 자금 순유입','연결된 데이터의 최근 관측값: +'+fmt(val,1)+'백만 달러 · 기준일 '+liveInstitution.asOf+'.'):add('counter','기관 ETF 자금 순유출','연결된 데이터의 최근 관측값: '+fmt(val,1)+'백만 달러 · 기준일 '+liveInstitution.asOf+'.'));
+   const val=Number(last[1]),session=String(last[0]);(val>=0?add('support','기관 ETF 자금 순유입','관측된 ETF 순유입: +'+fmt(val,1)+'백만 달러 · 관측일 '+session+'.'):add('counter','기관 ETF 자금 순유출','관측된 ETF 순유출: '+fmt(val,1)+'백만 달러 · 관측일 '+session+'.'));
   }
  }else add('counter','ETF 순유입 데이터가 과거 스냅샷임','2026년 11월의 예시나 검증되지 않은 CSV를 현재 자금 흐름의 증거로 사용하지 않습니다.');
  let headline,summary;
@@ -698,7 +698,7 @@ function renderSources(){
   card.append(heading,desc,status);root.append(card)
  })
 }
-async function refreshAll(notify=false){if(refreshBusy)return;refreshBusy=true;$('networkStatus').textContent='Fetching market data…';try{const shouldHistory=Date.now()-lastHistoryRefresh>(history.length?12*3600000:15*60000);const jobs=[livePriceConnected?Promise.resolve():fetchPrice(),fetchFear(),fetchDerivatives(),refreshBlockHeight(),refreshInstitutional()];if(shouldHistory){lastHistoryRefresh=Date.now();jobs.push(fetchHistory(false))}await Promise.allSettled(jobs);$('networkStatus').textContent='Checked at '+new Date().toLocaleTimeString('en-US')+' · according to provider frequency';$('networkStatus').classList.add('ok');renderSources();animateLiveUpdate();if(notify)toast('Source refresh completed. Check each card for observation dates.')}finally{refreshBusy=false}}
+async function refreshAll(notify=false){if(refreshBusy)return;refreshBusy=true;$('networkStatus').textContent='Fetching market data…';try{const shouldHistory=Date.now()-lastHistoryRefresh>(history.length?12*3600000:15*60000);const jobs=[livePriceConnected?Promise.resolve():fetchPrice(),fetchFear(),fetchDerivatives(),refreshBlockHeight(),refreshInstitutional(),loadMarketSeries()];if(shouldHistory){lastHistoryRefresh=Date.now();jobs.push(fetchHistory(false))}await Promise.allSettled(jobs);$('networkStatus').textContent='Checked at '+new Date().toLocaleTimeString('en-US')+' · according to provider frequency';$('networkStatus').classList.add('ok');renderSources();animateLiveUpdate();if(notify)toast('Source refresh completed. Check each card for observation dates.')}finally{refreshBusy=false}}
 function download(name,content,mime){const blob=new Blob([content],{type:mime+';charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}function downloadBackup(){download('cycle-terminal-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'cycle-terminal',version:2,savedAt:new Date().toISOString(),state},null,2),'application/json')}
 async function restoreBackup(e){const f=e.target.files?.[0];if(!f)return;try{const raw=JSON.parse(await f.text());if(raw.app!=='cycle-terminal'||raw.version!==2||!raw.state||!Array.isArray(raw.state.charts)||!Array.isArray(raw.state.journal)||!Array.isArray(raw.state.history))throw Error('Unsupported backup file.');if(!confirm('Replace existing local data with this backup?'))return;state={...defaults(),...raw.state,strategy:{...defaults().strategy,...raw.state.strategy}};history=normalizeHistory(state.history);historySource=state.historySource||'';if(!persist())return;location.reload()}catch(err){toast('Restore failed: '+err.message)}finally{e.target.value=''}}
 function restoreChecks(){document.querySelectorAll('[data-check]').forEach(x=>{x.checked=!!state.checks?.[x.dataset.check];x.addEventListener('change',()=>{state.checks[x.dataset.check]=x.checked;persist()})})}
@@ -1030,8 +1030,8 @@ function renderV4All(){renderV4Cycle();renderV4Divergence();renderV4Journal();re
 function initV4(){const divergence=$('divergenceRange');if(divergence)divergence.addEventListener('change',renderV4Divergence);$('recalcJournal')?.addEventListener('click',()=>{renderV4Journal();toast('판단 결과를 실제 BTC 관측 가격으로 다시 계산했습니다.')});renderV4All();
 // Keep fallback fear index history on the same browser without silently replacing newer values.
 try{const raw=JSON.parse(localStorage.getItem(V4_FEED_CACHE)||'null');if(raw?.data?.length&&!fear.length){setFear(raw.data);fetched.fear='Local cache ('+raw.data.length+' records · '+String(raw.saved||'')+')';renderV4All()}}catch(e){}
-const oldSetHistory=setHistory;setHistory=function(...args){const r=oldSetHistory(...args);renderV4All();return r};
-const oldSetFear=setFear;setFear=function(data){const r=oldSetFear(data);try{localStorage.setItem(V4_FEED_CACHE,JSON.stringify({saved:new Date().toISOString(),data:data.slice(0,4000)}))}catch(e){}renderV4All();return r};
+const oldSetHistory=setHistory;setHistory=function(...args){const r=oldSetHistory(...args);renderV4All();renderMarketResearch();return r};
+const oldSetFear=setFear;setFear=function(data){const r=oldSetFear(data);try{localStorage.setItem(V4_FEED_CACHE,JSON.stringify({saved:new Date().toISOString(),data:data.slice(0,4000)}))}catch(e){}renderV4All();renderMarketResearch();return r};
 const oldRenderJournal=renderJournal;renderJournal=function(...args){const r=oldRenderJournal(...args);renderV4Journal();return r};
 const oldRenderSources=renderSources;renderSources=function(...args){const r=oldRenderSources(...args);renderV4Health();return r};
 const oldRenderCycle=renderCycle;renderCycle=function(...args){const r=oldRenderCycle(...args);renderV4Cycle();return r};
@@ -1039,7 +1039,7 @@ const oldRenderSentiment=renderSentiment;renderSentiment=function(...args){const
 window.addEventListener('focus',()=>{if(!document.hidden&&Date.now()-v4LastCheck>180000){v4LastCheck=Date.now();refreshAll(false)}});let v4LastCheck=Date.now();
 }
 
-readStorage();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{if(!document.hidden)refreshAll(false)},400);
+readStorage();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
