@@ -91,7 +91,7 @@ function mountOverview(force=false){
   targets.forEach(t=>observer.observe(t.slot));
  }else targets.forEach((t,i)=>setTimeout(()=>load(t),i*350));
 }
-async async function renderKospiIndex(slot){
+async function renderKospiIndex(slot){
  const url='https://www.tradingview.com/symbols/KRX-KOSPI/';
  const errCard=message=>{
   slot.replaceChildren();
@@ -140,7 +140,7 @@ async async function renderKospiIndex(slot){
   slot.replaceChildren();slot.append(wrap);
  }catch(e){errCard(String(e.message||e))}
 }
-function renderTreasuryYield(slot){
+async function renderTreasuryYield(slot){
  const officialUrl='https://fred.stlouisfed.org/series/DGS10';
  function showFREDChart(reason){
   slot.replaceChildren();
