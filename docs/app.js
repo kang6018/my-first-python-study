@@ -593,46 +593,47 @@ function renderPsychologyEngine(){
  const elapsed=Math.floor((now-Date.parse('2024-04-20T00:00:00Z'))/day);
  $('psychCycleNote').textContent='반감기 사이클 참고: '+fmt(Math.max(0,elapsed),0)+'일 경과(2024년 4월 20일 기준). 과거 패턴의 반복을 전제하지 않습니다.';
 }
-function renderSentiment(){const last=fear.at(-1),prev=fear.at(-2);$('sentFear').textContent=last?last.y+'/100':'—';$('sentFearLabel').textContent=last?fearLabel(last.y):'Data feed unavailable';$('sentDelta').textContent=last&&prev?(last.y-prev.y>=0?'+':'')+(last.y-prev.y)+'p':'—';$('fundingValue').textContent=funding?fmt(funding.value,4)+'%':'Connection required';$('fundingTime').textContent=funding?'Binance / '+new Date(funding.time).toLocaleString('en-US'):'Binance public API';$('oiValue').textContent=oi!==null?fmt(oi,0)+' BTC':'Connection required';const n=Number($('fearRange').value),data=n===0?fear:fear.slice(-n);drawPlot($('sentimentPlot'),data.length?[{label:'Fear·Greed',color:'#f0b95e',points:data.map((d,i)=>({x:i,y:d.y}))}]:[],{xMin:0,xMax:Math.max(1,data.length-1),xFormat:i=>{const d=data[Math.min(data.length-1,Math.round(i))];return d?new Date(d.x).toISOString().slice(5,10):''}});const interpretations=[];
+function sentimentLabelKo(value){return value<=24?'극단적 공포':value<=44?'공포':value<=54?'중립':value<=74?'탐욕':'극단적 탐욕'}
+function renderSentiment(){const last=fear.at(-1),prev=fear.at(-2);$('sentFear').textContent=last?last.y+'/100':'—';$('sentFearLabel').textContent=last?sentimentLabelKo(last.y):'데이터 연결 대기';$('sentDelta').textContent=last&&prev?(last.y-prev.y>=0?'+':'')+(last.y-prev.y)+'p':'—';$('fundingValue').textContent=funding?fmt(funding.value,4)+'%':'연결 필요';$('fundingTime').textContent=funding?'Binance / '+new Date(funding.time).toLocaleString('en-US'):'Binance 공개 API';$('oiValue').textContent=oi!==null?fmt(oi,0)+' BTC':'연결 필요';const n=Number($('fearRange').value),data=n===0?fear:fear.slice(-n);drawPlot($('sentimentPlot'),data.length?[{label:'Fear·Greed',color:'#f0b95e',points:data.map((d,i)=>({x:i,y:d.y}))}]:[],{xMin:0,xMax:Math.max(1,data.length-1),xFormat:i=>{const d=data[Math.min(data.length-1,Math.round(i))];return d?new Date(d.x).toISOString().slice(5,10):''}});const interpretations=[];
 const observation=(label,value,note,wide=false)=>`<div class="sentiment-observation${wide?' wide':''}"><span class="obs-label">${label}</span><strong>${value}</strong><span class="obs-note">${note}</span></div>`;
 if(last){
-const mood=fearLabel(last.y);
+const mood=sentimentLabelKo(last.y);
 const d7=fear.length>=8?last.y-fear.at(-8).y:null;
 const d30=fear.length>=31?last.y-fear.at(-31).y:null;
 const sign=n=>n>0?'+':'';
-interpretations.push(observation('Current Sentiment',`${last.y} / 100 · ${mood}`,`${new Date(last.x).toLocaleDateString('en-US')} observation date`));
-interpretations.push(observation('7-Day Sentiment Change',d7===null?'Insufficient data':`${sign(d7)}${d7}p`,d7===null?'At least eight observations required':d7>0?'Sentiment index increased':d7<0?'Sentiment index decreased':'No index change'));
-interpretations.push(observation('30-Day Sentiment Change',d30===null?'Insufficient data':`${sign(d30)}${d30}p`,d30===null?'At least 31 observations required':d30>0?'Intermediate sentiment improving':d30<0?'Intermediate sentiment deteriorating':'No index change'));
-interpretations.push(observation('BTC Funding Rate',funding?`${fmt(funding.value,4)}%`:'Connection required',funding?'Positive funding typically means longs pay shorts':'Check Binance connection status'));
-interpretations.push(observation('BTC Open Interest',oi!==null?`${fmt(oi,0)} BTC`:'Connection required',oi!==null?'Open interest alone cannot establish a long/short bias':'Check exchange API connection'));
-const interpretation=last.y<=24?'Extreme Fear is not a standalone buy signal. Confirm the trend and any reduction in leverage.':last.y>=75?'Extreme Greed is not a standalone sell signal. Review funding and spot flows.':'Sentiment is in an intermediate range. Monitor its rate of change alongside derivatives.';
-interpretations.push(observation('Overall Sentiment Note','Key observations',interpretation+' Also check for signs that contradict the four-year-cycle thesis.',true));
+interpretations.push(observation('현재 시장 심리',`${last.y} / 100 · ${mood}`,`${new Date(last.x).toLocaleDateString('en-US')} 관측일`));
+interpretations.push(observation('최근 7일 심리 변화',d7===null?'데이터 부족':`${sign(d7)}${d7}p`,d7===null?'최소 8개의 관측값 필요':d7>0?'심리 지수 상승':d7<0?'심리 지수 하락':'지수 변화 없음'));
+interpretations.push(observation('최근 30일 심리 변화',d30===null?'데이터 부족':`${sign(d30)}${d30}p`,d30===null?'최소 31개의 관측값 필요':d30>0?'중기 심리 회복':d30<0?'중기 심리 악화':'지수 변화 없음'));
+interpretations.push(observation('BTC 펀딩비',funding?`${fmt(funding.value,4)}%`:'연결 필요',funding?'양의 펀딩비는 일반적으로 롱 포지션이 숏 포지션에 비용을 지급함을 의미합니다':'Binance 연결 상태를 확인하세요'));
+interpretations.push(observation('BTC 미결제약정',oi!==null?`${fmt(oi,0)} BTC`:'연결 필요',oi!==null?'미결제약정 잔량만으로 롱·숏 우위를 단정할 수 없습니다':'거래소 API 연결 상태를 확인하세요'));
+const interpretation=last.y<=24?'극단적 공포 자체가 매수 신호는 아닙니다. 가격 추세와 레버리지 감소 여부를 확인해야 합니다.':last.y>=75?'극단적 탐욕 자체가 매도 신호는 아닙니다. 펀딩비와 현물 자금 흐름을 확인하세요.':'심리 지수가 중간 범위에 있습니다. 파생상품과 함께 지수의 변화 속도를 관찰하세요.';
+interpretations.push(observation('시장 심리 종합 해석','주요 관측 내용',interpretation+' 4년 사이클 가설과 충돌하는 근거도 함께 확인하세요.',true));
 }else{
-interpretations.push(observation('Current Sentiment Feed','Waiting for connection','Verified Fear & Greed observations will appear once connected.',true));
-interpretations.push(observation('Derivatives Feed',funding?`${fmt(funding.value,4)}%`:'Waiting for connection','Only actual connected observations are displayed.',true));
+interpretations.push(observation('심리 지수 데이터','연결 대기 중','실제 공포·탐욕 관측값이 연결되면 표시됩니다.',true));
+interpretations.push(observation('파생상품 데이터',funding?`${fmt(funding.value,4)}%`:'연결 대기 중','연결된 실제 관측값만 표시합니다.',true));
 }
 $('sentimentInterpretation').innerHTML=interpretations.join('');
 const m=computedBtcMeasures();
- const signed=(n,d=1)=>Number.isFinite(n)?(n>=0?'+':'')+fmt(n,d)+'%':'Fetching';
+ const signed=(n,d=1)=>Number.isFinite(n)?(n>=0?'+':'')+fmt(n,d)+'%':'데이터 확인 중';
  const metric=(label,value,note,available=true)=>({label,value,note,available});
  const etfFlows=liveInstitution?.etf?.length?liveInstitution.etf:(etfExternal||ETF_SEED);
  const etfWindow=etfFlows.slice(-5),fiveDayFlow=etfWindow.length===5?etfWindow.reduce((sum,row)=>sum+Number(row[1]),0):null;
- const etfAsOf=liveInstitution?.etf?.length?liveInstitution.asOf:etfExternal?'CSV upload':'Snapshot as of 2026-11-06';
+ const etfAsOf=liveInstitution?.etf?.length?liveInstitution.asOf:etfExternal?'CSV 업로드':'2026-11-06 과거 스냅샷';
  const indicators=[
-  metric('Fear & Greed Index',last?last.y+'/100 · '+fearLabel(last.y):'Fetching',last?new Date(last.x).toLocaleDateString('en-US')+' observation date':'Alternative.me automatic feed',!!last),
-  metric('BTC Funding Rate',funding?fmt(funding.value,4)+'%':'Checking connection',funding?'Binance futures · '+new Date(funding.time).toLocaleTimeString('en-US'):'Exchange API may be restricted',!!funding),
-  metric('BTC Open Interest',oi!==null?fmt(oi,0)+' BTC':'Checking connection',oi!==null?'Binance BTCUSDT data':'Exchange API may be restricted',oi!==null),
-  metric('BTC 7-Day Return',signed(m.return7),m.latest?'BTC daily close · '+m.latest:'Loading historical close data',Number.isFinite(m.return7)),
-  metric('BTC 30-Day Return',signed(m.return30),m.latest?'BTC daily close · '+m.latest:'Loading historical close data',Number.isFinite(m.return30)),
-  metric('30-Day Realized Volatility',Number.isFinite(m.volatility30)?fmt(m.volatility30,1)+'%':'Checking price series','Annualized standard deviation of daily log returns',Number.isFinite(m.volatility30)),
-  metric('14-Day RSI',Number.isFinite(m.rsi14)?fmt(m.rsi14,1):'Checking price series','Simple RSI calculated from 14 days of closing-price changes',Number.isFinite(m.rsi14)),
-  metric('Distance from 200-Week MA',signed(m.maGap),Number.isFinite(m.ma200w)?'200-week average: '+money(m.ma200w):'200 weeks of price data required',Number.isFinite(m.maGap)),
-  metric('BTC ETF 5-Day Net Flow',Number.isFinite(fiveDayFlow)?(fiveDayFlow>=0?'+':'')+fmt(fiveDayFlow,1)+'M USD':'Checking ETF connection','As of: '+etfAsOf+' · historical flows, not streaming',Number.isFinite(fiveDayFlow))
+  metric('공포·탐욕 지수',last?last.y+'/100 · '+fearLabel(last.y):'데이터 확인 중',last?new Date(last.x).toLocaleDateString('en-US')+' 관측일':'Alternative.me 데이터 연동',!!last),
+  metric('BTC 펀딩비',funding?fmt(funding.value,4)+'%':'연결 확인 중',funding?'Binance 선물 · '+new Date(funding.time).toLocaleTimeString('en-US'):'거래소 API가 지역·브라우저에 따라 제한될 수 있음',!!funding),
+  metric('BTC 미결제약정',oi!==null?fmt(oi,0)+' BTC':'연결 확인 중',oi!==null?'Binance BTCUSDT 데이터':'거래소 API가 지역·브라우저에 따라 제한될 수 있음',oi!==null),
+  metric('BTC 7일 수익률',signed(m.return7),m.latest?'BTC 일일 종가 · '+m.latest:'과거 종가 불러오는 중',Number.isFinite(m.return7)),
+  metric('BTC 30일 수익률',signed(m.return30),m.latest?'BTC 일일 종가 · '+m.latest:'과거 종가 불러오는 중',Number.isFinite(m.return30)),
+  metric('30일 실현 변동성',Number.isFinite(m.volatility30)?fmt(m.volatility30,1)+'%':'가격 데이터 확인 중','일일 로그수익률의 연율화 표준편차',Number.isFinite(m.volatility30)),
+  metric('14일 RSI',Number.isFinite(m.rsi14)?fmt(m.rsi14,1):'가격 데이터 확인 중','14일 종가 변동으로 계산한 RSI',Number.isFinite(m.rsi14)),
+  metric('200주 이동평균선 대비 괴리',signed(m.maGap),Number.isFinite(m.ma200w)?'200주 평균: '+money(m.ma200w):'200주 가격 데이터 필요',Number.isFinite(m.maGap)),
+  metric('BTC ETF 5일 순유입',Number.isFinite(fiveDayFlow)?(fiveDayFlow>=0?'+':'')+fmt(fiveDayFlow,1)+'M USD':'Checking ETF connection','기준일: '+etfAsOf+' · 과거 자금 흐름 (실시간 아님)',Number.isFinite(fiveDayFlow))
  ];
- $('indicators').innerHTML=indicators.map(item=>'<div class="indicator"><strong>'+escapeHTML(item.label)+'</strong><span class="tag '+(item.available?'ok':'off')+'">'+(item.available?'Data available':'Pending')+'</span><div class="indicator-value">'+escapeHTML(item.value)+'</div><small class="indicator-note">'+escapeHTML(item.note)+'</small></div>').join('');
+ $('indicators').innerHTML=indicators.map(item=>'<div class="indicator"><strong>'+escapeHTML(item.label)+'</strong><span class="tag '+(item.available?'ok':'off')+'">'+(item.available?'관측값 확보':'대기')+'</span><div class="indicator-value">'+escapeHTML(item.value)+'</div><small class="indicator-note">'+escapeHTML(item.note)+'</small></div>').join('');
  renderPsychologyEngine();
 }
-function initSentiment(){$('refreshSentiment').onclick=()=>Promise.allSettled([fetchFear(),fetchDerivatives()]).then(()=>toast('Sentiment metrics refreshed.'));$('fearRange').onchange=renderSentiment}
+function initSentiment(){$('refreshSentiment').onclick=()=>Promise.allSettled([fetchFear(),fetchDerivatives()]).then(()=>toast('시장 심리 지표를 갱신했습니다.'));$('fearRange').onchange=renderSentiment}
 function initMacro(){ /* Macro charts are read-only; journal features live in Strategy. */ }
 function strategyKoDisplay(value){
  const translations={
