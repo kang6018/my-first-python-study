@@ -692,9 +692,14 @@ function renderSources(){
    const v=collectionStatus?.sources?.[id];
    const observed=v?.lastSavedObservation||'저장된 관측값 없음';
    const attempted=v?.lastAttemptAt?String(v.lastAttemptAt).slice(0,16).replace('T',' ')+' UTC':'실행 기록 없음';
+   const lastDay=v?.lastSavedObservation?Date.parse(v.lastSavedObservation+'T00:00:00Z'):NaN;
+   const ageDays=Number.isFinite(lastDay)?(Date.now()-lastDay)/86400000:Infinity;
+   const freshLimit=id==='etfFlows'?7:id==='btcHistory'?4:3;
+   const fresh=ageDays>=-1&&ageDays<=freshLimit;
+   const healthy=!!v?.lastAttemptSucceeded&&fresh;
    return {name,description:'수집 실행: '+attempted,
-    value:(v?.lastAttemptSucceeded?'최근 실행 성공 · ':'최근 실행 미확인/실패 · ')+observed+(v?.observations?' · '+v.observations+'개':'')+(v?.error?' · '+String(v.error).slice(0,75):''),
-    kind:v?.lastAttemptSucceeded&&v?.lastSavedObservation?'ok':v?.lastSavedObservation?'snapshot':'check'};
+    value:(healthy?'정상 · ':v?.lastSavedObservation?'지연·점검 필요 · ':'수집 미확인 · ')+observed+(v?.observations?' · '+v.observations+'개':'')+(v?.error?' · '+String(v.error).slice(0,75):''),
+    kind:healthy?'ok':v?.lastSavedObservation?'snapshot':'check'};
   })),
    {name:'On-chain & liquidations',description:'MVRV, SOPR, liquidation metrics',value:'Separate API required',kind:'missing'}
  ];
