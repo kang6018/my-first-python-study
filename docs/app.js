@@ -596,7 +596,7 @@ function renderPsychologyEngine(){
  $('psychCycleNote').textContent='반감기 사이클 참고: '+fmt(Math.max(0,elapsed),0)+'일 경과(2024년 4월 20일 기준). 과거 패턴의 반복을 전제하지 않습니다.';
 }
 function sentimentLabelKo(value){return value<=24?'극단적 공포':value<=44?'공포':value<=54?'중립':value<=74?'탐욕':'극단적 탐욕'}
-function renderSentiment(){const last=fear.at(-1),prev=fear.at(-2);$('sentFear').textContent=last?last.y+'/100':'—';$('sentFearLabel').textContent=last?sentimentLabelKo(last.y):'데이터 연결 대기';$('sentDelta').textContent=last&&prev?(last.y-prev.y>=0?'+':'')+(last.y-prev.y)+'p':'—';$('fundingValue').textContent=funding?fmt(funding.value,4)+'%':'연결 필요';$('fundingTime').textContent=funding?'Binance / '+new Date(funding.time).toLocaleString('en-US'):'Binance 공개 API';$('oiValue').textContent=oi!==null?fmt(oi,0)+' BTC':'연결 필요';const n=Number($('fearRange').value),data=n===0?fear:fear.slice(-n);drawPlot($('sentimentPlot'),data.length?[{label:'Fear·Greed',color:'#f0b95e',points:data.map((d,i)=>({x:i,y:d.y}))}]:[],{xMin:0,xMax:Math.max(1,data.length-1),xFormat:i=>{const d=data[Math.min(data.length-1,Math.round(i))];return d?new Date(d.x).toISOString().slice(5,10):''}});const interpretations=[];
+function renderSentiment(){const last=fear.at(-1),prev=fear.at(-2);$('sentFear').textContent=last?last.y+'/100':'—';$('sentFearLabel').textContent=last?sentimentLabelKo(last.y):'데이터 연결 대기';$('sentDelta').textContent=last&&prev?(last.y-prev.y>=0?'+':'')+(last.y-prev.y)+'p':'—';const n=Number($('fearRange').value),data=n===0?fear:fear.slice(-n);drawPlot($('sentimentPlot'),data.length?[{label:'Fear·Greed',color:'#f0b95e',points:data.map((d,i)=>({x:i,y:d.y}))}]:[],{xMin:0,xMax:Math.max(1,data.length-1),xFormat:i=>{const d=data[Math.min(data.length-1,Math.round(i))];return d?new Date(d.x).toISOString().slice(5,10):''}});const interpretations=[];
 const observation=(label,value,note,wide=false)=>`<div class="sentiment-observation${wide?' wide':''}"><span class="obs-label">${label}</span><strong>${value}</strong><span class="obs-note">${note}</span></div>`;
 if(last){
 const mood=sentimentLabelKo(last.y);
@@ -606,13 +606,10 @@ const sign=n=>n>0?'+':'';
 interpretations.push(observation('현재 시장 심리',`${last.y} / 100 · ${mood}`,`${new Date(last.x).toLocaleDateString('en-US')} 관측일`));
 interpretations.push(observation('최근 7일 심리 변화',d7===null?'데이터 부족':`${sign(d7)}${d7}p`,d7===null?'최소 8개의 관측값 필요':d7>0?'심리 지수 상승':d7<0?'심리 지수 하락':'지수 변화 없음'));
 interpretations.push(observation('최근 30일 심리 변화',d30===null?'데이터 부족':`${sign(d30)}${d30}p`,d30===null?'최소 31개의 관측값 필요':d30>0?'중기 심리 회복':d30<0?'중기 심리 악화':'지수 변화 없음'));
-interpretations.push(observation('BTC 펀딩비',funding?`${fmt(funding.value,4)}%`:'연결 필요',funding?'양의 펀딩비는 일반적으로 롱 포지션이 숏 포지션에 비용을 지급함을 의미합니다':'Binance 연결 상태를 확인하세요'));
-interpretations.push(observation('BTC 미결제약정',oi!==null?`${fmt(oi,0)} BTC`:'연결 필요',oi!==null?'미결제약정 잔량만으로 롱·숏 우위를 단정할 수 없습니다':'거래소 API 연결 상태를 확인하세요'));
 const interpretation=last.y<=24?'극단적 공포 자체가 매수 신호는 아닙니다. 가격 추세와 레버리지 감소 여부를 확인해야 합니다.':last.y>=75?'극단적 탐욕 자체가 매도 신호는 아닙니다. 펀딩비와 현물 자금 흐름을 확인하세요.':'심리 지수가 중간 범위에 있습니다. 파생상품과 함께 지수의 변화 속도를 관찰하세요.';
 interpretations.push(observation('시장 심리 종합 해석','주요 관측 내용',interpretation+' 4년 사이클 가설과 충돌하는 근거도 함께 확인하세요.',true));
 }else{
 interpretations.push(observation('심리 지수 데이터','연결 대기 중','실제 공포·탐욕 관측값이 연결되면 표시됩니다.',true));
-interpretations.push(observation('파생상품 데이터',funding?`${fmt(funding.value,4)}%`:'연결 대기 중','연결된 실제 관측값만 표시합니다.',true));
 }
 $('sentimentInterpretation').innerHTML=interpretations.join('');
 const m=computedBtcMeasures();
@@ -623,8 +620,6 @@ const m=computedBtcMeasures();
  const etfAsOf=liveInstitution?.etf?.length?liveInstitution.etf.at(-1)[0]:etfExternal?etfExternal.at(-1)[0]:etfAuto?.rows?.length?etfAuto.rows.at(-1)[0]:'2026-11-06 과거 스냅샷';
  const indicators=[
   metric('공포·탐욕 지수',last?last.y+'/100 · '+fearLabel(last.y):'데이터 확인 중',last?new Date(last.x).toLocaleDateString('en-US')+' 관측일':'Alternative.me 데이터 연동',!!last),
-  metric('BTC 펀딩비',funding?fmt(funding.value,4)+'%':'연결 확인 중',funding?'Binance 선물 · '+new Date(funding.time).toLocaleTimeString('en-US'):'거래소 API가 지역·브라우저에 따라 제한될 수 있음',!!funding),
-  metric('BTC 미결제약정',oi!==null?fmt(oi,0)+' BTC':'연결 확인 중',oi!==null?'Binance BTCUSDT 데이터':'거래소 API가 지역·브라우저에 따라 제한될 수 있음',oi!==null),
   metric('BTC 7일 수익률',signed(m.return7),m.latest?'BTC 일일 종가 · '+m.latest:'과거 종가 불러오는 중',Number.isFinite(m.return7)),
   metric('BTC 30일 수익률',signed(m.return30),m.latest?'BTC 일일 종가 · '+m.latest:'과거 종가 불러오는 중',Number.isFinite(m.return30)),
   metric('30일 실현 변동성',Number.isFinite(m.volatility30)?fmt(m.volatility30,1)+'%':'가격 데이터 확인 중','일일 로그수익률의 연율화 표준편차',Number.isFinite(m.volatility30)),
@@ -632,10 +627,10 @@ const m=computedBtcMeasures();
   metric('200주 이동평균선 대비 괴리',signed(m.maGap),Number.isFinite(m.ma200w)?'200주 평균: '+money(m.ma200w):'200주 가격 데이터 필요',Number.isFinite(m.maGap)),
   metric('BTC ETF 5일 순유입',Number.isFinite(fiveDayFlow)?(fiveDayFlow>=0?'+':'')+fmt(fiveDayFlow,1)+'M USD':'Checking ETF connection','기준일: '+etfAsOf+' · 과거 자금 흐름 (실시간 아님)',Number.isFinite(fiveDayFlow))
  ];
- $('indicators').innerHTML=indicators.map(item=>'<div class="indicator"><strong>'+escapeHTML(item.label)+'</strong><span class="tag '+(item.available?'ok':'off')+'">'+(item.available?'관측값 확보':'대기')+'</span><div class="indicator-value">'+escapeHTML(item.value)+'</div><small class="indicator-note">'+escapeHTML(item.note)+'</small></div>').join('');
+ $('indicators').innerHTML=indicators.filter(item=>item.available).map(item=>'<div class="indicator"><strong>'+escapeHTML(item.label)+'</strong><span class="tag '+(item.available?'ok':'off')+'">'+(item.available?'관측값 확보':'대기')+'</span><div class="indicator-value">'+escapeHTML(item.value)+'</div><small class="indicator-note">'+escapeHTML(item.note)+'</small></div>').join('');
  renderPsychologyEngine();
 }
-function initSentiment(){$('refreshSentiment').onclick=()=>Promise.allSettled([fetchFear(),fetchDerivatives()]).then(()=>toast('시장 심리 지표를 갱신했습니다.'));$('fearRange').onchange=renderSentiment}
+function initSentiment(){$('refreshSentiment').onclick=()=>Promise.allSettled([fetchFear(),loadMarketSeries(true)]).then(()=>toast('시장 심리 지표를 갱신했습니다.'));$('fearRange').onchange=renderSentiment}
 function initMacro(){ /* Macro charts are read-only; journal features live in Strategy. */ }
 function strategyKoDisplay(value){
  const translations={
@@ -716,7 +711,7 @@ function renderSources(){
   card.append(heading,desc,status);root.append(card)
  })
 }
-async function refreshAll(notify=false){if(refreshBusy)return;refreshBusy=true;$('networkStatus').textContent='Fetching market data…';try{const shouldHistory=Date.now()-lastHistoryRefresh>(history.length?12*3600000:15*60000);const jobs=[livePriceConnected?Promise.resolve():fetchPrice(),fetchFear(),fetchDerivatives(),refreshBlockHeight(),refreshInstitutional(),loadMarketSeries()];if(shouldHistory){lastHistoryRefresh=Date.now();jobs.push(fetchHistory(false))}await Promise.allSettled(jobs);$('networkStatus').textContent='Checked at '+new Date().toLocaleTimeString('en-US')+' · according to provider frequency';$('networkStatus').classList.add('ok');renderSources();animateLiveUpdate();if(notify)toast('Source refresh completed. Check each card for observation dates.')}finally{refreshBusy=false}}
+async function refreshAll(notify=false){if(refreshBusy)return;refreshBusy=true;$('networkStatus').textContent='Fetching market data…';try{const shouldHistory=Date.now()-lastHistoryRefresh>(history.length?12*3600000:15*60000);const jobs=[livePriceConnected?Promise.resolve():fetchPrice(),fetchFear(),refreshBlockHeight(),refreshInstitutional(),loadMarketSeries()];if(shouldHistory){lastHistoryRefresh=Date.now();jobs.push(fetchHistory(false))}await Promise.allSettled(jobs);$('networkStatus').textContent='Checked at '+new Date().toLocaleTimeString('en-US')+' · according to provider frequency';$('networkStatus').classList.add('ok');renderSources();animateLiveUpdate();if(notify)toast('Source refresh completed. Check each card for observation dates.')}finally{refreshBusy=false}}
 function download(name,content,mime){const blob=new Blob([content],{type:mime+';charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}function downloadBackup(){download('cycle-terminal-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'cycle-terminal',version:2,savedAt:new Date().toISOString(),state},null,2),'application/json')}
 async function restoreBackup(e){const f=e.target.files?.[0];if(!f)return;try{const raw=JSON.parse(await f.text());if(raw.app!=='cycle-terminal'||raw.version!==2||!raw.state||!Array.isArray(raw.state.charts)||!Array.isArray(raw.state.journal)||!Array.isArray(raw.state.history))throw Error('Unsupported backup file.');if(!confirm('Replace existing local data with this backup?'))return;state={...defaults(),...raw.state,strategy:{...defaults().strategy,...raw.state.strategy}};history=normalizeHistory(state.history);historySource=state.historySource||'';if(!persist())return;location.reload()}catch(err){toast('Restore failed: '+err.message)}finally{e.target.value=''}}
 function restoreChecks(){document.querySelectorAll('[data-check]').forEach(x=>{x.checked=!!state.checks?.[x.dataset.check];x.addEventListener('change',()=>{state.checks[x.dataset.check]=x.checked;persist()})})}
@@ -725,24 +720,25 @@ function restoreChecks(){document.querySelectorAll('[data-check]').forEach(x=>{x
 const LEADERS=[['Michael Saylor','saylor'],['Cathie Wood','CathieDWood'],['Balaji Srinivasan','balajis'],['Eric Balchunas','EricBalchunas'],['Bitcoin Magazine','BitcoinMagazine'],['Davinci Jeremie','Davincij15'],['Cameron Winklevoss','cameron'],['Tyler Winklevoss','tyler'],['Grant Cardone','GrantCardone'],['Vitalik Buterin','VitalikButerin'],['Justin Sun','justinsuntron'],['Elon Musk','elonmusk'],['Jeff Yan · Hyperliquid','chameleon_jeff']];
 let activeLeader='saylor',communityTab='all',newsItems=[],newsPending=false,newsEverLoaded=false;
 function renderCommunity(){
- const tabs=$('leaderTabs');if(!tabs)return;
- tabs.replaceChildren();
- for(const [label,handle] of LEADERS){
-  const b=document.createElement('button');b.textContent=label;b.className=activeLeader===handle?'selected':'';
-  b.onclick=()=>{activeLeader=handle;renderCommunity()};tabs.append(b);
+ const x=$('xTimeline');if(!x)return;
+ x.replaceChildren();x.classList.remove('community-profile-card');x.classList.add('ct-leader-grid');
+ const roles={
+  saylor:'Bitcoin treasury strategy',CathieDWood:'Innovation & investment',balajis:'Technology & macro',EricBalchunas:'ETF research',
+  BitcoinMagazine:'Bitcoin news & analysis',Davincij15:'Bitcoin market commentary',cameron:'Digital assets',tyler:'Digital assets',
+  GrantCardone:'Business & investing',VitalikButerin:'Ethereum & research',justinsuntron:'Crypto markets',elonmusk:'Technology',chameleon_jeff:'DeFi market structure'
+ };
+ for(const [name,handle] of LEADERS){
+  const card=document.createElement('article');card.className='ct-leader-card';
+  const monogram=document.createElement('div');monogram.className='ct-leader-monogram';monogram.textContent=name.split(' ').map(v=>v[0]).slice(0,2).join('').toUpperCase();
+  const body=document.createElement('div');body.className='ct-leader-body';
+  const title=document.createElement('h3');title.textContent=name;
+  const detail=document.createElement('p');detail.textContent=roles[handle]||'Market commentary';
+  const tag=document.createElement('small');tag.textContent='@'+handle;
+  const actions=document.createElement('div');actions.className='ct-leader-actions';
+  const profile=document.createElement('a');profile.href='https://x.com/'+encodeURIComponent(handle);profile.target='_blank';profile.rel='noopener noreferrer';profile.textContent='X Profile ↗';
+  const search=document.createElement('a');search.href='https://www.google.com/search?q='+encodeURIComponent('site:x.com/'+handle+' bitcoin market');search.target='_blank';search.rel='noopener noreferrer';search.textContent='Recent Posts ↗';
+  actions.append(profile,search);body.append(title,detail,tag,actions);card.append(monogram,body);x.append(card);
  }
- const x=$('xTimeline');
- // Avoid third-party embedded timelines that render as a black, empty frame under tracking protection.
- // A native profile card loads instantly and works without third-party cookies.
- x.replaceChildren();x.classList.add('community-profile-card');
- const eyebrow=document.createElement('div');eyebrow.className='ct-profile-eyebrow';eyebrow.textContent='CURATED MARKET VOICES';
- const mark=document.createElement('div');mark.className='ct-profile-mark';mark.textContent='𝕏';
- const title=document.createElement('h3');title.textContent='Follow '+(LEADERS.find(x=>x[1]===activeLeader)?.[0]||('@'+activeLeader));
- const desc=document.createElement('p');desc.textContent='Explore original market commentary directly on X. Embedded timelines can be blocked by browser privacy settings.';
- const actions=document.createElement('div');actions.className='ct-profile-actions';
- const profile=document.createElement('a');profile.href='https://x.com/'+encodeURIComponent(activeLeader);profile.target='_blank';profile.rel='noopener noreferrer';profile.className='ct-action-primary';profile.textContent='Open X Profile ↗';
- const search=document.createElement('a');search.href='https://www.google.com/search?q='+encodeURIComponent('site:x.com/'+activeLeader+' bitcoin market');search.target='_blank';search.rel='noopener noreferrer';search.className='ct-action-secondary';search.textContent='Find Recent Posts ↗';
- actions.append(profile,search);x.append(eyebrow,mark,title,desc,actions);
  const xOn=communityTab!=='news',newsOn=communityTab!=='x';
  $('communityXPanel').classList.toggle('hidden',!xOn);
  $('communityNewsPanel').classList.toggle('hidden',!newsOn);
@@ -785,7 +781,7 @@ async function loadMarketSeries(force=false){
   const manifest=await jsonGet('data/collection-status.json',9000);
   if(manifest?.version==='10'&&typeof manifest.sources==='object'&&manifest.sources)collectionStatus=manifest;
  }catch(e){collectionStatus=null}
- const feeds=[['ETF','data/etf-flows.json','netMillionUsd'],['FUNDING','data/funding-history.json','fundingPct'],['OI','data/oi-history.json','openInterestBtc']];
+ const feeds=[['ETF','data/etf-flows.json','netMillionUsd']];
  const results=await Promise.allSettled(feeds.map(async ([name,url,key])=>{
   const response=await jsonGet(url,13000);
   return {name,source:response.source,rows:normalizedMarketRows(response,key)};
@@ -835,21 +831,7 @@ function renderMarketResearch(){
  const rowAge=rows=>rows.length?Math.floor((utcNow-Date.parse(rows.at(-1).date+'T00:00:00Z'))/86400000):null;
  const status=[];
  if(etfAuto?.rows?.length)status.push('ETF '+etfAuto.rows.at(-1)[0]);else status.push('ETF 연결 대기');
- if(fundingSeries.length)status.push('펀딩비 '+fundingSeries.at(-1).date);else status.push('펀딩비 연결 대기');
- if(oiSeries.length)status.push('OI '+oiSeries.at(-1).date);else status.push('OI 연결 대기');
  $('researchDataStatus').textContent=status.join(' · ');
- const recentFunding=fundingSeries.slice(-60),recentOI=oiSeries.slice(-60);
- const latestFunding=recentFunding.at(-1),latestOI=recentOI.at(-1);
- const fundRecent=rowAge(recentFunding)!==null&&rowAge(recentFunding)<=5;
- const oiRecent=rowAge(recentOI)!==null&&rowAge(recentOI)<=5;
- $('fundingTrendValue').textContent=latestFunding?(latestFunding.value>=0?'+':'')+fmt(latestFunding.value,4)+'%':'—';
- $('fundingTrendNote').textContent=latestFunding?'최근 관측 '+latestFunding.date+(fundRecent?' · 정산 1회당 일평균 펀딩비':' · 과거 자료, 최신값 아님'):'Binance 일별 펀딩비 수집 기록이 없습니다.';
- marketMiniPlot($('fundingTrendPlot'),recentFunding,'#f4ac65');
- $('oiTrendValue').textContent=latestOI?fmt(latestOI.value,0)+' BTC':'—';
- const comparison=oiSeries.length>=8?oiSeries.at(-8):null;
- const oiChange=comparison&&latestOI?((latestOI.value/comparison.value-1)*100):null;
- $('oiTrendNote').textContent=latestOI?'최근 관측 '+latestOI.date+(Number.isFinite(oiChange)?' · 7개 관측일 대비 '+(oiChange>=0?'+':'')+fmt(oiChange,1)+'%':'')+(oiRecent?'':' · 과거 자료'):'Binance 일별 미결제약정 기록이 없습니다.';
- marketMiniPlot($('oiTrendPlot'),recentOI,'#91b7a0');
  const etfRows=etfAuto?.rows||[],lastFive=etfRows.slice(-5);
  const flow=lastFive.length===5?lastFive.reduce((sum,r)=>sum+Number(r[1]),0):null;
  const etfDate=etfRows.length?etfRows.at(-1)[0]:null;
@@ -943,12 +925,25 @@ $('cycleMetricCards').innerHTML=metrics.join('');$('cycleMetricsBody').innerHTML
 function renderV4Divergence(){
  const target=$('divergencePlot');if(!target)return;
  const days=Number($('divergenceRange').value||90);
- const priceMap=new Map(history.map(r=>[r.date,r.price]));
- const paired=fear.map(x=>({date:v4ISO(x.x),fear:Number(x.y),price:Number(priceMap.get(v4ISO(x.x)))}))
-  .filter(x=>Number.isFinite(x.price)&&x.price>0&&Number.isFinite(x.fear)&&x.fear>=0&&x.fear<=100);
+ // The public BTC backup may contain sampled observations rather than a daily close.
+ // Pair each sentiment observation with the nearest *actual* BTC observation (max 2 days apart).
+ // No prices are interpolated or manufactured.
+ const validPrices=history.filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(String(r.date))&&Number.isFinite(Number(r.price))&&Number(r.price)>0);
+ const priceMap=new Map(validPrices.map(r=>[r.date,Number(r.price)]));
+ const paired=fear.map(x=>{
+  const date=v4ISO(x.x),time=Date.parse(date+'T00:00:00Z');
+  let observedDate=date,actual=priceMap.get(date),offset=0;
+  if(actual===undefined){
+   for(const days of [1,-1,2,-2]){
+    const candidate=new Date(time+days*86400000).toISOString().slice(0,10);
+    if(priceMap.has(candidate)){observedDate=candidate;actual=priceMap.get(candidate);offset=Math.abs(days);break}
+   }
+  }
+  return {date,fear:Number(x.y),price:Number(actual),observedDate,offset};
+ }).filter(x=>Number.isFinite(x.price)&&x.price>0&&Number.isFinite(x.fear)&&x.fear>=0&&x.fear<=100);
  const anchor=paired.length?Date.parse(paired.at(-1).date+'T00:00:00Z'):0;
  const pair=days?paired.filter(p=>Date.parse(p.date+'T00:00:00Z')>=anchor-(days-1)*86400000):paired;
- if(pair.length<10){
+ if(pair.length<5){
   $('divergenceCards').innerHTML=[
    v4Metric('일치하는 관측일',pair.length+'일','BTC 가격과 심리 지수가 모두 있는 날짜'),
    v4Metric('비교 상태','데이터 부족','동일 날짜의 BTC 종가와 공포·탐욕 기록이 필요합니다')
@@ -1002,7 +997,7 @@ function renderV4Divergence(){
  }
  const stroke=(yMap,color)=>{
   const d=pair.map((p,i)=>{
-   const contiguous=i>0&&(Date.parse(p.date+'T00:00:00Z')-Date.parse(pair[i-1].date+'T00:00:00Z'))<=3*86400000;
+   const contiguous=i>0&&(Date.parse(p.date+'T00:00:00Z')-Date.parse(pair[i-1].date+'T00:00:00Z'))<=10*86400000;
    return (contiguous?'L':'M')+X(i).toFixed(2)+' '+yMap(p).toFixed(2)
   }).join(' ');
   append('path',{d,fill:'none',stroke:color,'stroke-width':2.9,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'})
@@ -1029,7 +1024,45 @@ function renderV4Divergence(){
   guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);guide.setAttribute('visibility','visible');
   btcDot.setAttribute('cx',cx);btcDot.setAttribute('cy',YPrice(point.price));btcDot.setAttribute('visibility','visible');
   fearDot.setAttribute('cx',cx);fearDot.setAttribute('cy',YFear(point.fear));fearDot.setAttribute('visibility','visible');
-  tooltip.textContent=point.date+'   |   BTC $'+point.price.toLocaleString('en-US',{maximumFractionDigits:2})+'   |   공포·탐욕 '+point.fear+'/100';
+  tooltip.textContent=point.date+' (BTC observed '+point.observedDate+')   |   BTC +point.price.toLocaleString('en-US',{maximumFractionDigits:2})+'   |   공포·탐욕 '+point.fear+'/100';
+  tooltip.hidden=false;
+  const xPct=Math.min(74,Math.max(5,cx/W*100));
+  tooltip.style.left=xPct+'%';
+ };
+ svg.addEventListener('pointermove',update);
+ svg.addEventListener('pointerdown',update);
+ svg.addEventListener('pointerleave',()=>{
+  guide.setAttribute('visibility','hidden');btcDot.setAttribute('visibility','hidden');
+  fearDot.setAttribute('visibility','hidden');tooltip.hidden=true;
+ });
+ $('divergenceNote').textContent='관측일 기준 '+(days?days+'일':'전체 기간')+'에서 공통 자료 '+pair.length+'개 · '+first.date+' ~ '+last.date+' · 왼쪽: 공포·탐욕 0~100 · 오른쪽: BTC 실제 종가(USD). BTC는 실제 관측일 기준 ±2일 이내 가장 가까운 표본을 사용하며 보간하지 않습니다. 10일 초과 공백은 선을 끊습니다.';
+}
+function v4JournalResult(r){const start=String(r.date||'').slice(0,10),days=Number(r.horizon)||30;if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return {status:'Date invalid'};const target=v4ISO(v4DateUTC(start)+days*DAYS);const recentDay=v4ISO(Date.now());const manual=Number(r.price);const inferred=v4PriceAt(start,3);const base=manual>0?{price:manual,date:start,manual:true}:inferred;if(!base)return {status:'Reference price unavailable',target};if(recentDay<target)return {status:'Awaiting verification',target,base};const end=v4PriceAt(target,3);if(!end||end.date>recentDay)return {status:'End-price unavailable',target,base};return {status:'Verification available',target,base,end,change:(end.price/base.price-1)*100}}
+function renderV4Journal(){const statusKo={'Date invalid':'날짜 오류','Reference price unavailable':'기준 가격 없음','Awaiting verification':'검증 대기','End-price unavailable':'결과 가격 없음','Verification available':'검증 완료'};if(!$('journalReviewRows'))return;const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));let ready=0,pending=0,positive=0,changes=[],scored=0,hits=0;const rows=sorted.map(r=>{const ev=v4JournalResult(r);if(ev.status==='Verification available'&&['up','down','flat'].includes(r.direction)){scored++;const c=ev.change;if((r.direction==='up'&&c>0)||(r.direction==='down'&&c<0)||(r.direction==='flat'&&Math.abs(c)<=5))hits++}if(ev.status==='Verification available'){ready++;if(ev.change>0)positive++;changes.push(ev.change)}else pending++;const v=ev.change;return `<tr><td><b>${escapeHTML(r.date||'')}</b><div class="v4-muted">${escapeHTML(r.title||'제목 없음')}</div></td><td>${escapeHTML(String(r.horizon||30))}일</td><td>${ev.base?money(ev.base.price):'—'}</td><td>${ev.end?`${ev.end.date} / ${money(ev.end.price)}`:'—'}</td><td class="${Number.isFinite(v)?v>=0?'positive':'negative':''}">${Number.isFinite(v)?(v>=0?'+':'')+fmt(v,2)+'%':'—'}</td><td>${escapeHTML(statusKo[ev.status]||ev.status)}</td></tr>`});
+$('journalReviewRows').innerHTML=rows.join('')||'<tr><td colspan="6" class="v4-muted">No decisions yet. Add your first research entry above.</td></tr>';
+$('journalReviewStats').innerHTML=[v4Metric('전체 판단 기록',sorted.length+'건','현재 브라우저에 저장됨'),v4Metric('검증 가능 기록',ready+'건','결과 확인일의 가격 확보'),v4Metric('방향 예측 적중률',scored?fmt(hits/scored*100,0)+'%':'—',scored?hits+' / '+scored+'건 방향 예측':'방향 예측 기록 없음'),v4Metric('평균 BTC 가격 변동률',changes.length?(changes.reduce((a,b)=>a+b,0)/changes.length>=0?'+':'')+fmt(changes.reduce((a,b)=>a+b,0)/changes.length,2)+'%':'—','검증 완료 기록의 단순 평균 · 실제 매매 수익률 아님')].join('');}
+function v4DataStatus(name,value,note){const ok=/Connected|Fallback connected/.test(value),stale=/snapshot|not connected|separate/.test(value);return `<tr><td>${escapeHTML(name)}</td><td><span class="v4-tag ${ok?'ok':stale?'stale':'bad'}">${ok?'Connected':stale?'Limited':'Check required'}</span></td><td>${escapeHTML(value)}</td><td class="v4-muted">${escapeHTML(note)}</td></tr>`}
+function renderV4Health(){if(!$('dataHealthRows'))return;const lastPrice=price?'Current price · observed at fetch time':'Price unavailable';const lastFear=fear.length?'Latest observation date: '+v4ISO(fear.at(-1).x):'Source refresh required';const lastHistory=history.length?'Last historical observation: '+history.at(-1).date:'CSV import available';$('dataHealthRows').innerHTML=[v4DataStatus('BTC Spot',fetched.price||'Not fetched',lastPrice),v4DataStatus('Fear·Greed',fetched.fear||'Not fetched',lastFear),v4DataStatus('BTC Price History',fetched.history||(history.length?'Local saved history':'Not fetched'),lastHistory),v4DataStatus('Funding',fetched.funding||'Not fetched','Check regional exchange access policy'),v4DataStatus('Open Interest',fetched.oi||'Not fetched','Exchange BTCUSDT product'),v4DataStatus('Block Height',fetched.block||'Not fetched','Block production times can vary'),v4DataStatus('ETF and institutional holdings',fetched.institution||'Snapshot shown · no API connected','Historical snapshot or custom HTTPS API')].join('')}
+function renderV4All(){renderV4Cycle();renderV4Divergence();renderV4Journal();renderV4Health()}
+function initV4(){const divergence=$('divergenceRange');if(divergence)divergence.addEventListener('change',renderV4Divergence);$('recalcJournal')?.addEventListener('click',()=>{renderV4Journal();toast('판단 결과를 실제 BTC 관측 가격으로 다시 계산했습니다.')});renderV4All();
+// Keep fallback fear index history on the same browser without silently replacing newer values.
+try{const raw=JSON.parse(localStorage.getItem(V4_FEED_CACHE)||'null');if(raw?.data?.length&&!fear.length){setFear(raw.data);fetched.fear='Local cache ('+raw.data.length+' records · '+String(raw.saved||'')+')';renderV4All()}}catch(e){}
+const oldSetHistory=setHistory;setHistory=function(...args){const r=oldSetHistory(...args);renderV4All();renderMarketResearch();return r};
+const oldSetFear=setFear;setFear=function(data){const r=oldSetFear(data);try{localStorage.setItem(V4_FEED_CACHE,JSON.stringify({saved:new Date().toISOString(),data:data.slice(0,4000)}))}catch(e){}renderV4All();renderMarketResearch();return r};
+const oldRenderJournal=renderJournal;renderJournal=function(...args){const r=oldRenderJournal(...args);renderV4Journal();return r};
+const oldRenderSources=renderSources;renderSources=function(...args){const r=oldRenderSources(...args);renderV4Health();return r};
+const oldRenderCycle=renderCycle;renderCycle=function(...args){const r=oldRenderCycle(...args);renderV4Cycle();return r};
+const oldRenderSentiment=renderSentiment;renderSentiment=function(...args){const r=oldRenderSentiment(...args);renderV4Divergence();return r};
+window.addEventListener('focus',()=>{if(!document.hidden&&Date.now()-v4LastCheck>180000){v4LastCheck=Date.now();refreshAll(false)}});let v4LastCheck=Date.now();
+}
+
+readStorage();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
+setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
+setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(!livePriceConnected)fetchQuickPrice();refreshAll(false);if(!$('communityPage').classList.contains('hidden'))fetchCommunityNews()}});
+
+})();+point.price.toLocaleString('en-US',{maximumFractionDigits:2})+'   |   공포·탐욕 '+point.fear+'/100';
   tooltip.hidden=false;
   const xPct=Math.min(74,Math.max(5,cx/W*100));
   tooltip.style.left=xPct+'%';
