@@ -1539,3 +1539,30 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 .ct-data-credit a{color:#ffbd75!important;text-decoration:underline}
 @media(max-width:1030px){.ct-data-panels{grid-template-columns:repeat(2,minmax(0,1fr))}.ct-data-panels .ct-data-panel:last-child{grid-column:span 2}}
 @media(max-width:660px){.ct-data-panels{grid-template-columns:minmax(0,1fr)}.ct-data-panels .ct-data-panel:last-child{grid-column:auto}.ct-analog-stats{grid-template-columns:minmax(0,1fr)}.ct-data-research{padding:16px!important}}
+
+/* V10.1 — native terminal refinements. Keep English chrome; only research/journal copy stays Korean. */
+#sentimentPage .ct-data-panels{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+#sentimentPage .ct-data-panels .ct-data-panel{min-width:0;max-width:none;padding:18px 20px}
+#sentimentPage .ct-analog-list{display:grid;gap:10px}
+#sentimentPage .ct-analog-row.ct-analog-card{display:grid;grid-template-columns:minmax(170px,1fr) minmax(140px,1.25fr) minmax(150px,1.7fr);align-items:center;gap:18px;padding:14px 18px;line-height:1.55}
+.ct-analog-card .ct-analog-primary{font-weight:700;color:var(--text)}
+.ct-analog-card .ct-analog-secondary{font-size:12px;color:var(--muted)}
+.ct-analog-card .ct-analog-returns{display:flex;gap:14px;flex-wrap:wrap;font-weight:700}
+.ct-analog-card .ct-analog-returns span{font-size:12px}
+.ct-analog-card .ct-analog-spark{width:100%;height:68px;display:block;overflow:visible}
+.ct-eight-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px;row-gap:6px}
+.ct-eight-checks label{min-width:0}
+#communityPage .ct-leader-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;overflow:visible!important;max-width:100%;padding:2px 0 12px}
+#communityPage .ct-leader-card{display:flex;align-items:flex-start;gap:14px;min-width:0;padding:20px;border:1px solid var(--border-soft);border-radius:14px;background:rgba(24,18,15,.88);box-shadow:none}
+.ct-leader-monogram{width:52px;height:52px;flex:0 0 52px;border-radius:12px;background:rgba(247,147,26,.10);border:1px solid rgba(247,147,26,.25);color:var(--accent-strong);display:grid;place-items:center;font-size:18px;font-weight:800;letter-spacing:.02em}
+.ct-leader-body{min-width:0;flex:1}
+.ct-leader-body h3{font-size:15px;line-height:1.4;margin:0 0 6px!important;color:var(--text)}
+.ct-leader-body p{font-size:12px;line-height:1.5;color:var(--muted);margin:0 0 10px}
+.ct-leader-body small{color:var(--accent-strong);display:block;white-space:normal;overflow-wrap:anywhere}
+.ct-leader-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.ct-leader-actions a{font-size:12px!important;font-weight:700;text-decoration:none;color:var(--accent-strong);padding:7px 0}
+.ct-leader-actions a:hover{text-decoration:underline}
+#communityPage .leader-tabs{display:none!important}
+#communityPage .community-x.ct-leader-grid{padding:2px 0 10px!important;border:0!important;background:transparent!important;box-shadow:none!important}
+@media(max-width:1050px){#communityPage .ct-leader-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#sentimentPage .ct-analog-row.ct-analog-card{grid-template-columns:1fr 1fr}}
+@media(max-width:660px){#communityPage .ct-leader-grid{grid-template-columns:1fr}#sentimentPage .ct-analog-row.ct-analog-card{grid-template-columns:1fr}#sentimentPage .ct-eight-checks{grid-template-columns:1fr}.ct-leader-card{padding:15px}}
