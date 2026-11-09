@@ -1501,3 +1501,41 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  .ct-story-hero .ct-scene.ct-scene-photo{width:94%!important;right:-32%!important;opacity:.34!important}
  .ct-story-hero .ct-bitcoin-photo img{transform:scale(2.1)!important}
 }
+
+/* V9.4 · source-verified funding, OI, ETF trends and historical analogs */
+#sentimentPage .ct-data-research{
+ border:1px solid rgba(247,147,26,.25)!important;
+ border-radius:20px!important;
+ background:linear-gradient(154deg,#281b15,#17110e)!important;
+ padding:clamp(18px,2.1vw,30px)!important;
+ color:#f1dfcb!important;
+ box-shadow:0 22px 48px #0003!important;
+ min-width:0!important;
+}
+.ct-data-title{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.ct-data-title>div>span{font-size:10px;color:#eaa358;font-weight:850;letter-spacing:.15em}
+.ct-data-title h2{font-size:clamp(21px,2vw,30px)!important;letter-spacing:-.05em;color:#f9ead9!important;margin:9px 0 6px!important}
+.ct-data-title p,.ct-data-panel p,.ct-analog-disclaimer,.ct-data-credit{font-size:11px!important;line-height:1.65!important;color:#c3a994!important}
+.ct-data-freshness{display:block;font-size:10px!important;line-height:1.6;color:#edc08d;border-radius:11px;padding:8px 12px;background:#362317;border:1px solid #70482e;max-width:380px}
+.ct-data-panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+.ct-data-panel,.ct-analogs{background:linear-gradient(144deg,#332219,#201712)!important;border:1px solid #63432f!important;border-radius:15px!important;padding:17px!important;min-width:0!important}
+.ct-data-panel-head{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.ct-data-panel-head h3{color:#f5e3d0!important;font-size:13px!important;font-weight:850!important;margin:0!important}
+.ct-data-panel-head small{color:#b8997c!important;font-size:10px!important;line-height:1.5!important}
+.ct-data-value{font-size:clamp(20px,2.2vw,28px)!important;color:#ffc384!important;font-weight:800!important;letter-spacing:-.045em!important;line-height:1.4}
+.ct-data-mini-plot{height:104px;margin:6px 0 8px;background:linear-gradient(180deg,rgba(7,6,4,.1),rgba(10,8,7,.25));border-radius:8px;color:#ad947c;display:flex;align-items:center;justify-content:center;font-size:10px}
+.ct-data-mini-plot svg{width:100%;height:100%;display:block}
+.ct-data-panel p{margin:8px 0 0!important;min-height:35px}
+.ct-analogs{margin-top:12px!important}
+.ct-analog-results{min-height:50px;color:#d8bd9f;font-size:12px}
+.ct-analog-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0 17px}
+.ct-analog-stats>div{padding:12px;background:#211813;border:1px solid #4f3629;border-radius:11px;display:flex;flex-direction:column;gap:7px}
+.ct-analog-stats small{font-size:10px!important;color:#bca18a!important}
+.ct-analog-stats strong{font-size:clamp(15px,1.5vw,22px)!important;color:#ffbb78!important}
+.ct-analog-list{display:grid;gap:6px}
+.ct-analog-row{padding:10px 12px;border-radius:8px;background:rgba(29,20,16,.65);border:1px solid rgba(255,185,120,.1);color:#e4cfba;font-size:11px;line-height:1.6}
+.ct-analog-disclaimer{margin:12px 0 0!important}
+.ct-data-credit{margin:15px 0 0!important;border-top:1px solid rgba(247,147,26,.16);padding-top:12px!important}
+.ct-data-credit a{color:#ffbd75!important;text-decoration:underline}
+@media(max-width:1030px){.ct-data-panels{grid-template-columns:repeat(2,minmax(0,1fr))}.ct-data-panels .ct-data-panel:last-child{grid-column:span 2}}
+@media(max-width:660px){.ct-data-panels{grid-template-columns:minmax(0,1fr)}.ct-data-panels .ct-data-panel:last-child{grid-column:auto}.ct-analog-stats{grid-template-columns:minmax(0,1fr)}.ct-data-research{padding:16px!important}}
