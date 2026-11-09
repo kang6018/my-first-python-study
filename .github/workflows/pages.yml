@@ -33,6 +33,7 @@ jobs:
         run: |
           node --check docs/app.js
           node --check docs/motion.js
+          python3 -m py_compile scripts/collect_btc_history.py scripts/collect_market_data.py scripts/run_data_pipeline.py
           python3 - <<'PY'
           from pathlib import Path
           page=Path('docs/index.html').read_text(encoding='utf-8')
