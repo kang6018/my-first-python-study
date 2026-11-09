@@ -1052,7 +1052,7 @@ function renderV4Divergence(){
   guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);guide.setAttribute('visibility','visible');
   btcDot.setAttribute('cx',cx);btcDot.setAttribute('cy',YPrice(point.price));btcDot.setAttribute('visibility','visible');
   fearDot.setAttribute('cx',cx);fearDot.setAttribute('cy',YFear(point.fear));fearDot.setAttribute('visibility','visible');
-  tooltip.textContent=point.date+' (BTC observed '+point.observedDate+')   |   BTC +point.price.toLocaleString('en-US',{maximumFractionDigits:2})+'   |   공포·탐욕 '+point.fear+'/100';
+  tooltip.textContent=point.date+' (BTC observed '+point.observedDate+')   |   BTC USD '+point.price.toLocaleString('en-US',{maximumFractionDigits:2})+'   |   공포·탐욕 '+point.fear+'/100';
   tooltip.hidden=false;
   const xPct=Math.min(74,Math.max(5,cx/W*100));
   tooltip.style.left=xPct+'%';
@@ -1064,44 +1064,6 @@ function renderV4Divergence(){
   fearDot.setAttribute('visibility','hidden');tooltip.hidden=true;
  });
  $('divergenceNote').textContent='관측일 기준 '+(days?days+'일':'전체 기간')+'에서 공통 자료 '+pair.length+'개 · '+first.date+' ~ '+last.date+' · 왼쪽: 공포·탐욕 0~100 · 오른쪽: BTC 실제 종가(USD). BTC는 실제 관측일 기준 ±2일 이내 가장 가까운 표본을 사용하며 보간하지 않습니다. 10일 초과 공백은 선을 끊습니다.';
-}
-function v4JournalResult(r){const start=String(r.date||'').slice(0,10),days=Number(r.horizon)||30;if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return {status:'Date invalid'};const target=v4ISO(v4DateUTC(start)+days*DAYS);const recentDay=v4ISO(Date.now());const manual=Number(r.price);const inferred=v4PriceAt(start,3);const base=manual>0?{price:manual,date:start,manual:true}:inferred;if(!base)return {status:'Reference price unavailable',target};if(recentDay<target)return {status:'Awaiting verification',target,base};const end=v4PriceAt(target,3);if(!end||end.date>recentDay)return {status:'End-price unavailable',target,base};return {status:'Verification available',target,base,end,change:(end.price/base.price-1)*100}}
-function renderV4Journal(){const statusKo={'Date invalid':'날짜 오류','Reference price unavailable':'기준 가격 없음','Awaiting verification':'검증 대기','End-price unavailable':'결과 가격 없음','Verification available':'검증 완료'};if(!$('journalReviewRows'))return;const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));let ready=0,pending=0,positive=0,changes=[],scored=0,hits=0;const rows=sorted.map(r=>{const ev=v4JournalResult(r);if(ev.status==='Verification available'&&['up','down','flat'].includes(r.direction)){scored++;const c=ev.change;if((r.direction==='up'&&c>0)||(r.direction==='down'&&c<0)||(r.direction==='flat'&&Math.abs(c)<=5))hits++}if(ev.status==='Verification available'){ready++;if(ev.change>0)positive++;changes.push(ev.change)}else pending++;const v=ev.change;return `<tr><td><b>${escapeHTML(r.date||'')}</b><div class="v4-muted">${escapeHTML(r.title||'제목 없음')}</div></td><td>${escapeHTML(String(r.horizon||30))}일</td><td>${ev.base?money(ev.base.price):'—'}</td><td>${ev.end?`${ev.end.date} / ${money(ev.end.price)}`:'—'}</td><td class="${Number.isFinite(v)?v>=0?'positive':'negative':''}">${Number.isFinite(v)?(v>=0?'+':'')+fmt(v,2)+'%':'—'}</td><td>${escapeHTML(statusKo[ev.status]||ev.status)}</td></tr>`});
-$('journalReviewRows').innerHTML=rows.join('')||'<tr><td colspan="6" class="v4-muted">No decisions yet. Add your first research entry above.</td></tr>';
-$('journalReviewStats').innerHTML=[v4Metric('전체 판단 기록',sorted.length+'건','현재 브라우저에 저장됨'),v4Metric('검증 가능 기록',ready+'건','결과 확인일의 가격 확보'),v4Metric('방향 예측 적중률',scored?fmt(hits/scored*100,0)+'%':'—',scored?hits+' / '+scored+'건 방향 예측':'방향 예측 기록 없음'),v4Metric('평균 BTC 가격 변동률',changes.length?(changes.reduce((a,b)=>a+b,0)/changes.length>=0?'+':'')+fmt(changes.reduce((a,b)=>a+b,0)/changes.length,2)+'%':'—','검증 완료 기록의 단순 평균 · 실제 매매 수익률 아님')].join('');}
-function v4DataStatus(name,value,note){const ok=/Connected|Fallback connected/.test(value),stale=/snapshot|not connected|separate/.test(value);return `<tr><td>${escapeHTML(name)}</td><td><span class="v4-tag ${ok?'ok':stale?'stale':'bad'}">${ok?'Connected':stale?'Limited':'Check required'}</span></td><td>${escapeHTML(value)}</td><td class="v4-muted">${escapeHTML(note)}</td></tr>`}
-function renderV4Health(){if(!$('dataHealthRows'))return;const lastPrice=price?'Current price · observed at fetch time':'Price unavailable';const lastFear=fear.length?'Latest observation date: '+v4ISO(fear.at(-1).x):'Source refresh required';const lastHistory=history.length?'Last historical observation: '+history.at(-1).date:'CSV import available';$('dataHealthRows').innerHTML=[v4DataStatus('BTC Spot',fetched.price||'Not fetched',lastPrice),v4DataStatus('Fear·Greed',fetched.fear||'Not fetched',lastFear),v4DataStatus('BTC Price History',fetched.history||(history.length?'Local saved history':'Not fetched'),lastHistory),v4DataStatus('Funding',fetched.funding||'Not fetched','Check regional exchange access policy'),v4DataStatus('Open Interest',fetched.oi||'Not fetched','Exchange BTCUSDT product'),v4DataStatus('Block Height',fetched.block||'Not fetched','Block production times can vary'),v4DataStatus('ETF and institutional holdings',fetched.institution||'Snapshot shown · no API connected','Historical snapshot or custom HTTPS API')].join('')}
-function renderV4All(){renderV4Cycle();renderV4Divergence();renderV4Journal();renderV4Health()}
-function initV4(){const divergence=$('divergenceRange');if(divergence)divergence.addEventListener('change',renderV4Divergence);$('recalcJournal')?.addEventListener('click',()=>{renderV4Journal();toast('판단 결과를 실제 BTC 관측 가격으로 다시 계산했습니다.')});renderV4All();
-// Keep fallback fear index history on the same browser without silently replacing newer values.
-try{const raw=JSON.parse(localStorage.getItem(V4_FEED_CACHE)||'null');if(raw?.data?.length&&!fear.length){setFear(raw.data);fetched.fear='Local cache ('+raw.data.length+' records · '+String(raw.saved||'')+')';renderV4All()}}catch(e){}
-const oldSetHistory=setHistory;setHistory=function(...args){const r=oldSetHistory(...args);renderV4All();renderMarketResearch();return r};
-const oldSetFear=setFear;setFear=function(data){const r=oldSetFear(data);try{localStorage.setItem(V4_FEED_CACHE,JSON.stringify({saved:new Date().toISOString(),data:data.slice(0,4000)}))}catch(e){}renderV4All();renderMarketResearch();return r};
-const oldRenderJournal=renderJournal;renderJournal=function(...args){const r=oldRenderJournal(...args);renderV4Journal();return r};
-const oldRenderSources=renderSources;renderSources=function(...args){const r=oldRenderSources(...args);renderV4Health();return r};
-const oldRenderCycle=renderCycle;renderCycle=function(...args){const r=oldRenderCycle(...args);renderV4Cycle();return r};
-const oldRenderSentiment=renderSentiment;renderSentiment=function(...args){const r=oldRenderSentiment(...args);renderV4Divergence();return r};
-window.addEventListener('focus',()=>{if(!document.hidden&&Date.now()-v4LastCheck>180000){v4LastCheck=Date.now();refreshAll(false)}});let v4LastCheck=Date.now();
-}
-
-readStorage();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
-setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
-setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
-setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(!livePriceConnected)fetchQuickPrice();refreshAll(false);if(!$('communityPage').classList.contains('hidden'))fetchCommunityNews()}});
-
-})();+point.price.toLocaleString('en-US',{maximumFractionDigits:2})+'   |   공포·탐욕 '+point.fear+'/100';
-  tooltip.hidden=false;
-  const xPct=Math.min(74,Math.max(5,cx/W*100));
-  tooltip.style.left=xPct+'%';
- };
- svg.addEventListener('pointermove',update);
- svg.addEventListener('pointerdown',update);
- svg.addEventListener('pointerleave',()=>{
-  guide.setAttribute('visibility','hidden');btcDot.setAttribute('visibility','hidden');
-  fearDot.setAttribute('visibility','hidden');tooltip.hidden=true;
- });
- $('divergenceNote').textContent='관측일 기준 '+(days?days+'일':'전체 기간')+'에서 공통 자료 '+pair.length+'개 · '+first.date+' ~ '+last.date+' · 왼쪽: 공포·탐욕 0~100 · 오른쪽: BTC 실제 종가(USD). 3일 초과 자료 공백은 선을 끊어 표시합니다.';
 }
 function v4JournalResult(r){const start=String(r.date||'').slice(0,10),days=Number(r.horizon)||30;if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return {status:'Date invalid'};const target=v4ISO(v4DateUTC(start)+days*DAYS);const recentDay=v4ISO(Date.now());const manual=Number(r.price);const inferred=v4PriceAt(start,3);const base=manual>0?{price:manual,date:start,manual:true}:inferred;if(!base)return {status:'Reference price unavailable',target};if(recentDay<target)return {status:'Awaiting verification',target,base};const end=v4PriceAt(target,3);if(!end||end.date>recentDay)return {status:'End-price unavailable',target,base};return {status:'Verification available',target,base,end,change:(end.price/base.price-1)*100}}
 function renderV4Journal(){const statusKo={'Date invalid':'날짜 오류','Reference price unavailable':'기준 가격 없음','Awaiting verification':'검증 대기','End-price unavailable':'결과 가격 없음','Verification available':'검증 완료'};if(!$('journalReviewRows'))return;const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));let ready=0,pending=0,positive=0,changes=[],scored=0,hits=0;const rows=sorted.map(r=>{const ev=v4JournalResult(r);if(ev.status==='Verification available'&&['up','down','flat'].includes(r.direction)){scored++;const c=ev.change;if((r.direction==='up'&&c>0)||(r.direction==='down'&&c<0)||(r.direction==='flat'&&Math.abs(c)<=5))hits++}if(ev.status==='Verification available'){ready++;if(ev.change>0)positive++;changes.push(ev.change)}else pending++;const v=ev.change;return `<tr><td><b>${escapeHTML(r.date||'')}</b><div class="v4-muted">${escapeHTML(r.title||'제목 없음')}</div></td><td>${escapeHTML(String(r.horizon||30))}일</td><td>${ev.base?money(ev.base.price):'—'}</td><td>${ev.end?`${ev.end.date} / ${money(ev.end.price)}`:'—'}</td><td class="${Number.isFinite(v)?v>=0?'positive':'negative':''}">${Number.isFinite(v)?(v>=0?'+':'')+fmt(v,2)+'%':'—'}</td><td>${escapeHTML(statusKo[ev.status]||ev.status)}</td></tr>`});
