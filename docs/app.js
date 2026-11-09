@@ -506,6 +506,93 @@ function computedBtcMeasures(){
  return result;
 }
 
+/* V9 — Evidence-first market psychology: freshness gates, conflicting signals, no fabricated predictions. */
+function renderPsychologyEngine(){
+ const root=$('psychHeadline');if(!root)return;
+ const now=Date.now(),day=86400000;
+ const latestFear=fear.at(-1),measures=computedBtcMeasures();
+ const recentFear=!!latestFear&&now-latestFear.x>=-day&&now-latestFear.x<=3*day;
+ const priceDate=measures.latest?Date.parse(measures.latest+'T00:00:00Z'):NaN;
+ const recentPrice=Number.isFinite(priceDate)&&now-priceDate>=-day&&now-priceDate<=4*day;
+ const freshFunding=!!funding&&Number.isFinite(funding.time)&&Math.abs(now-funding.time)<24*3600000;
+ const freshOI=Number.isFinite(oi)&&oi>0&&fetched.oi==='Connected';
+ const freshEtf=!!liveInstitution?.etf?.length&&Number.isFinite(Date.parse(liveInstitution.asOf))&&now-Date.parse(liveInstitution.asOf)<=7*day&&now-Date.parse(liveInstitution.asOf)>=-day;
+ const fresh=[recentFear,recentPrice,freshFunding,freshOI,freshEtf];
+ const sources=fresh.filter(Boolean).length;
+ const support=[],counter=[],labels=[];
+ const add=(type,title,detail)=>{(type==='support'?support:counter).push({title,detail})};
+ let mood='insufficient';
+ if(recentFear){
+  const value=latestFear.y;
+  if(value<=24){labels.push('Extreme fear');add('support','Crowd fear is elevated','Fear & Greed '+value+'/100. Capitulation or exhaustion is possible, but this alone is not a bottom signal.')}
+  else if(value>=75){labels.push('Extreme greed');add('counter','Crowd optimism is stretched','Fear & Greed '+value+'/100. Strong optimism can accompany momentum or late-stage overheating.')}
+  else{labels.push('Sentiment '+value+'/100');add('support','Sentiment gauge is in its middle range','Fear & Greed '+value+'/100. No sentiment extreme is present.')}
+  if(fear.length>=8){
+   const prior=fear.at(-8),gap=latestFear.y-prior.y,spacing=latestFear.x-prior.x;
+   if(spacing>=5*day&&spacing<=10*day){
+    if(gap<=-15)add('counter','Fear intensified over seven days','Index moved '+gap+' points. Watch whether this confirms a weaker price trend.');
+    if(gap>=15)add('support','Sentiment is improving quickly','Index gained '+gap+' points over roughly seven days; verify with spot and derivatives data.');
+   }
+  }
+ }else add('counter','Sentiment observation is missing or stale','Alternative.me must have a dated reading from the past three days.');
+ if(recentPrice&&Number.isFinite(measures.return30)){
+  const change=measures.return30;
+  labels.push('BTC 30D '+(change>=0?'+':'')+fmt(change,1)+'%');
+  if(change>=10)add('support','BTC 30-day trend is positive','Observed daily-close performance: +'+fmt(change,1)+'%. Sustained price strength should be checked against positioning.');
+  else if(change<=-10)add('counter','BTC 30-day trend is weak','Observed daily-close performance: '+fmt(change,1)+'%. A low fear index may reflect genuine downside risk.');
+  else add('support','BTC is consolidating over 30 days','Observed 30-day change: '+(change>=0?'+':'')+fmt(change,1)+'%. No decisive directional trend from this window alone.');
+  if(recentFear&&latestFear.y<=24&&change>5)add('support','Potential price–sentiment divergence','Extreme fear coincides with positive 30-day BTC performance; monitor whether sentiment catches up.');
+  if(recentFear&&latestFear.y>=75&&change<0)add('counter','Optimism conflicts with price action','High greed accompanies a negative 30-day BTC return. The two measures disagree.');
+ }else add('counter','Current trend confirmation unavailable','BTC historical daily-close series is missing, dated too far back, or lacks a 30-day comparison.');
+ if(recentPrice&&Number.isFinite(measures.rsi14)){
+  const rsi=measures.rsi14;
+  if(rsi>=70)add('counter','Daily RSI is elevated','14-day RSI '+fmt(rsi,1)+'; overbought conditions can persist in trending markets.');
+  else if(rsi<=30)add('support','Daily RSI is depressed','14-day RSI '+fmt(rsi,1)+'; oversold conditions do not guarantee a rebound.');
+ }
+ if(freshFunding){
+  labels.push('Funding '+(funding.value>=0?'+':'')+fmt(funding.value,4)+'%');
+  if(funding.value>=0.025)add('counter','Positive funding points to crowded longs','Funding: +'+fmt(funding.value,4)+'%. High positive rates may amplify a long squeeze; no open-interest trend is inferred.');
+  else if(funding.value<=-0.015)add('support','Negative funding indicates short-side pressure','Funding: '+fmt(funding.value,4)+'%. Confirm whether shorts are crowded before drawing a contrarian conclusion.');
+  else add('support','Funding is not at an extreme threshold','Funding: '+(funding.value>=0?'+':'')+fmt(funding.value,4)+'%. Does not independently imply excessive leverage.');
+ }else add('counter','Derivatives positioning lacks a fresh funding reading','Binance funding data must be dated within the past 24 hours.');
+ if(freshOI){labels.push('OI observed');add('support','Open-interest level is available',fmt(oi,0)+' BTC at the exchange. A single level cannot establish whether leverage is increasing or decreasing.')}
+ else add('counter','Open-interest level not verified','BTC open interest is not currently available. No leverage trend can be established.');
+ if(freshEtf){
+  const last=liveInstitution.etf.at(-1);
+  if(last&&Number.isFinite(Number(last[1]))){
+   const val=Number(last[1]);(val>=0?add('support','Institutional ETF flow is positive','Latest verified custom-feed observation: +'+fmt(val,1)+'M USD, as of '+liveInstitution.asOf+'.'):add('counter','Institutional ETF flow is negative','Latest verified custom-feed observation: '+fmt(val,1)+'M USD, as of '+liveInstitution.asOf+'.'));
+  }
+ }else add('counter','ETF flow is a historical snapshot','The November 2026 example or an unverified CSV is not used as evidence of present-day capital flows.');
+ let headline,summary;
+ if(sources<2){headline='Insufficient fresh evidence';summary='Connect current market data to produce a cross-indicator interpretation. No market regime is assigned from stale snapshots.';mood='insufficient'}
+ else if(recentFear&&latestFear.y<=24&&recentPrice&&measures.return30>0){headline='Fear diverges from price strength';summary='Crowd pessimism contrasts with positive BTC price action. Watch for confirmation from flows and derivatives; this is not a buy signal.';mood='divergence'}
+ else if(recentFear&&latestFear.y>=75&&((recentPrice&&measures.return30<0)||(freshFunding&&funding.value>=.025))){headline='Optimism meets positioning risk';summary='Elevated greed conflicts with price weakness or high long-side funding. Validate the move with spot volume and changing open interest.';mood='caution'}
+ else if(recentFear&&latestFear.y<=24){headline='Fear-dominated market';summary='Risk aversion is elevated. Separate structural downtrends from short-lived liquidation events using additional evidence.';mood='fear'}
+ else if(recentFear&&latestFear.y>=75){headline='Greed-dominated market';summary='Optimism is elevated. Assess whether price and positioning remain aligned before interpreting the move.';mood='caution'}
+ else{headline='Mixed / transitional signals';summary='The available indicators do not establish one dominant regime. Compare confirming observations and their counter-evidence.';mood='mixed'}
+ root.textContent=headline;$('psychSummary').textContent=summary;
+ $('psychCoverage').textContent=sources+' / 5 current sources';
+ $('psychScore').textContent=String(sources);
+ $('psychProgress').style.width=(sources/5*100)+'%';
+ $('psychAsOf').textContent='Evaluated '+new Date(now).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})+' · local time';
+ $('psychReadiness').textContent=sources<3?'Limited evidence · several market feeds unavailable':'Coverage measures availability, not prediction accuracy.';
+ const tags=$('psychTags');tags.replaceChildren();
+ for(const item of labels.slice(0,4)){const span=document.createElement('span');span.textContent=item;tags.append(span)}
+ const render=(id,items,empty)=>{
+  const target=$(id);target.replaceChildren();
+  if(!items.length){const row=document.createElement('p');row.className='ct-psych-empty';row.textContent=empty;target.append(row);return}
+  for(const item of items.slice(0,5)){
+   const row=document.createElement('div');row.className='ct-psych-evidence-row';
+   const title=document.createElement('strong');title.textContent=item.title;
+   const detail=document.createElement('p');detail.textContent=item.detail;
+   row.append(title,detail);target.append(row);
+  }
+ };
+ render('psychSupporting',support,'No supporting evidence with valid observation dates yet.');
+ render('psychCounter',counter,'No opposing evidence from available inputs. This is not proof of safety.');
+ const elapsed=Math.floor((now-Date.parse('2024-04-20T00:00:00Z'))/day);
+ $('psychCycleNote').textContent='Halving-cycle context: '+fmt(Math.max(0,elapsed),0)+' calendar days after April 20, 2024. Historical repetition is not assumed.';
+}
 function renderSentiment(){const last=fear.at(-1),prev=fear.at(-2);$('sentFear').textContent=last?last.y+'/100':'—';$('sentFearLabel').textContent=last?fearLabel(last.y):'Data feed unavailable';$('sentDelta').textContent=last&&prev?(last.y-prev.y>=0?'+':'')+(last.y-prev.y)+'p':'—';$('fundingValue').textContent=funding?fmt(funding.value,4)+'%':'Connection required';$('fundingTime').textContent=funding?'Binance / '+new Date(funding.time).toLocaleString('en-US'):'Binance public API';$('oiValue').textContent=oi!==null?fmt(oi,0)+' BTC':'Connection required';const n=Number($('fearRange').value),data=n===0?fear:fear.slice(-n);drawPlot($('sentimentPlot'),data.length?[{label:'Fear·Greed',color:'#f0b95e',points:data.map((d,i)=>({x:i,y:d.y}))}]:[],{xMin:0,xMax:Math.max(1,data.length-1),xFormat:i=>{const d=data[Math.min(data.length-1,Math.round(i))];return d?new Date(d.x).toISOString().slice(5,10):''}});const interpretations=[];
 const observation=(label,value,note,wide=false)=>`<div class="sentiment-observation${wide?' wide':''}"><span class="obs-label">${label}</span><strong>${value}</strong><span class="obs-note">${note}</span></div>`;
 if(last){
@@ -543,6 +630,7 @@ const m=computedBtcMeasures();
   metric('BTC ETF 5-Day Net Flow',Number.isFinite(fiveDayFlow)?(fiveDayFlow>=0?'+':'')+fmt(fiveDayFlow,1)+'M USD':'Checking ETF connection','As of: '+etfAsOf+' · historical flows, not streaming',Number.isFinite(fiveDayFlow))
  ];
  $('indicators').innerHTML=indicators.map(item=>'<div class="indicator"><strong>'+escapeHTML(item.label)+'</strong><span class="tag '+(item.available?'ok':'off')+'">'+(item.available?'Data available':'Pending')+'</span><div class="indicator-value">'+escapeHTML(item.value)+'</div><small class="indicator-note">'+escapeHTML(item.note)+'</small></div>').join('');
+ renderPsychologyEngine();
 }
 function initSentiment(){$('refreshSentiment').onclick=()=>Promise.allSettled([fetchFear(),fetchDerivatives()]).then(()=>toast('Sentiment metrics refreshed.'));$('fearRange').onchange=renderSentiment}
 function initMacro(){ /* Macro charts are read-only; journal features live in Strategy. */ }
