@@ -42,83 +42,20 @@ jobs:
           assert 'lang="ko"' in page
           print('Static research sections and JavaScript syntax validated')
           PY
-      - name: Collect ETF flows and futures positioning history
-        continue-on-error: true
-        run: python3 scripts/collect_market_data.py
-      - name: Preserve verified dated series in the repository
+      - name: Collect and validate market history (independent sources)
+        run: python3 scripts/run_data_pipeline.py
+      - name: Preserve all validated datasets after collection
         continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for file in docs/data/etf-flows.json docs/data/funding-history.json docs/data/oi-history.json; do
+          for file in docs/data/btc-history.json docs/data/etf-flows.json docs/data/funding-history.json docs/data/oi-history.json docs/data/collection-status.json; do
             if test -f "$file"; then git add "$file"; fi
           done
           if ! git diff --cached --quiet; then
-            git commit -m "data: refresh source-verified ETF and derivatives observations [skip ci]"
+            git commit -m "data: persist validated market observations and source status [skip ci]"
             git push origin HEAD:main
           fi
-      - name: Download source-labelled historic BTC prices
-        continue-on-error: true
-        run: |
-          python3 - <<'PY'
-          import json, os, time, urllib.request, datetime
-          def fetch(url):
-              req = urllib.request.Request(url, headers={"User-Agent":"CycleTerminalStatic/6.2","Accept":"application/json"})
-              with urllib.request.urlopen(req, timeout=17) as response:
-                  return json.load(response)
-          data = []
-          source = None
-          try:
-              to_ts = int(time.time())
-              for _ in range(4):
-                  url = "https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD&limit=2000&toTs="+str(to_ts)
-                  page = fetch(url).get("Data",{}).get("Data",[])
-                  if len(page)<100: raise RuntimeError("Insufficient candles")
-                  data = page + data
-                  earliest = int(page[0]["time"])
-                  if earliest < 1353283200: break
-                  to_ts = earliest - 86400
-              rows = [{"date":datetime.datetime.fromtimestamp(int(item["time"]),datetime.timezone.utc).date().isoformat(),"price":float(item["close"])} for item in data if float(item.get("close",0))>0]
-              source = "CryptoCompare BTC/USD historical daily close"
-          except Exception as err:
-              print("CryptoCompare unavailable:",str(err)[:160])
-              data = fetch("https://api.blockchain.info/charts/market-price?timespan=all&format=json&sampled=true").get("values",[])
-              rows = [{"date":datetime.datetime.fromtimestamp(int(item["x"]),datetime.timezone.utc).date().isoformat(),"price":float(item["y"])} for item in data if float(item.get("y",0))>0]
-              source = "Blockchain.com BTC/USD sampled market-price"
-          unique = {item["date"]:item for item in rows}
-          rows = [unique[key] for key in sorted(unique)]
-          if len(rows)<350: raise RuntimeError("Not enough verified price observations")
-          os.makedirs("docs/data",exist_ok=True)
-          with open("docs/data/btc-history.json","w",encoding="utf-8") as output:
-              json.dump({"status":"ok","source":source,"asOf":rows[-1]["date"],"rows":rows},output,ensure_ascii=False,separators=(',',':'))
-          print("BTC observations:",len(rows),"source:",source,"latest:",rows[-1]["date"])
-          PY
-      - name: Download Federal Reserve US ten-year Treasury yield observations
-        continue-on-error: true
-        run: |
-          python3 - <<'PY'
-          import csv, datetime, io, json, os, urllib.request
-          url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
-          req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0 (compatible; CycleTerminal/8.5)"})
-          with urllib.request.urlopen(req, timeout=25) as response:
-              text = response.read().decode("utf-8-sig")
-          rows=[]
-          for rec in csv.DictReader(io.StringIO(text)):
-              date = rec.get("observation_date") or rec.get("DATE") or rec.get("date")
-              val = rec.get("DGS10")
-              if not date or not val or val.strip() in ("", "."): continue
-              try:
-                  datetime.date.fromisoformat(date)
-                  value = float(val)
-                  if -1 <= value <= 25: rows.append({"date": date, "value": value})
-              except (ValueError, TypeError): continue
-          rows.sort(key=lambda r:r["date"])
-          if len(rows)<100: raise RuntimeError("FRED DGS10 returned too few valid observations")
-          os.makedirs("docs/data",exist_ok=True)
-          with open("docs/data/us10y.json","w",encoding="utf-8") as fp:
-              json.dump({"status":"ok","source":"Federal Reserve Bank of St. Louis FRED DGS10","asOf":rows[-1]["date"],"rows":rows[-1000:]},fp,separators=(',',':'))
-          print("DGS10 rows:",len(rows),"latest:",rows[-1]["date"])
-          PY
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload static website
