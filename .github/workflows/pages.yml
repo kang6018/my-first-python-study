@@ -50,7 +50,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/data/etf-flows.json docs/data/funding-history.json docs/data/oi-history.json 2>/dev/null || true
+          for file in docs/data/etf-flows.json docs/data/funding-history.json docs/data/oi-history.json; do
+            if test -f "$file"; then git add "$file"; fi
+          done
           if ! git diff --cached --quiet; then
             git commit -m "data: refresh source-verified ETF and derivatives observations [skip ci]"
             git push origin HEAD:main
