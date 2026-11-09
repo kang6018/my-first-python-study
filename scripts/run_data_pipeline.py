@@ -19,8 +19,6 @@ NOW=dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
 JOBS=(
     ("btcHistory",lambda:btc.main(),"btc-history.json"),
     ("etfFlows",market.collect_etf,"etf-flows.json"),
-    ("fundingHistory",market.collect_funding,"funding-history.json"),
-    ("openInterestHistory",market.collect_oi,"oi-history.json"),
 )
 result={}
 for name,work,filename in JOBS:
