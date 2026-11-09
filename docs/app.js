@@ -750,6 +750,141 @@ function initInstitutionEndpoint(){const input=$('institutionEndpoint'),save=$('
 const ETF_SEED=[['2026-10-20',23.2],['2026-10-21',524.8],['2026-10-22',-635.6],['2026-10-23',-137.9],['2026-10-26',110.3],['2026-10-27',176],['2026-10-28',137.3],['2026-10-29',17.2],['2026-10-30',-643.2],['2026-11-02',-398.6],['2026-11-03',-115.6],['2026-11-04',74.6],['2026-11-05',-430.2],['2026-11-06',-411.9]];
 const TREASURY_CATEGORY=[['ETF',1468734],['Sovereigns',518526],['Public Companies',1228717],['Private Companies',439005],['Miners',98422],['DeFi',267236]];
 const WEEKLY_TREASURY=[['ETF',-14077],['Public Companies',934],['Sovereigns',0],['Private Companies',0],['Miners',0],['DeFi',0]];
+/* GitHub Pages source data: dated daily observations, never synthetic live readings. */
+let etfAuto=null,fundingSeries=[],oiSeries=[],marketSeriesLastFetch=0;
+function normalizedMarketRows(data,key){
+ if(!data||data.status!=='ok'||!Array.isArray(data.rows))throw Error('자료 형식 또는 출처가 유효하지 않습니다.');
+ const rows=data.rows.filter(r=>r&&/^\d{4}-\d{2}-\d{2}$/.test(String(r.date))&&Number.isFinite(Number(r[key])))
+  .map(r=>({date:String(r.date),value:Number(r[key])})).sort((a,b)=>a.date.localeCompare(b.date));
+ if(rows.length<5)throw Error('확인된 관측값이 부족합니다.');
+ return [...new Map(rows.map(row=>[row.date,row])).values()];
+}
+async function loadMarketSeries(force=false){
+ if(!force&&Date.now()-marketSeriesLastFetch<20*60000)return;
+ marketSeriesLastFetch=Date.now();
+ const feeds=[['ETF','data/etf-flows.json','netMillionUsd'],['FUNDING','data/funding-history.json','fundingPct'],['OI','data/oi-history.json','openInterestBtc']];
+ const results=await Promise.allSettled(feeds.map(async ([name,url,key])=>{
+  const response=await jsonGet(url,13000);
+  return {name,source:response.source,rows:normalizedMarketRows(response,key)};
+ }));
+ for(let i=0;i<results.length;i++){
+  const result=results[i];
+  if(result.status!=='fulfilled')continue;
+  const info=result.value;
+  if(info.name==='ETF')etfAuto={rows:info.rows.map(r=>[r.date,r.value]),source:info.source};
+  if(info.name==='FUNDING')fundingSeries=info.rows;
+  if(info.name==='OI')oiSeries=info.rows;
+ }
+ renderInstitutional();
+ renderMarketResearch();
+ renderSentiment();
+ renderSources();
+}
+function marketMiniPlot(node,rows,color){
+ if(!node)return;
+ node.replaceChildren();
+ if(rows.length<2){node.textContent='이력 데이터가 연결되면 추세가 나타납니다.';return}
+ const ns='http://www.w3.org/2000/svg',W=650,H=128,pad=12;
+ const svg=document.createElementNS(ns,'svg');
+ svg.setAttribute('viewBox','0 0 650 128');svg.setAttribute('preserveAspectRatio','none');
+ svg.setAttribute('role','img');svg.setAttribute('aria-label','날짜별 실측값 추이');
+ const values=rows.map(r=>r.value),lo=Math.min(...values),hi=Math.max(...values);
+ const range=Math.max(hi-lo,Math.max(Math.abs(lo),Math.abs(hi))*.04,1e-9);
+ const yMin=lo-range*.17,yMax=hi+range*.17;
+ const t0=Date.parse(rows[0].date+'T00:00:00Z'),t1=Date.parse(rows.at(-1).date+'T00:00:00Z');
+ const x=r=>pad+(Date.parse(r.date+'T00:00:00Z')-t0)/Math.max(1,t1-t0)*(W-pad*2);
+ const y=v=>H-pad-(v-yMin)/(yMax-yMin)*(H-pad*2);
+ const path=document.createElementNS(ns,'path');
+ const gapDays=rows.length>5?4:8;
+ path.setAttribute('d',rows.map((r,i)=>{
+  const prev=i>0?Date.parse(rows[i-1].date+'T00:00:00Z'):0;
+  const d=Date.parse(r.date+'T00:00:00Z')-prev;
+  return (i&&d<=gapDays*86400000?'L':'M')+x(r).toFixed(1)+','+y(r.value).toFixed(1);
+ }).join(' '));
+ path.setAttribute('fill','none');path.setAttribute('stroke',color);
+ path.setAttribute('stroke-width','3');path.setAttribute('vector-effect','non-scaling-stroke');
+ svg.append(path);node.append(svg);
+}
+function renderMarketResearch(){
+ if(!$('historicalAnalogResults'))return;
+ const utcNow=Date.now();
+ const validDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(String(d));
+ const rowAge=rows=>rows.length?Math.floor((utcNow-Date.parse(rows.at(-1).date+'T00:00:00Z'))/86400000):null;
+ const status=[];
+ if(etfAuto?.rows?.length)status.push('ETF '+etfAuto.rows.at(-1)[0]);else status.push('ETF 연결 대기');
+ if(fundingSeries.length)status.push('펀딩비 '+fundingSeries.at(-1).date);else status.push('펀딩비 연결 대기');
+ if(oiSeries.length)status.push('OI '+oiSeries.at(-1).date);else status.push('OI 연결 대기');
+ $('researchDataStatus').textContent=status.join(' · ');
+ const recentFunding=fundingSeries.slice(-60),recentOI=oiSeries.slice(-60);
+ const latestFunding=recentFunding.at(-1),latestOI=recentOI.at(-1);
+ const fundRecent=rowAge(recentFunding)!==null&&rowAge(recentFunding)<=5;
+ const oiRecent=rowAge(recentOI)!==null&&rowAge(recentOI)<=5;
+ $('fundingTrendValue').textContent=latestFunding?(latestFunding.value>=0?'+':'')+fmt(latestFunding.value,4)+'%':'—';
+ $('fundingTrendNote').textContent=latestFunding?'최근 관측 '+latestFunding.date+(fundRecent?' · 정산 1회당 일평균 펀딩비':' · 과거 자료, 최신값 아님'):'Binance 일별 펀딩비 수집 기록이 없습니다.';
+ marketMiniPlot($('fundingTrendPlot'),recentFunding,'#f4ac65');
+ $('oiTrendValue').textContent=latestOI?fmt(latestOI.value,0)+' BTC':'—';
+ const comparison=oiSeries.length>=8?oiSeries.at(-8):null;
+ const oiChange=comparison&&latestOI?((latestOI.value/comparison.value-1)*100):null;
+ $('oiTrendNote').textContent=latestOI?'최근 관측 '+latestOI.date+(Number.isFinite(oiChange)?' · 7개 관측일 대비 '+(oiChange>=0?'+':'')+fmt(oiChange,1)+'%':'')+(oiRecent?'':' · 과거 자료'):'Binance 일별 미결제약정 기록이 없습니다.';
+ marketMiniPlot($('oiTrendPlot'),recentOI,'#91b7a0');
+ const etfRows=etfAuto?.rows||[],lastFive=etfRows.slice(-5);
+ const flow=lastFive.length===5?lastFive.reduce((sum,r)=>sum+Number(r[1]),0):null;
+ const etfDate=etfRows.length?etfRows.at(-1)[0]:null;
+ const etfOld=etfDate&&(utcNow-Date.parse(etfDate+'T00:00:00Z'))/86400000>7;
+ $('etfTrendValue').textContent=flow===null?'—':(flow>=0?'+':'')+fmt(flow,1)+'M USD';
+ $('etfTrendNote').textContent=etfDate?'마지막 관측 '+etfDate+(etfOld?' · 이전 거래일 자료, 최신 아님':' · 최근 5거래일 합계'):'검증된 ETF 공개 자료가 없으면 과거 스냅샷을 최신값으로 표시하지 않습니다.';
+ marketMiniPlot($('etfTrendPlot'),etfRows.slice(-60).map(r=>({date:r[0],value:Number(r[1])})),'#d8b36c');
+ const root=$('historicalAnalogResults');root.replaceChildren();
+ const latest=fear.at(-1);
+ const prices=new Map(history.filter(r=>validDate(r.date)&&Number(r.price)>0).map(r=>[r.date,Number(r.price)]));
+ if(!latest||prices.size<120){
+  root.textContent='공포·탐욕 이력과 충분한 BTC 일일 종가가 있어야 과거 유사 구간을 계산할 수 있습니다.';
+  return;
+ }
+ const current=Number(latest.y),cutoff=utcNow-90*86400000;
+ const observations=fear.filter(r=>r.x<cutoff&&Math.abs(Number(r.y)-current)<=5).sort((a,b)=>b.x-a.x);
+ const picked=[];
+ for(const candidate of observations){
+  if(picked.every(p=>Math.abs(p.x-candidate.x)>=30*86400000))picked.push(candidate);
+  if(picked.length>=30)break;
+ }
+ const calc=(d,days)=>{
+  const p0=prices.get(d);if(!p0)return null;
+  const start=Date.parse(d+'T00:00:00Z')+days*86400000;
+  for(let offset=0;offset<=2;offset++){
+   const date=new Date(start+offset*86400000).toISOString().slice(0,10);
+   if(prices.has(date))return (prices.get(date)/p0-1)*100;
+  }
+  return null;
+ };
+ const cases=picked.map(p=>{
+  const date=new Date(p.x).toISOString().slice(0,10);
+  return {date,score:p.y,r30:calc(date,30),r90:calc(date,90)}
+ }).filter(c=>Number.isFinite(c.r30)&&Number.isFinite(c.r90));
+ if(cases.length<3){
+  root.textContent='같은 심리 점수(±5점)이며 이후 90일 가격까지 확인된 독립 사례가 3개 미만입니다.';
+  return;
+ }
+ const med=values=>{
+  const x=values.slice().sort((a,b)=>a-b),mid=Math.floor(x.length/2);
+  return x.length%2?x[mid]:(x[mid-1]+x[mid])/2;
+ };
+ const score=(r)=>(r>=0?'+':'')+fmt(r,1)+'%';
+ const stats=document.createElement('div');stats.className='ct-analog-stats';
+ for(const [name,value] of [['독립 사례',cases.length+'개'],['이후 30일 중위수',score(med(cases.map(c=>c.r30)))],['이후 90일 중위수',score(med(cases.map(c=>c.r90)))]]){
+  const cell=document.createElement('div');const label=document.createElement('small');label.textContent=name;
+  const strong=document.createElement('strong');strong.textContent=value;
+  cell.append(label,strong);stats.append(cell);
+ }
+ const list=document.createElement('div');list.className='ct-analog-list';
+ for(const item of cases.slice(0,6)){
+  const line=document.createElement('div');line.className='ct-analog-row';
+  line.textContent=item.date+' · 공포·탐욕 '+item.score+'/100 · 이후 30일 '+score(item.r30)+' · 90일 '+score(item.r90);
+  list.append(line);
+ }
+ root.append(stats,list);
+ $('historicalAnalogNote').textContent='조건: 최근 심리 점수 ±5점, 최소 30일 간격, 이후 90일 BTC 종가가 확인된 사례 '+cases.length+'개. 겹치는 거시·시장 환경은 통제되지 않았으며 예측 신호가 아닙니다.';
+}
 let etfExternal=null;
 function readEtfLocal(){try{const v=JSON.parse(localStorage.getItem('cycle-terminal-etf-csv-'+(window.__CT_ACCOUNT_ID__||'guest')));if(Array.isArray(v)&&v.length)etfExternal=v}catch(e){}}
 function barSvg(data){const w=900,h=215,L=50,R=18,T=25,B=34,low=Math.min(-750,...data.map(x=>x[1])),high=Math.max(600,...data.map(x=>x[1]));const y=v=>T+(high-v)/(high-low)*(h-T-B),zero=y(0);let s=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Daily ETF net flows (USD millions)"><line x1="${L}" y1="${zero}" x2="${w-R}" y2="${zero}" stroke="#8d7b63" stroke-width="1"/>`;const bw=(w-L-R)/data.length;data.forEach(([date,val],i)=>{const x=L+i*bw+bw*.18,yr=y(val),rectY=Math.min(zero,yr),rectH=Math.max(1,Math.abs(zero-yr));s+=`<rect x="${x.toFixed(1)}" y="${rectY.toFixed(1)}" width="${(bw*.64).toFixed(1)}" height="${rectH.toFixed(1)}" fill="${val>=0?'#6eae8c':'#c98076'}"><title>${escapeHTML(date)}: ${fmt(val,1)}M USD</title></rect>`;if(i%Math.ceil(data.length/6)===0)s+=`<text x="${(x+bw*.32).toFixed(1)}" y="${h-10}" text-anchor="middle" font-size="12" fill="#a99a86">${escapeHTML(date.slice(5))}</text>`});s+='</svg>';return s;}
