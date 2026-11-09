@@ -1237,3 +1237,47 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  #settingsPage .data-endpoint-box{padding:14px!important}
  #settingsPage .data-endpoint-box .endpoint-row button{width:100%!important}
 }
+
+/* V8.11: scalable curated X roster with horizontal tabs */
+#communityPage #leaderTabs.leader-tabs{
+ display:flex!important;
+ flex-wrap:nowrap!important;
+ overflow-x:auto!important;
+ overflow-y:hidden!important;
+ -webkit-overflow-scrolling:touch!important;
+ overscroll-behavior-x:contain;
+ scrollbar-color:#88522d #21150f;
+ scrollbar-width:thin;
+ gap:4px!important;
+ padding:6px 1px 9px!important;
+ margin-bottom:14px!important;
+ width:100%!important;
+ max-width:100%!important;
+ box-sizing:border-box!important;
+}
+#communityPage #leaderTabs.leader-tabs button{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ flex:0 0 auto!important;white-space:nowrap!important;
+ padding:10px 12px!important;
+ color:#ccb39f!important;
+ font-size:12px!important;font-weight:650!important;
+ background:transparent!important;
+ border:1px solid transparent!important;
+ border-bottom:2px solid transparent!important;
+ border-radius:9px!important;
+ line-height:1.2!important;
+ cursor:pointer;
+}
+#communityPage #leaderTabs.leader-tabs button:hover{
+ background:rgba(247,147,26,.11)!important;
+ color:#ffe5c6!important
+}
+#communityPage #leaderTabs.leader-tabs button.selected{
+ background:#412714!important;
+ border-color:#79502c!important;
+ color:#ffc27e!important;
+}
+#communityPage #communityXPanel{min-width:0!important}
+@media(max-width:640px){
+ #communityPage #leaderTabs.leader-tabs button{font-size:11px!important;padding:11px!important}
+}
