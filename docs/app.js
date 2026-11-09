@@ -53,7 +53,7 @@ function mountOverview(force=false){
   {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'US TECHNOLOGY',description:'FOREX.com cash CFD · may differ from official NDX',original:'NASDAQ:NDX'},
   {name:'Gold / XAUUSD',symbol:'OANDA:XAUUSD',category:'SAFE-HAVEN ASSET',description:'OANDA spot-gold quote'},
   {name:'Brent Crude · Cash CFD',symbol:'OANDA:BCOUSD',category:'ENERGY',description:'OANDA Brent crude CFD · not BR1! continuous futures',original:'ICEEUR:BRN1!'},
-  {name:'US 10Y Treasury Yield',symbol:'FRED:DGS10',category:'US INTEREST RATES',description:'FRED DGS10 daily closing yield · delayed observation',native:true,original:'TVC:US10Y'},
+  {name:'KOSPI Composite Index',symbol:'TVC:KOSPI',category:'KOREAN EQUITIES',description:'TradingView composite KOSPI index · data may be delayed',original:'KRX:KOSPI'},
   {name:'USD / KRW',symbol:'FX_IDC:USDKRW',category:'FOREIGN EXCHANGE',description:'FX_IDC indicative USD/KRW quote'}
  ];
  grid.replaceChildren();
@@ -564,7 +564,7 @@ async function restoreBackup(e){const f=e.target.files?.[0];if(!f)return;try{con
 function restoreChecks(){document.querySelectorAll('[data-check]').forEach(x=>{x.checked=!!state.checks?.[x.dataset.check];x.addEventListener('change',()=>{state.checks[x.dataset.check]=x.checked;persist()})})}
 
 // Community: verified public profiles through the official X embed, plus live-source RSS.
-const LEADERS=[['Michael Saylor','saylor'],['Cathie Wood','CathieDWood'],['Balaji Srinivasan','balajis'],['Eric Balchunas','EricBalchunas'],['Bitcoin Magazine','BitcoinMagazine']];
+const LEADERS=[['Michael Saylor','saylor'],['Cathie Wood','CathieDWood'],['Balaji Srinivasan','balajis'],['Eric Balchunas','EricBalchunas'],['Bitcoin Magazine','BitcoinMagazine'],['Davinci Jeremie','Davincij15'],['Cameron Winklevoss','cameron'],['Tyler Winklevoss','tyler'],['Grant Cardone','GrantCardone'],['Vitalik Buterin','VitalikButerin'],['Justin Sun','justinsuntron'],['Elon Musk','elonmusk'],['Jeff Yan · Hyperliquid','chameleon_jeff']];
 let activeLeader='saylor',communityTab='all',newsItems=[],newsPending=false,newsEverLoaded=false;
 function renderCommunity(){
  const tabs=$('leaderTabs');if(!tabs)return;
