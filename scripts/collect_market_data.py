@@ -11,6 +11,7 @@ import os
 import pathlib
 import urllib.parse
 import urllib.request
+import urllib.error
 
 ROOT = pathlib.Path(__file__).resolve().parents[1] / "docs" / "data"
 ROOT.mkdir(parents=True, exist_ok=True)
@@ -55,7 +56,15 @@ def load_existing(file):
         return []
 
 def write_verified(file, source, rows, field, limit=4000, extra=None):
+    # Never merge observations from different exchanges into a single series.
     previous = load_existing(file)
+    if file.exists():
+        try:
+            prior = json.loads(file.read_text(encoding="utf-8"))
+            if prior.get("source") != source:
+                previous = []
+        except (ValueError, OSError, AttributeError):
+            previous = []
     merged = {}
     for item in previous + rows:
         if not isinstance(item, dict):
@@ -115,48 +124,78 @@ def collect_etf():
     write_verified(ROOT / "etf-flows.json", "The Commoner Bitcoin ETF Tracker by TFTC (CC BY 4.0), https://www.tftc.io/bitcoin-etf-flows", parsed, "netMillionUsd", limit=1200,
                    extra={"license": "CC BY 4.0", "url": "https://www.tftc.io/bitcoin-etf-flows", "unit": "USD million"})
 
+
+def bybit_rows(endpoint, params):
+    """Public Bybit V5 endpoint. Validate success envelope and exact product."""
+    query = urllib.parse.urlencode(params)
+    payload = fetch_json("https://api.bybit.com/v5/market/" + endpoint + "?" + query)
+    if not isinstance(payload, dict) or payload.get("retCode") != 0:
+        raise ValueError("Bybit API returned nonzero retCode")
+    result = payload.get("result")
+    if not isinstance(result, dict) or result.get("category") != "linear":
+        raise ValueError("Unexpected Bybit product category")
+    rows = result.get("list")
+    if not isinstance(rows, list):
+        raise ValueError("Invalid Bybit market history")
+    return rows
+
 def collect_funding():
-    base = "https://fapi.binance.com"
-    funding = fetch_json(base + "/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1000")
-    if not isinstance(funding, list):
-        raise ValueError("Funding history response is not a list")
+    source = "Binance USD-M BTCUSDT funding settlements (daily mean, % per settlement)"
+    try:
+        funding = fetch_json("https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1000")
+        if not isinstance(funding, list):
+            raise ValueError("Binance funding response is not a list")
+        records = [(r.get("fundingTime"), r.get("fundingRate")) for r in funding
+                   if isinstance(r, dict) and r.get("symbol") == "BTCUSDT"]
+    except urllib.error.HTTPError as exc:
+        if exc.code != 451:
+            raise
+        print("Binance funding blocked (HTTP 451); requesting Bybit history", flush=True)
+        funding = bybit_rows("funding/history", {"category":"linear","symbol":"BTCUSDT","limit":200})
+        records = [(r.get("fundingRateTimestamp"),r.get("fundingRate")) for r in funding
+                   if isinstance(r,dict) and r.get("symbol")=="BTCUSDT"]
+        source = "Bybit linear BTCUSDT funding settlements (daily mean, % per settlement)"
     daily = {}
-    for row in funding:
-        if not isinstance(row, dict) or row.get("symbol") != "BTCUSDT":
-            continue
-        stamp = numeric(row.get("fundingTime"))
-        value = numeric(row.get("fundingRate"))
+    for stamp_raw, rate_raw in records:
+        stamp, value = numeric(stamp_raw), numeric(rate_raw)
         if stamp is None or value is None or abs(value) > .2:
             continue
         day = dt.datetime.fromtimestamp(stamp / 1000, tz=dt.timezone.utc).date().isoformat()
         if iso_date(day):
-            daily.setdefault(day, []).append(value * 100)  # mean per settlement (%)
-    series = [{"date": day, "fundingPct": sum(vals) / len(vals)} for day, vals in daily.items()]
+            daily.setdefault(day, []).append(value * 100)
+    series = [{"date": day, "fundingPct": sum(vals)/len(vals)} for day, vals in daily.items()]
     if len(series) < 5:
-        raise ValueError("Funding history has insufficient validated dates")
-    write_verified(ROOT / "funding-history.json", "Binance USD-M BTCUSDT funding settlements (daily mean, % per settlement)", series, "fundingPct", limit=900,
-                   extra={"unit": "percent per settlement", "product": "BTCUSDT USD-M perpetual"})
+        raise ValueError("Funding history has insufficient verified dates")
+    write_verified(ROOT / "funding-history.json", source, series, "fundingPct", limit=900,
+                   extra={"unit":"percent per settlement","product":"BTCUSDT linear perpetual"})
 
 def collect_oi():
-    base = "https://fapi.binance.com"
-    oi_data = fetch_json(base + "/futures/data/openInterestHist?symbol=BTCUSDT&period=1d&limit=60")
-    if not isinstance(oi_data, list):
-        raise ValueError("Open-interest response is not a list")
+    source = "Binance USD-M BTCUSDT daily open interest (BTC)"
+    try:
+        oi_data = fetch_json("https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1d&limit=60")
+        if not isinstance(oi_data, list):
+            raise ValueError("Binance open-interest response is not a list")
+        records = [(r.get("timestamp"), r.get("sumOpenInterest")) for r in oi_data
+                   if isinstance(r, dict) and r.get("symbol") == "BTCUSDT"]
+    except urllib.error.HTTPError as exc:
+        if exc.code != 451:
+            raise
+        print("Binance OI blocked (HTTP 451); requesting Bybit history", flush=True)
+        oi_data = bybit_rows("open-interest", {"category":"linear","symbol":"BTCUSDT","intervalTime":"1d","limit":60})
+        records = [(r.get("timestamp"), r.get("openInterest")) for r in oi_data if isinstance(r,dict)]
+        source = "Bybit linear BTCUSDT daily open interest (BTC)"
     seen = []
-    for row in oi_data:
-        if not isinstance(row, dict) or row.get("symbol") != "BTCUSDT":
-            continue
-        stamp = numeric(row.get("timestamp"))
-        value = numeric(row.get("sumOpenInterest"))
+    for stamp_raw, interest_raw in records:
+        stamp, value = numeric(stamp_raw), numeric(interest_raw)
         if stamp is None or value is None or value <= 0:
             continue
         day = dt.datetime.fromtimestamp(stamp / 1000, tz=dt.timezone.utc).date().isoformat()
         if iso_date(day):
-            seen.append({"date": day, "openInterestBtc": value})
+            seen.append({"date":day,"openInterestBtc":value})
     if len(seen) < 5:
-        raise ValueError("Open-interest history has insufficient validated dates")
-    write_verified(ROOT / "oi-history.json", "Binance USD-M BTCUSDT daily open interest (BTC)", seen, "openInterestBtc", limit=900,
-                   extra={"unit": "BTC", "product": "BTCUSDT USD-M perpetual"})
+        raise ValueError("Open-interest history has insufficient verified dates")
+    write_verified(ROOT / "oi-history.json", source, seen, "openInterestBtc", limit=900,
+                   extra={"unit":"BTC","product":"BTCUSDT linear perpetual"})
 
 def main():
     for name, job in (("TFTC ETF flows", collect_etf), ("Binance funding rate", collect_funding), ("Binance open interest", collect_oi)):
