@@ -514,12 +514,12 @@ function renderPsychologyEngine(){
  const recentFear=!!latestFear&&now-latestFear.x>=-day&&now-latestFear.x<=3*day;
  const priceDate=measures.latest?Date.parse(measures.latest+'T00:00:00Z'):NaN;
  const recentPrice=Number.isFinite(priceDate)&&now-priceDate>=-day&&now-priceDate<=4*day;
- const freshFunding=!!funding&&Number.isFinite(funding.time)&&Math.abs(now-funding.time)<24*3600000;
- const freshOI=Number.isFinite(oi)&&oi>0&&fetched.oi==='Connected'&&oiObservedAt>0&&Math.abs(now-oiObservedAt)<24*3600000;
+ const freshFunding=false; // Removed from the dashboard's active analysis.
+ const freshOI=false;
  const etfSeries=liveInstitution?.etf?.length?liveInstitution.etf:(etfExternal||etfAuto?.rows||[]);
  const etfLastDate=etfSeries.length?Date.parse(String(etfSeries.at(-1)[0])+'T00:00:00Z'):NaN;
  const freshEtf=Number.isFinite(etfLastDate)&&now-etfLastDate<=7*day&&now-etfLastDate>=-day;
- const fresh=[recentFear,recentPrice,freshFunding,freshOI,freshEtf];
+ const fresh=[recentFear,recentPrice,freshEtf];
  const sources=fresh.filter(Boolean).length;
  const support=[],counter=[],labels=[];
  const add=(type,title,detail)=>{(type==='support'?support:counter).push({title,detail})};
@@ -551,14 +551,6 @@ function renderPsychologyEngine(){
   if(rsi>=70)add('counter','일일 RSI 과열 가능성','14일 RSI '+fmt(rsi,1)+'; 강한 추세에서는 과매수 구간이 지속될 수 있습니다.');
   else if(rsi<=30)add('support','일일 RSI 과매도 가능성','14일 RSI '+fmt(rsi,1)+'; 과매도 상태만으로 반등을 보장할 수 없습니다.');
  }
- if(freshFunding){
-  labels.push('펀딩비 '+(funding.value>=0?'+':'')+fmt(funding.value,4)+'%');
-  if(funding.value>=0.025)add('counter','양의 펀딩비와 롱 포지션 과밀 위험','펀딩비: +'+fmt(funding.value,4)+'%. 롱 포지션 청산 위험이 커질 수 있지만 미결제약정의 증가 추세를 추정하지는 않습니다.');
-  else if(funding.value<=-0.015)add('support','음의 펀딩비와 숏 포지션 우세','펀딩비: '+fmt(funding.value,4)+'%. 역발상 판단 전 숏 포지션 과밀 여부를 확인해야 합니다.');
-  else add('support','펀딩비가 극단적 수준은 아님','펀딩비: '+(funding.value>=0?'+':'')+fmt(funding.value,4)+'%. 이 수치 하나로 과도한 레버리지를 단정할 수 없습니다.');
- }else add('counter','최신 펀딩비 자료가 부족함','Binance의 최근 24시간 이내 펀딩비가 필요합니다.');
- if(freshOI){labels.push('미결제약정 확인');add('support','미결제약정 잔량 확인',fmt(oi,0)+' BTC(해당 거래소 기준). 단일 잔량만으로 레버리지 증가·감소를 판단할 수 없습니다.')}
- else add('counter','미결제약정 잔량 확인 불가','BTC 미결제약정 데이터를 확인할 수 없어 포지션 증감을 판단하지 않습니다.');
  if(freshEtf){
   const last=etfSeries.at(-1);
   if(last&&Number.isFinite(Number(last[1]))){
@@ -567,15 +559,15 @@ function renderPsychologyEngine(){
  }else add('counter','ETF 순유입 데이터가 과거 스냅샷임','2026년 11월의 예시나 검증되지 않은 CSV를 현재 자금 흐름의 증거로 사용하지 않습니다.');
  let headline,summary;
  if(sources<2){headline='최신 분석 근거 부족';summary='최신 데이터를 연결하면 여러 지표를 함께 해석할 수 있습니다. 오래된 자료로 시장 국면을 단정하지 않습니다.';mood='insufficient'}
- else if(recentFear&&latestFear.y<=24&&recentPrice&&measures.return30>0){headline='공포 심리와 BTC 가격 상승의 괴리';summary='대중은 비관적이지만 BTC 가격은 상승하고 있습니다. 자금 흐름과 파생상품 데이터로 확인해야 하며 매수 신호는 아닙니다.';mood='divergence'}
- else if(recentFear&&latestFear.y>=75&&((recentPrice&&measures.return30<0)||(freshFunding&&funding.value>=.025))){headline='낙관론과 포지션 위험 동반';summary='탐욕이 높은 가운데 가격 약세나 높은 롱 펀딩비가 관측됩니다. 현물 거래량과 미결제약정 변화를 확인해야 합니다.';mood='caution'}
+ else if(recentFear&&latestFear.y<=24&&recentPrice&&measures.return30>0){headline='공포 심리와 BTC 가격 상승의 괴리';summary='대중은 비관적이지만 BTC 가격은 상승하고 있습니다. 자금 흐름과 장기 가격 추세를 함께 확인해야 하며 매수 신호는 아닙니다.';mood='divergence'}
+ else if(recentFear&&latestFear.y>=75&&recentPrice&&measures.return30<0){headline='낙관론과 포지션 위험 동반';summary='탐욕이 높은 가운데 가격 약세나 가격 약세가 관측됩니다. 현물 수급과 가격 추세를 확인해야 합니다.';mood='caution'}
  else if(recentFear&&latestFear.y<=24){headline='공포가 우세한 시장';summary='위험 회피 심리가 높습니다. 구조적 하락 추세와 단기 청산 충격을 추가 자료로 구분해야 합니다.';mood='fear'}
  else if(recentFear&&latestFear.y>=75){headline='탐욕이 우세한 시장';summary='낙관적 심리가 높습니다. 가격과 포지션 수급이 같은 방향인지 확인하세요.';mood='caution'}
  else{headline='혼재된 시장 심리';summary='현재 지표만으로 단일 국면을 확정하기 어렵습니다. 지지 근거와 반대 근거를 함께 살펴보세요.';mood='mixed'}
  root.textContent=headline;$('psychSummary').textContent=summary;
- $('psychCoverage').textContent=sources+' / 5개 최신 데이터 소스';
+ $('psychCoverage').textContent=sources+' / 3개 최신 데이터 소스';
  $('psychScore').textContent=String(sources);
- $('psychProgress').style.width=(sources/5*100)+'%';
+ $('psychProgress').style.width=(sources/3*100)+'%';
  $('psychAsOf').textContent='분석 시각 '+new Date(now).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})+' · 현지 시각';
  $('psychReadiness').textContent=sources<3?'근거 제한적 · 일부 시장 데이터 연결 필요':'데이터 확보율은 예측 정확도를 나타내지 않습니다.';
  const tags=$('psychTags');tags.replaceChildren();
@@ -681,8 +673,6 @@ function renderSources(){
   ...([
    ['btcHistory','BTC 과거 가격 자동 수집'],
    ['etfFlows','ETF 자금 흐름 자동 수집'],
-   ['fundingHistory','펀딩비 이력 자동 수집'],
-   ['openInterestHistory','미결제약정 이력 자동 수집']
   ].map(([id,name])=>{
    const v=collectionStatus?.sources?.[id];
    const observed=v?.lastSavedObservation||'저장된 관측값 없음';
@@ -882,13 +872,51 @@ function renderMarketResearch(){
   cell.append(label,strong);stats.append(cell);
  }
  const list=document.createElement('div');list.className='ct-analog-list';
- for(const item of cases.slice(0,6)){
-  const line=document.createElement('div');line.className='ct-analog-row';
-  line.textContent=item.date+' · 공포·탐욕 '+item.score+'/100 · 이후 30일 '+score(item.r30)+' · 90일 '+score(item.r90);
-  list.append(line);
+ for(const item of cases.slice(0,4)){
+  const line=document.createElement('div');line.className='ct-analog-row ct-analog-card';
+  const identity=document.createElement('div');
+  const title=document.createElement('div');title.className='ct-analog-primary';title.textContent=item.date;
+  const detail=document.createElement('div');detail.className='ct-analog-secondary';detail.textContent='공포·탐욕 '+item.score+'/100';
+  const returns=document.createElement('div');returns.className='ct-analog-returns';
+  for(const [label,value] of [['30D',item.r30],['90D',item.r90]]){
+   const token=document.createElement('span');token.textContent=label+' '+score(value);
+   token.style.color=value>=0?'#a5e3c2':'#ffb0af';returns.append(token);
+  }
+  identity.append(title,detail);
+  const chart=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  chart.setAttribute('viewBox','0 0 240 68');chart.setAttribute('class','ct-analog-spark');
+  chart.setAttribute('role','img');chart.setAttribute('aria-label','실제 BTC 가격 관측값, 관측일 전후 최대 120일');
+  const t0=Date.parse(item.date+'T00:00:00Z');
+  const observed=history.filter(r=>{
+   const t=Date.parse(r.date+'T00:00:00Z');
+   return Number.isFinite(t)&&t>=t0-30*86400000&&t<=t0+90*86400000&&Number.isFinite(r.price)&&r.price>0;
+  });
+  if(observed.length>=3){
+   const values=observed.map(r=>Number(r.price)),low=Math.min(...values),high=Math.max(...values);
+   const x=r=>10+(Date.parse(r.date+'T00:00:00Z')-(t0-30*86400000))/(120*86400000)*220;
+   const y=v=>58-(v-low)/Math.max(high-low,1)*48;
+   const vertical=document.createElementNS('http://www.w3.org/2000/svg','line');
+   vertical.setAttribute('x1','65');vertical.setAttribute('x2','65');vertical.setAttribute('y1','6');vertical.setAttribute('y2','62');
+   vertical.setAttribute('stroke','#86624a');vertical.setAttribute('stroke-dasharray','3 4');chart.append(vertical);
+   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+   let d='';
+   for(let i=0;i<observed.length;i++){
+    const r=observed[i],gap=i?Date.parse(r.date)-Date.parse(observed[i-1].date):Infinity;
+    d+=(i&&gap<=10*86400000?' L':' M')+x(r).toFixed(1)+' '+y(r.price).toFixed(1);
+   }
+   path.setAttribute('d',d);
+   path.setAttribute('fill','none');path.setAttribute('stroke',item.r90>=0?'#a5e3c2':'#f2aa63');
+   path.setAttribute('stroke-width','2.2');path.setAttribute('stroke-linejoin','round');path.setAttribute('stroke-linecap','round');
+   chart.append(path);
+  }else{
+   const message=document.createElementNS('http://www.w3.org/2000/svg','text');
+   message.setAttribute('x','120');message.setAttribute('y','36');message.setAttribute('text-anchor','middle');
+   message.setAttribute('fill','#c7b6a8');message.setAttribute('font-size','11');message.textContent='Limited price samples';chart.append(message);
+  }
+  line.append(identity,returns,chart);list.append(line);
  }
  root.append(stats,list);
- $('historicalAnalogNote').textContent='조건: 최근 심리 점수 ±5점, 최소 30일 간격, 이후 90일 BTC 종가가 확인된 사례 '+cases.length+'개. 겹치는 거시·시장 환경은 통제되지 않았으며 예측 신호가 아닙니다.';
+ $('historicalAnalogNote').textContent='조건: 최근 심리 점수 ±5점, 최소 30일 간격, 이후 90일 BTC 종가가 확인된 사례 '+cases.length+'개. 차트는 실제 BTC 관측값만 연결하며 10일 이상 공백은 끊습니다. 과거 사례는 예측 신호가 아닙니다.';
 }
 let etfExternal=null;
 function readEtfLocal(){try{const v=JSON.parse(localStorage.getItem('cycle-terminal-etf-csv-'+(window.__CT_ACCOUNT_ID__||'guest')));if(Array.isArray(v)&&v.length)etfExternal=v}catch(e){}}
