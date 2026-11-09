@@ -53,7 +53,7 @@ function mountOverview(force=false){
   {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'US TECHNOLOGY',description:'FOREX.com cash CFD · may differ from official NDX',original:'NASDAQ:NDX'},
   {name:'Gold / XAUUSD',symbol:'OANDA:XAUUSD',category:'SAFE-HAVEN ASSET',description:'OANDA spot-gold quote'},
   {name:'Brent Crude · Cash CFD',symbol:'OANDA:BCOUSD',category:'ENERGY',description:'OANDA Brent crude CFD · not BR1! continuous futures',original:'ICEEUR:BRN1!'},
-  {name:'KOSPI Composite Index',symbol:'KRX:KOSPI',category:'KOREAN EQUITIES',description:'Actual KOSPI index · KS11 historical daily closes · not intraday',native:'kospi',original:'KRX:KOSPI'},
+  {name:'Silver / XAGUSD',symbol:'OANDA:XAGUSD',category:'PRECIOUS METALS',description:'OANDA silver spot price · USD per troy ounce'},
   {name:'USD / KRW',symbol:'FX_IDC:USDKRW',category:'FOREIGN EXCHANGE',description:'FX_IDC indicative USD/KRW quote'}
  ];
  grid.replaceChildren();
