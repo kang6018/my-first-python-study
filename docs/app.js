@@ -516,7 +516,8 @@ function renderPsychologyEngine(){
  const recentPrice=Number.isFinite(priceDate)&&now-priceDate>=-day&&now-priceDate<=4*day;
  const freshFunding=!!funding&&Number.isFinite(funding.time)&&Math.abs(now-funding.time)<24*3600000;
  const freshOI=Number.isFinite(oi)&&oi>0&&fetched.oi==='Connected'&&oiObservedAt>0&&Math.abs(now-oiObservedAt)<24*3600000;
- const etfLastDate=liveInstitution?.etf?.length?Date.parse(String(liveInstitution.etf.at(-1)[0])+'T00:00:00Z'):NaN;
+ const etfSeries=liveInstitution?.etf?.length?liveInstitution.etf:(etfExternal||etfAuto?.rows||[]);
+ const etfLastDate=etfSeries.length?Date.parse(String(etfSeries.at(-1)[0])+'T00:00:00Z'):NaN;
  const freshEtf=Number.isFinite(etfLastDate)&&now-etfLastDate<=7*day&&now-etfLastDate>=-day;
  const fresh=[recentFear,recentPrice,freshFunding,freshOI,freshEtf];
  const sources=fresh.filter(Boolean).length;
@@ -559,7 +560,7 @@ function renderPsychologyEngine(){
  if(freshOI){labels.push('미결제약정 확인');add('support','미결제약정 잔량 확인',fmt(oi,0)+' BTC(해당 거래소 기준). 단일 잔량만으로 레버리지 증가·감소를 판단할 수 없습니다.')}
  else add('counter','미결제약정 잔량 확인 불가','BTC 미결제약정 데이터를 확인할 수 없어 포지션 증감을 판단하지 않습니다.');
  if(freshEtf){
-  const last=liveInstitution.etf.at(-1);
+  const last=etfSeries.at(-1);
   if(last&&Number.isFinite(Number(last[1]))){
    const val=Number(last[1]);(val>=0?add('support','기관 ETF 자금 순유입','연결된 데이터의 최근 관측값: +'+fmt(val,1)+'백만 달러 · 기준일 '+liveInstitution.asOf+'.'):add('counter','기관 ETF 자금 순유출','연결된 데이터의 최근 관측값: '+fmt(val,1)+'백만 달러 · 기준일 '+liveInstitution.asOf+'.'));
   }
@@ -619,7 +620,7 @@ const m=computedBtcMeasures();
  const metric=(label,value,note,available=true)=>({label,value,note,available});
  const etfFlows=liveInstitution?.etf?.length?liveInstitution.etf:(etfExternal||etfAuto?.rows||ETF_SEED);
  const etfWindow=etfFlows.slice(-5),fiveDayFlow=etfWindow.length===5?etfWindow.reduce((sum,row)=>sum+Number(row[1]),0):null;
- const etfAsOf=liveInstitution?.etf?.length?liveInstitution.asOf:etfExternal?'CSV 업로드':'2026-11-06 과거 스냅샷';
+ const etfAsOf=liveInstitution?.etf?.length?liveInstitution.etf.at(-1)[0]:etfExternal?etfExternal.at(-1)[0]:etfAuto?.rows?.length?etfAuto.rows.at(-1)[0]:'2026-11-06 과거 스냅샷';
  const indicators=[
   metric('공포·탐욕 지수',last?last.y+'/100 · '+fearLabel(last.y):'데이터 확인 중',last?new Date(last.x).toLocaleDateString('en-US')+' 관측일':'Alternative.me 데이터 연동',!!last),
   metric('BTC 펀딩비',funding?fmt(funding.value,4)+'%':'연결 확인 중',funding?'Binance 선물 · '+new Date(funding.time).toLocaleTimeString('en-US'):'거래소 API가 지역·브라우저에 따라 제한될 수 있음',!!funding),
