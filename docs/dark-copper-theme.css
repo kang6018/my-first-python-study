@@ -1456,3 +1456,48 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  #sentimentPage #divergencePlot.ct-dual-axis svg{width:700px!important;height:100%!important}
  #sentimentPage #divergencePlot .ct-dual-tooltip{font-size:10px!important;bottom:20px!important}
 }
+
+/* V9.4 · Editorial real-photo hero — licensed Unsplash photo by Valentin (@omikron)
+   Source: https://unsplash.com/photos/bitcoin-coin-isolated-on-a-black-background-cdV4BY5hTdU */
+.ct-story-hero .ct-scene.ct-scene-photo{
+ right:-3%!important;top:3%!important;width:min(61%,850px)!important;
+ height:94%!important;display:flex!important;align-items:center!important;
+ justify-content:center!important;perspective:none!important;
+ filter:none!important;overflow:visible!important
+}
+.ct-story-hero .ct-scene-photo .ct-scene-image{
+ width:100%!important;height:100%!important;
+ transform:none!important;animation:none!important;
+ display:grid!important;place-items:center!important;will-change:auto!important
+}
+.ct-story-hero .ct-bitcoin-photo{
+ position:relative;width:min(94%,700px)!important;height:92%!important;
+ margin:0!important;overflow:hidden!important;
+ border-radius:44% 44% 43% 43%!important;
+ mask-image:radial-gradient(ellipse 57% 61% at 50% 50%,black 35%,rgba(0,0,0,.92) 59%,transparent 95%);
+ -webkit-mask-image:radial-gradient(ellipse 57% 61% at 50% 50%,black 35%,rgba(0,0,0,.92) 59%,transparent 95%);
+ background:#0b0908!important;
+ filter:drop-shadow(0 30px 70px rgba(188,106,31,.2))!important;
+}
+.ct-story-hero .ct-bitcoin-photo img{
+ display:block!important;width:100%!important;height:100%!important;
+ object-fit:cover!important;object-position:50% 51%!important;
+ transform:scale(1.9)!important;
+ filter:contrast(1.15) saturate(.9) brightness(.85) sepia(.06)!important;
+}
+.ct-story-hero .ct-scene-photo::before{
+ content:"";position:absolute;width:66%;aspect-ratio:1;left:18%;top:17%;
+ border-radius:50%;background:radial-gradient(circle,rgba(236,134,42,.18),transparent 70%);
+ filter:blur(50px);pointer-events:none;
+}
+.ct-story-hero .ct-hero-content{z-index:5!important;position:relative!important}
+@media(max-width:900px){
+ .ct-story-hero .ct-scene.ct-scene-photo{
+  right:-12%!important;width:79%!important;opacity:.56!important
+ }
+ .ct-story-hero .ct-bitcoin-photo{height:80%!important}
+}
+@media(max-width:590px){
+ .ct-story-hero .ct-scene.ct-scene-photo{width:94%!important;right:-32%!important;opacity:.34!important}
+ .ct-story-hero .ct-bitcoin-photo img{transform:scale(2.1)!important}
+}
