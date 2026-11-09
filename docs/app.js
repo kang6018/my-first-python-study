@@ -788,7 +788,8 @@ function renderV4Divergence(){
  const priceMap=new Map(history.map(r=>[r.date,r.price]));
  const paired=fear.map(x=>({date:v4ISO(x.x),fear:Number(x.y),price:Number(priceMap.get(v4ISO(x.x)))}))
   .filter(x=>Number.isFinite(x.price)&&x.price>0&&Number.isFinite(x.fear)&&x.fear>=0&&x.fear<=100);
- const pair=days?paired.slice(-days):paired;
+ const anchor=paired.length?Date.parse(paired.at(-1).date+'T00:00:00Z'):0;
+ const pair=days?paired.filter(p=>Date.parse(p.date+'T00:00:00Z')>=anchor-(days-1)*86400000):paired;
  if(pair.length<10){
   $('divergenceCards').innerHTML=[
    v4Metric('일치하는 관측일',pair.length+'일','BTC 가격과 심리 지수가 모두 있는 날짜'),
@@ -813,7 +814,9 @@ function renderV4Divergence(){
  const prices=pair.map(p=>p.price),rawMin=Math.min(...prices),rawMax=Math.max(...prices);
  const pad=Math.max((rawMax-rawMin)*.12,rawMax*.018,1);
  const priceMin=Math.max(0,rawMin-pad),priceMax=rawMax+pad;
- const X=i=>L+i/(pair.length-1)*plotW;
+ const firstTime=Date.parse(first.date+'T00:00:00Z'),lastTime=Date.parse(last.date+'T00:00:00Z');
+ const positions=pair.map(p=>L+(Date.parse(p.date+'T00:00:00Z')-firstTime)/Math.max(1,lastTime-firstTime)*plotW);
+ const X=i=>positions[i];
  const YFear=v=>T+(100-v)/100*plotH;
  const YPrice=v=>T+(priceMax-v)/(priceMax-priceMin)*plotH;
  const svg=document.createElementNS(ns,'svg');
@@ -836,11 +839,14 @@ function renderV4Divergence(){
  append('text',{x:L,y:22,fill:'#d8b36c','font-size':14,'font-weight':'700'},'공포·탐욕 지수 (0–100)');
  append('text',{x:W-R,y:22,'text-anchor':'end',fill:'#91b7a0','font-size':14,'font-weight':'700'},'BTC 가격 (USD)');
  for(let k=0;k<=5;k++){
-  const index=Math.round(k*(pair.length-1)/5);
-  append('text',{x:X(index),y:H-16,'text-anchor':'middle',fill:'#bda28d','font-size':13},pair[index].date.slice(5));
+  const tick=firstTime+(lastTime-firstTime)*k/5;
+  append('text',{x:L+plotW*k/5,y:H-16,'text-anchor':'middle',fill:'#bda28d','font-size':13},new Date(tick).toISOString().slice(5,10));
  }
  const stroke=(yMap,color)=>{
-  const d=pair.map((p,i)=>(i?'L':'M')+X(i).toFixed(2)+' '+yMap(p).toFixed(2)).join(' ');
+  const d=pair.map((p,i)=>{
+   const contiguous=i>0&&(Date.parse(p.date+'T00:00:00Z')-Date.parse(pair[i-1].date+'T00:00:00Z'))<=3*86400000;
+   return (contiguous?'L':'M')+X(i).toFixed(2)+' '+yMap(p).toFixed(2)
+  }).join(' ');
   append('path',{d,fill:'none',stroke:color,'stroke-width':2.9,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'})
  };
  stroke(p=>YPrice(p.price),'#91b7a0');
@@ -858,7 +864,9 @@ function renderV4Divergence(){
   const bounds=svg.getBoundingClientRect();
   if(!bounds.width)return;
   const px=(ev.clientX-bounds.left)/bounds.width*W;
-  const index=Math.min(pair.length-1,Math.max(0,Math.round((px-L)/plotW*(pair.length-1))));
+  let left=0,right=pair.length-1;
+  while(right-left>1){const mid=(left+right)>>1;if(positions[mid]<px)left=mid;else right=mid}
+  const index=Math.abs(positions[left]-px)<=Math.abs(positions[right]-px)?left:right;
   const point=pair[index],cx=X(index);
   guide.setAttribute('x1',cx);guide.setAttribute('x2',cx);guide.setAttribute('visibility','visible');
   btcDot.setAttribute('cx',cx);btcDot.setAttribute('cy',YPrice(point.price));btcDot.setAttribute('visibility','visible');
@@ -874,7 +882,7 @@ function renderV4Divergence(){
   guide.setAttribute('visibility','hidden');btcDot.setAttribute('visibility','hidden');
   fearDot.setAttribute('visibility','hidden');tooltip.hidden=true;
  });
- $('divergenceNote').textContent='공통 관측일 '+pair.length+'개 · '+first.date+' ~ '+last.date+' · 왼쪽 Y축: 공포·탐욕 0~100 · 오른쪽 Y축: BTC 실제 종가(USD). 각 축의 단위가 다르므로 두 선의 높이를 직접 비교하지 마세요.';
+ $('divergenceNote').textContent='관측일 기준 '+(days?days+'일':'전체 기간')+'에서 공통 자료 '+pair.length+'개 · '+first.date+' ~ '+last.date+' · 왼쪽: 공포·탐욕 0~100 · 오른쪽: BTC 실제 종가(USD). 3일 초과 자료 공백은 선을 끊어 표시합니다.';
 }
 function v4JournalResult(r){const start=String(r.date||'').slice(0,10),days=Number(r.horizon)||30;if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return {status:'Date invalid'};const target=v4ISO(v4DateUTC(start)+days*DAYS);const recentDay=v4ISO(Date.now());const manual=Number(r.price);const inferred=v4PriceAt(start,3);const base=manual>0?{price:manual,date:start,manual:true}:inferred;if(!base)return {status:'Reference price unavailable',target};if(recentDay<target)return {status:'Awaiting verification',target,base};const end=v4PriceAt(target,3);if(!end||end.date>recentDay)return {status:'End-price unavailable',target,base};return {status:'Verification available',target,base,end,change:(end.price/base.price-1)*100}}
 function renderV4Journal(){const statusKo={'Date invalid':'날짜 오류','Reference price unavailable':'기준 가격 없음','Awaiting verification':'검증 대기','End-price unavailable':'결과 가격 없음','Verification available':'검증 완료'};if(!$('journalReviewRows'))return;const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));let ready=0,pending=0,positive=0,changes=[],scored=0,hits=0;const rows=sorted.map(r=>{const ev=v4JournalResult(r);if(ev.status==='Verification available'&&['up','down','flat'].includes(r.direction)){scored++;const c=ev.change;if((r.direction==='up'&&c>0)||(r.direction==='down'&&c<0)||(r.direction==='flat'&&Math.abs(c)<=5))hits++}if(ev.status==='Verification available'){ready++;if(ev.change>0)positive++;changes.push(ev.change)}else pending++;const v=ev.change;return `<tr><td><b>${escapeHTML(r.date||'')}</b><div class="v4-muted">${escapeHTML(r.title||'제목 없음')}</div></td><td>${escapeHTML(String(r.horizon||30))}일</td><td>${ev.base?money(ev.base.price):'—'}</td><td>${ev.end?`${ev.end.date} / ${money(ev.end.price)}`:'—'}</td><td class="${Number.isFinite(v)?v>=0?'positive':'negative':''}">${Number.isFinite(v)?(v>=0?'+':'')+fmt(v,2)+'%':'—'}</td><td>${escapeHTML(statusKo[ev.status]||ev.status)}</td></tr>`});
