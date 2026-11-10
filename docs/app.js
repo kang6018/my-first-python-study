@@ -295,7 +295,23 @@ function renderCharts(){const grid=$('chartGrid');grid.replaceChildren();$('pres
 if(i===0&&entry.symbol==='BINANCE:BTCUSDT')card.classList.add('ct-v12-primary-chart');
 head.append(symbol,interval,apply,before,after,remove,memo);card.append(head,body);grid.append(card);tv(body,entry)});function swap(a,b){[state.charts[a],state.charts[b]]=[state.charts[b],state.charts[a]];state.preset='custom';renderCharts();persist()}}
 function btn(text,action,cls='secondary'){const b=document.createElement('button');b.type='button';b.className='btn '+cls;b.textContent=text;b.onclick=action;return b}
-function initCharts(){ $('preset').onchange=e=>{const name=e.target.value;state.preset=name;if(presets[name])state.charts=presets[name].map(([symbol,interval])=>({symbol,interval}));renderCharts();persist()};$('layout').onchange=e=>{state.cols=Number(e.target.value);$('chartGrid').style.setProperty('--cols',state.cols);persist()};$('chartHeight').onchange=e=>{state.height=Number(e.target.value);$('chartGrid').style.setProperty('--chart-height',state.height+'px');persist()};$('applyAllInterval').onclick=()=>{const interval=$('allInterval').value;state.charts.forEach(c=>c.interval=interval);state.preset='custom';renderCharts();persist()};$('addChart').onclick=()=>{if(state.charts.length>=16)return toast('You can have up to 16 charts.');state.charts.push({symbol:'BINANCE:BTCUSDT',interval:'D'});state.preset='custom';renderCharts();persist()};$('resetCharts').onclick=()=>{if(confirm('Reset all charts to the default layout?')){Object.assign(state,{charts:defaults().charts,cols:2,height:360,preset:'crypto'});renderCharts();persist()}};$('saveCharts').onclick=()=>persist(true)}
+function initCharts(){
+ const toolbar=$('resetCharts')?.parentElement;
+ if(toolbar&&!$('restoreCryptoSeven')){
+  const restore=document.createElement('button');restore.id='restoreCryptoSeven';
+  restore.type='button';restore.className='btn primary ct-restore-crypto';
+  restore.textContent='₿ BTC 크게 + HYPE 7차트';
+  restore.title='BTC 차트를 전체 너비로 표시하고 HYPE를 포함한 7개 기본 차트 구성으로 복구합니다.';
+  restore.addEventListener('click',()=>{
+   // Only change chart layout, never strategy notes, timeline, journal or holdings.
+   state.charts=presets.crypto.map(([symbol,interval])=>({symbol,interval}));
+   state.preset='crypto';state.cols=2;state.height=360;
+   renderCharts();persist();
+   toast('BTC 대형 차트와 HYPE 포함 7개 차트를 복구했습니다.');
+  });
+  toolbar.insertBefore(restore,$('resetCharts'));
+ }
+ $('preset').onchange=e=>{const name=e.target.value;state.preset=name;if(presets[name])state.charts=presets[name].map(([symbol,interval])=>({symbol,interval}));renderCharts();persist()};$('layout').onchange=e=>{state.cols=Number(e.target.value);$('chartGrid').style.setProperty('--cols',state.cols);persist()};$('chartHeight').onchange=e=>{state.height=Number(e.target.value);$('chartGrid').style.setProperty('--chart-height',state.height+'px');persist()};$('applyAllInterval').onclick=()=>{const interval=$('allInterval').value;state.charts.forEach(c=>c.interval=interval);state.preset='custom';renderCharts();persist()};$('addChart').onclick=()=>{if(state.charts.length>=16)return toast('You can have up to 16 charts.');state.charts.push({symbol:'BINANCE:BTCUSDT',interval:'D'});state.preset='custom';renderCharts();persist()};$('resetCharts').onclick=()=>{if(confirm('Reset all charts to the default layout?')){Object.assign(state,{charts:defaults().charts,cols:2,height:360,preset:'crypto'});renderCharts();persist()}};$('saveCharts').onclick=()=>persist(true)}
 function normalizeHistory(rows){const m=new Map();for(const r of Array.isArray(rows)?rows:[]){if(!r)continue;let date=String(r.date||'');const value=Number(r.price??r.close);if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(value)&&value>0)m.set(date,value)}return [...m].map(([date,price])=>({date,price})).sort((a,b)=>a.date.localeCompare(b.date))}
 function setHistory(rows,source){const normalized=normalizeHistory(rows);if(normalized.length<5)throw Error('At least five price observations are required.');history=normalized;historySource=source;state.history=normalized;state.historySource=source;persist();renderCycle();renderOverview();renderPsychologyEngine()}
 async function jsonGet(url,timeout=13000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout);try{const res=await fetch(url,{signal:controller.signal,cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);return await res.json()}finally{clearTimeout(timer)}}
