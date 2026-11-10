@@ -434,7 +434,7 @@ function renderHalvingPriceHistory(){
   'Loading BTC/USD history. No values are estimated when observations are unavailable.';
 }
 function renderCycle(){const days=Math.max(0,dayNum(new Date().toISOString().slice(0,10))-dayNum('2024-04-20'));$('halvingDays').textContent=fmt(days)+' days';animateElapsedDays();beginHalvingCountdown();$('cycleYear').textContent='Since the halving: '+(days/365.25).toFixed(2)+' years';$('historyCount').textContent=history.length?fmt(history.length)+' records':'None';$('historySource').textContent=historySource||'API request or CSV upload required';const range=Number($('cycleRange').value),rows=[],chart=[];const current=cycleSeries('2024','2024-04-20',Math.max(range,days));if(current){const observed=interpolateNearest(history,dayNum(new Date().toISOString().slice(0,10)),7)||history[history.length-1];const y=observed.price/current.start.price*100-100;$('cycleReturn').textContent=(y>=0?'+':'')+fmt(y,1)+'%';$('cycleReturn').className='stat-value '+(y<0?'negative':'positive')}else{$('cycleReturn').textContent='—';$('cycleReturn').className='stat-value'}
-for(const [year,date,color] of HALVINGS){const s=cycleSeries(year,date,range);if(s&&s.series.length>1)chart.push({label:year,color,points:s.series});if(!s){rows.push(`<tr><td>${year}</td><td>—</td><td>—</td><td>—</td><td>Data unavailable</td></tr>`);continue}const elapsed=Math.min(days,range);const comparable=s.series.filter(r=>r.x<=elapsed);const at=comparable[comparable.length-1];const max=s.series.reduce((acc,item)=>Math.max(acc,item.y),0);rows.push(`<tr><td>${year}</td><td>${money(s.start.price)}</td><td>${at?(at.y-100>=0?'+':'')+fmt(at.y-100,1)+'%':'—'}</td><td>+${fmt(max-100,1)}%</td><td>${s.series.length} observations</td></tr>`)}$('cycleTable').innerHTML=rows.join('');renderEmissionChart();renderSeasonality();renderHalvingPriceHistory();renderCyclePerformance();renderV11Cycle();}
+for(const [year,date,color] of HALVINGS){const s=cycleSeries(year,date,range);if(s&&s.series.length>1)chart.push({label:year,color,points:s.series});if(!s){rows.push(`<tr><td>${year}</td><td>—</td><td>—</td><td>—</td><td>Data unavailable</td></tr>`);continue}const elapsed=Math.min(days,range);const comparable=s.series.filter(r=>r.x<=elapsed);const at=comparable[comparable.length-1];const max=s.series.reduce((acc,item)=>Math.max(acc,item.y),0);rows.push(`<tr><td>${year}</td><td>${money(s.start.price)}</td><td>${at?(at.y-100>=0?'+':'')+fmt(at.y-100,1)+'%':'—'}</td><td>+${fmt(max-100,1)}%</td><td>${s.series.length} observations</td></tr>`)}$('cycleTable').innerHTML=rows.join('');renderEmissionChart();renderSeasonality();renderHalvingPriceHistory();renderCyclePerformance();renderV11Cycle();renderV12CycleValidation();}
 function parseCsv(content){const lines=content.trim().split(/\r?\n/);if(lines.length<2)throw Error('Not enough CSV rows');let cols=lines[0].replace(/^\uFEFF/,'').split(',').map(s=>s.trim().toLowerCase().replaceAll('"',''));const ix=cols.findIndex(x=>['date','timestamp','time'].includes(x)),iy=cols.findIndex(x=>['close','price','value'].includes(x));if(ix===-1||iy===-1)throw Error('Required columns: date,close or timestamp,price');const output=[];for(const line of lines.slice(1)){const c=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));let date=c[ix];if(/^\d{10,13}$/.test(date))date=new Date(Number(date)*(date.length===10?1000:1)).toISOString().slice(0,10);else if(/^\d{4}\/\d{2}\/\d{2}$/.test(date))date=date.replaceAll('/','-');output.push({date,price:Number(c[iy])})}return normalizeHistory(output)}
 function initCycle(){$('loadHistory').onclick=()=>fetchHistory(true);$('cycleRange').onchange=renderCycle;$('historyFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{setHistory(parseCsv(await file.text()),'CSV: '+file.name);toast('Imported '+history.length+' CSV observations.')}catch(err){toast('CSV read failed: '+err.message)}e.target.value=''};$('downloadCsvTemplate').onclick=()=>download('btc-price-template.csv','date,close\n','text/csv');$('exportHistory').onclick=()=>{if(!history.length)return toast('There is no historical data to export.');download('btc-history.csv','date,close\n'+history.map(r=>r.date+','+r.price).join('\n'),'text/csv')}}
 function drawPlot(node,sets,opts={}){node.replaceChildren();if(!sets.some(s=>s.points?.length)){node.innerHTML='<div class="plot-placeholder">No observations available. Load an external feed or import CSV.</div>';return}const W=900,H=415,pad={l:58,r:22,t:24,b:45};const all=sets.flatMap(s=>s.points),xs=all.map(p=>p.x),ys=all.map(p=>p.y);let xMin=opts.xMin??Math.min(...xs),xMax=opts.xMax??Math.max(...xs),yMin=Math.min(...ys),yMax=Math.max(...ys);if(opts.normalizeY){yMin=Math.max(0,yMin*.87);yMax*=1.07}else{const d=Math.max(1,yMax-yMin);yMin-=d*.11;yMax+=d*.11}if(yMax<=yMin)yMax=yMin+1;if(xMax<=xMin)xMax=xMin+1;const px=x=>pad.l+(x-xMin)/(xMax-xMin)*(W-pad.l-pad.r),py=y=>pad.t+(yMax-y)/(yMax-yMin)*(H-pad.t-pad.b);const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Time series graph');function el(tag,attrs={},text=''){const x=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v));if(text)x.textContent=text;svg.append(x);return x}for(let i=0;i<5;i++){const y=yMin+(yMax-yMin)*(i/4),yp=py(y);el('line',{x1:pad.l,y1:yp,x2:W-pad.r,y2:yp,stroke:'#73503b','stroke-opacity':'.46','stroke-width':'1'});el('text',{x:pad.l-9,y:yp+4,fill:'#d4b69a','fill-opacity':'.95','text-anchor':'end','font-size':'11'},fmt(y,opts.normalizeY?0:1))}for(let i=0;i<6;i++){const x=xMin+(xMax-xMin)*(i/5),xp=px(x);el('text',{x:xp,y:H-17,fill:'#d4b69a','fill-opacity':'.9','text-anchor':'middle','font-size':'11'},opts.xFormat?opts.xFormat(x):fmt(x,0))}if(opts.horizontalLine!==undefined&&opts.horizontalLine>=yMin&&opts.horizontalLine<=yMax)el('line',{x1:pad.l,y1:py(opts.horizontalLine),x2:W-pad.r,y2:py(opts.horizontalLine),stroke:'#92a1b9','stroke-dasharray':'5 5','stroke-opacity':'.6'});sets.forEach(s=>{const values=s.points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=xMin&&p.x<=xMax);if(values.length<2)return;const d=values.map((p,i)=>(i?'L':'M')+px(p.x).toFixed(2)+' '+py(p.y).toFixed(2)).join(' ');el('path',{d,fill:'none',stroke:s.color||'#5c9eff','stroke-width':'2.6','stroke-linejoin':'round','stroke-linecap':'round'})});svg.style.color='#d4b69a';svg.style.background='transparent';node.append(svg)}
@@ -1375,6 +1375,56 @@ function renderV11Cycle(){
  const user=state.strategy?.phase||'Not configured';
  $('v11CycleContext').textContent='YOUR CYCLE THESIS: '+user+'  |  Objective timer: '+f.year+'. Historical timing does not confirm the market phase. '+'Provider values are observations, not a trading signal.';
 }
+
+/* V12 cycle validation distinguishes the user's phase hypothesis from observed data. */
+function v12CycleEvidence(){
+ const f=v11CycleFacts(),q=f.quality,rows=history;
+ const target=rows.at(-1),last=target?.price;
+ let ma=null,maDate=null;
+ if(rows.length&&q.daily){
+  const weekly=[];
+  const weeklyKeys=new Set();
+  for(let i=rows.length-1;i>=0;i--){
+   const r=rows[i],stamp=dayNum(r.date),week=Math.floor(stamp/7);
+   if(!weeklyKeys.has(week)){weeklyKeys.add(week);weekly.push(r)}
+   if(weekly.length===200)break;
+  }
+  if(weekly.length===200){ma=weekly.reduce((a,b)=>a+b.price,0)/200;maDate=target.date;}
+ }
+ const distance=Number.isFinite(ma)&&Number.isFinite(last)?(last/ma-1)*100:null;
+ let caveat=[];
+ const user=state.strategy?.phase||'Not configured';
+ if(user==='Not configured'||user==='Not set')caveat.push('No cycle thesis recorded.');
+ if(!q.daily)caveat.push('Price observations are not daily.');
+ if(q.age>4)caveat.push('Price data are stale: '+q.age+' days since last observation.');
+ if(f.drawdown!==null&&f.drawdown<=-30)caveat.push('Observed peak drawdown exceeds 30%; review the downside scenario.');
+ if(distance!==null&&distance<0)caveat.push('Observed BTC price is below the 200-week weekly sample average.');
+ if(f.days>550&&user.toLowerCase().includes('early'))caveat.push('The early-expansion thesis is late relative to halving time; verify the classification.');
+ return {f,ma,maDate,distance,caveat,user};
+}
+function v12InitCycleValidation(){
+ const page=$('cyclePage'),panel=page?.querySelector('.ct-v11-cycle');
+ if(!panel)return;
+ const section=document.createElement('div');section.className='ct-v12-cycle-validation';
+ const head=document.createElement('h3');head.textContent='Thesis vs. Observations';
+ const metrics=document.createElement('div');metrics.className='ct-v11-metrics';
+ for(const [name,id] of [['200-WEEK REFERENCE','v12CycleMA'],['DISTANCE TO 200W','v12CycleMADistance'],['DAYS SINCE PEAK','v12CycleSincePeak'],['OBSERVATION DATE','v12CycleAsOf']])metrics.append(v11Metric(name,id));
+ const verdict=document.createElement('p');verdict.id='v12CycleCaveats';verdict.className='ct-v12-evidence';
+ const action=document.createElement('button');action.className='btn secondary';action.type='button';action.textContent='Review my cycle thesis ↗';
+ action.addEventListener('click',()=>setPage('strategy'));
+ section.append(head,metrics,verdict,action);panel.append(section);
+}
+function renderV12CycleValidation(){
+ if(!$('v12CycleMA'))return;
+ const e=v12CycleEvidence();
+ $('v12CycleMA').textContent=e.ma?money(e.ma):'Insufficient data';
+ $('v12CycleMADistance').textContent=e.distance===null?'—':(e.distance>=0?'+':'')+fmt(e.distance,1)+'%';
+ $('v12CycleSincePeak').textContent=e.f.fromPeak===null?'—':e.f.fromPeak+' days';
+ $('v12CycleAsOf').textContent=e.f.latest?.date||'—';
+ $('v12CycleCaveats').textContent=e.caveat.length?'Evidence to review: '+e.caveat.join('  •  '):
+  'No preset contradiction flagged by the selected observation checks. This does not validate the cycle hypothesis.';
+}
+
 function v11InitOverview(){
  const main=$('overviewPage'),band=main?.querySelector('.ct-live-band');if(!main||!band)return;
  const section=v11CreatePanel('Where Are We in the Cycle?','Time, trend and evidence before conviction.','ct-v11-overview');
@@ -1583,7 +1633,7 @@ function renderV11Calibration(){
  root.after(metric);
 }
 
-readStorage();initFinalCleanup();v11InitAssessment();v11InitHoldings();v11InitCycle();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+readStorage();initFinalCleanup();v11InitAssessment();v11InitHoldings();v11InitCycle();v12InitCycleValidation();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
