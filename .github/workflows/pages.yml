@@ -33,7 +33,7 @@ jobs:
         run: |
           node --check docs/app.js
           node --check docs/motion.js
-          python3 -m py_compile scripts/collect_btc_history.py scripts/collect_market_data.py scripts/run_data_pipeline.py
+          python3 -m py_compile scripts/collect_btc_history.py scripts/collect_market_data.py scripts/collect_fred.py scripts/run_data_pipeline.py
           python3 - <<'PY'
           from pathlib import Path
           page=Path('docs/index.html').read_text(encoding='utf-8')
@@ -50,7 +50,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for file in docs/data/btc-history.json docs/data/etf-flows.json docs/data/funding-history.json docs/data/oi-history.json docs/data/collection-status.json; do
+          for file in docs/data/btc-history.json docs/data/etf-flows.json docs/data/funding-history.json docs/data/oi-history.json docs/data/collection-status.json docs/data/fred-dgs10.json docs/data/fred-dfii10.json docs/data/fred-m2sl.json docs/data/fred-walcl.json; do
             if test -f "$file"; then git add "$file"; fi
           done
           if ! git diff --cached --quiet; then
