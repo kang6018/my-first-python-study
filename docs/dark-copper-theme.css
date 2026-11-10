@@ -1566,3 +1566,31 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 #communityPage .community-x.ct-leader-grid{padding:2px 0 10px!important;border:0!important;background:transparent!important;box-shadow:none!important}
 @media(max-width:1050px){#communityPage .ct-leader-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#sentimentPage .ct-analog-row.ct-analog-card{grid-template-columns:1fr 1fr}}
 @media(max-width:660px){#communityPage .ct-leader-grid{grid-template-columns:1fr}#sentimentPage .ct-analog-row.ct-analog-card{grid-template-columns:1fr}#sentimentPage .ct-eight-checks{grid-template-columns:1fr}.ct-leader-card{padding:15px}}
+
+/* V10.2 / In-place updates: real market voice avatars and halving price history */
+#communityPage .community-x.ct-leader-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important}
+#communityPage .ct-leader-card{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important;padding:12px!important;overflow:hidden}
+#communityPage .ct-leader-portrait{position:relative;height:190px;border-radius:9px;overflow:hidden;display:grid;place-items:center;background:radial-gradient(circle at 46% 35%,#392619,#18120f 68%)}
+#communityPage .ct-leader-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 32%;display:block;background:#18120f}
+#communityPage .ct-leader-monogram{width:76px;height:76px;flex:none;font-size:24px}
+#communityPage .ct-leader-portrait .ct-leader-monogram{z-index:0}
+#communityPage .ct-leader-photo{z-index:1}
+#communityPage .ct-leader-body{display:flex;flex-direction:column;min-height:124px}
+#communityPage .ct-leader-body h3{font-size:15px!important;line-height:1.3}
+#communityPage .ct-leader-body p{margin-bottom:6px!important}
+#communityPage .ct-leader-actions{margin-top:auto;padding-top:12px}
+.ct-halving-history{margin-top:18px}
+.ct-halving-scroll{overflow:auto;max-width:100%}
+.ct-halving-table{width:100%;border-collapse:separate;border-spacing:0 5px;font-size:12px;min-width:810px}
+.ct-halving-table th{text-align:left;padding:12px 10px;white-space:nowrap;color:var(--muted);font-weight:700;font-size:11px}
+.ct-halving-table td{padding:13px 10px;background:rgba(31,23,18,.78);border-top:1px solid var(--border);border-bottom:1px solid var(--border);white-space:nowrap;color:var(--text)}
+.ct-halving-table td:first-child{border-left:1px solid var(--border);border-radius:9px 0 0 9px;font-weight:800}
+.ct-halving-table td:last-child{border-right:1px solid var(--border);border-radius:0 9px 9px 0}
+.ct-halving-table td strong{display:block;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.ct-halving-table .ct-halving-price{color:var(--accent-strong);font-size:16px}
+.ct-halving-table .ct-halving-date{display:block;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:5px}
+.ct-halving-table td small{display:block;color:var(--muted);font-size:10px;font-weight:500;line-height:1.5;margin-top:3px}
+#halvingPriceNote{margin-top:14px;line-height:1.65}
+@media(max-width:1200px){#communityPage .community-x.ct-leader-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:780px){#communityPage .community-x.ct-leader-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#communityPage .ct-leader-portrait{height:155px}}
+@media(max-width:480px){#communityPage .community-x.ct-leader-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}#communityPage .ct-leader-card{padding:9px!important}#communityPage .ct-leader-portrait{height:122px}#communityPage .ct-leader-body h3{font-size:13px!important}#communityPage .ct-leader-actions a{font-size:11px!important}}
