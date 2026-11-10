@@ -56,14 +56,22 @@ function mountOverview(force=false){
  // Four external-chart-restricted instruments use broker CFDs / cash proxies.
  // The US10Y yield uses source-labelled FRED daily observations, not a surrogate ETF.
  const data=[
-  {name:'S&P 500 · Cash CFD',symbol:'FOREXCOM:SPXUSD',category:'US EQUITIES',description:'FOREX.com cash CFD · indicative, not official index prints',original:'SP:SPX'},
-  {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'US TECHNOLOGY',description:'FOREX.com cash CFD · may differ from official NDX',original:'NASDAQ:NDX'},
-  {name:'Gold / XAUUSD',symbol:'OANDA:XAUUSD',category:'SAFE-HAVEN ASSET',description:'OANDA spot-gold quote'},
-  {name:'Brent Crude · Cash CFD',symbol:'OANDA:BCOUSD',category:'ENERGY',description:'OANDA Brent crude CFD · not BR1! continuous futures',original:'ICEEUR:BRN1!'},
-  {name:'Silver / XAGUSD',symbol:'OANDA:XAGUSD',category:'PRECIOUS METALS',description:'OANDA silver spot price · USD per troy ounce'},
-  {name:'USD / KRW',symbol:'FX_IDC:USDKRW',category:'FOREIGN EXCHANGE',description:'FX_IDC indicative USD/KRW quote'}
+  {name:'DXY · US Dollar Index',symbol:'TVC:DXY',category:'USD & LIQUIDITY',description:'TradingView DXY index · not total global liquidity',original:'TVC:DXY'},
+  {name:'US 10Y Treasury Yield',symbol:'FRED:DGS10',native:'treasury',category:'INTEREST RATES',description:'FRED DGS10 · daily nominal 10-year Treasury yield'},
+  {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official NDX',original:'NASDAQ:NDX'},
+  {name:'S&P 500 · Cash CFD',symbol:'FOREXCOM:SPXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official SPX',original:'SP:SPX'},
+  {name:'Gold / XAUUSD',symbol:'OANDA:XAUUSD',category:'RELATIVE STRENGTH',description:'OANDA spot gold · USD per troy ounce'},
+  {name:'VIX Volatility Index',symbol:'TVC:VIX',category:'RISK APPETITE',description:'Equity implied-volatility index · not a BTC volatility reading'},
+  {name:'Silver / XAGUSD',symbol:'OANDA:XAGUSD',category:'ADDITIONAL MARKETS',description:'OANDA silver spot · USD per troy ounce',secondary:true},
+  {name:'Brent Crude · Cash CFD',symbol:'OANDA:BCOUSD',category:'ADDITIONAL MARKETS',description:'OANDA Brent CFD proxy · not ICE continuous future',original:'ICEEUR:BRN1!',secondary:true},
+  {name:'USD / KRW',symbol:'FX_IDC:USDKRW',category:'ADDITIONAL MARKETS',description:'Indicative USD/KRW quote',secondary:true}
  ];
  grid.replaceChildren();
+ const previous=$('v12MacroExtra');if(previous)previous.remove();
+ const extra=document.createElement('details');extra.id='v12MacroExtra';extra.className='ct-clean-details ct-v12-macro-extra';
+ const summary=document.createElement('summary');summary.textContent='Additional Markets · Silver, Brent, USD/KRW';
+ const extraGrid=document.createElement('div');extraGrid.className='macro-grid';
+ extra.append(summary,extraGrid);grid.after(extra);
  const targets=[];
  data.forEach(item=>{
   const card=document.createElement('article');card.className='macro-card';
@@ -81,7 +89,7 @@ function mountOverview(force=false){
   tools.append(code,link);head.append(heading,tools);
   const slot=document.createElement('div');slot.className='tv-slot';
   const loading=document.createElement('div');loading.className='macro-load-note';loading.textContent='Loading '+item.name+'…';slot.append(loading);
-  card.append(head,slot);grid.append(card);targets.push({slot,item,done:false});
+  card.append(head,slot);(item.secondary?extraGrid:grid).append(card);targets.push({slot,item,done:false});
  });
  macroMounted=true;
  const load=entry=>{
@@ -1469,7 +1477,13 @@ function v11InitMacro(){
   const hint=document.createElement('small');hint.textContent=reference;
   card.append(title,body,hint);axes.append(card);
  }
- p.append(note,axes);grid.before(p);
+ const sources=document.createElement('div');sources.className='ct-v12-macro-links';
+ for(const [title,url] of [['US M2 Money Stock','https://fred.stlouisfed.org/series/M2SL'],['Federal Reserve Assets','https://fred.stlouisfed.org/series/WALCL'],['10Y Real Yield (TIPS)','https://fred.stlouisfed.org/series/DFII10']]){
+  const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=title+' ↗';sources.append(link);
+ }
+ const caution=document.createElement('p');caution.className='ct-v11-foot';
+ caution.textContent='FRED series update at different intervals (weekly/monthly/daily); these links are reference data and not live widgets. Do not infer a mechanical BTC price signal.';
+ p.append(note,axes,sources,caution);grid.before(p);
 }
 function renderV11Quality(){
  const q=v11PriceQuality();
