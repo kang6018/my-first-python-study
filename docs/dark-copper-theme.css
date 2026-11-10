@@ -2021,7 +2021,7 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 
 /* V12.7.3: lower only the world map; traceable government snapshot overlay */
 #overviewPage .ct-story-hero .ct-hero-map-background{
- transform:translateY(20%)!important;
+ transform:translateY(10%)!important;
 }
 #overviewPage .ct-gov-source-details{
  position:absolute!important;z-index:8!important;
@@ -2064,7 +2064,7 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 #overviewPage .ct-gov-source-popover a{color:#ffbd6e;text-decoration:underline;text-underline-offset:3px}
 #overviewPage .ct-gov-source-details>summary:focus-visible{outline:2px solid #ffa543;outline-offset:3px}
 @media(max-width:700px){
- #overviewPage .ct-story-hero .ct-hero-map-background{transform:translateY(18%)!important}
+ #overviewPage .ct-story-hero .ct-hero-map-background{transform:translateY(8%)!important}
  #overviewPage .ct-gov-source-details{right:12px!important;bottom:42px!important;max-width:90vw!important}
  #overviewPage .ct-gov-source-details>summary{font-size:9px;padding:6px 8px}
  #overviewPage .ct-gov-source-popover{width:min(340px,88vw);max-height:55vh}
@@ -2074,3 +2074,6 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 @media(prefers-reduced-motion:reduce){
  #overviewPage .ct-story-hero .ct-hero-map-background img{animation:none!important}
 }
+
+/* V12.7.5 · 9-node illustrative mesh: subtle links, map 10 points higher */
+#overviewPage .ct-story-hero .ct-hero-map-background{will-change:auto}
