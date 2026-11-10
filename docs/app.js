@@ -595,7 +595,7 @@ async function fetchQuickPrice(){
 }
 async function fetchDerivatives(){const base='https://fapi.binance.com';const requests=await Promise.allSettled([jsonGet(base+'/fapi/v1/premiumIndex?symbol=BTCUSDT'),jsonGet(base+'/fapi/v1/openInterest?symbol=BTCUSDT')]);if(requests[0].status==='fulfilled'&&Number.isFinite(Number(requests[0].value.lastFundingRate))){funding={value:Number(requests[0].value.lastFundingRate)*100,time:Number(requests[0].value.time||Date.now())};fetched.funding='Connected'}else fetched.funding='Connection failed / regional restrictions possible';if(requests[1].status==='fulfilled'&&Number.isFinite(Number(requests[1].value.openInterest))){oi=Number(requests[1].value.openInterest);oiObservedAt=Number(requests[1].value.time)||0;fetched.oi='Connected'}else {oiObservedAt=0;fetched.oi='Connection failed / regional restrictions possible'};renderSentiment();renderSources()}
 function fearLabel(x){return x<=24?'Extreme Fear':x<=44?'Fear':x<=54?'Neutral':x<=74?'Greed':'Extreme Greed'}function renderPriceCard(){const p=$('btcPrice'),s=$('btcSource'),c=$('btcChange');if(!p||!s||!c)return;p.textContent=price?money(price.value):'—';s.textContent=price?.source||'Not connected';c.textContent=price&&Number.isFinite(price.change)?'24h '+(price.change>=0?'+':'')+fmt(price.change,2)+'%':'Price unavailable / awaiting connection';c.className='stat-sub '+(price?.change>=0?'positive':'negative');}
-function renderOverview(){const last=fear.at(-1);renderPriceCard();$('fearScore').textContent=last?last.y+'/100':'—';$('fearName').textContent=last?fearLabel(last.y):'Sentiment feed unavailable';const s=state.strategy;$('currentFramework').textContent=s.phase==='Not configured'?'Not configured':s.phase;$('overviewStrategy').innerHTML=`<div>Cycle view: <b>${escapeHTML(s.phase)}</b> · Sentiment: <b>${escapeHTML(s.mood)}</b></div><div class="tiny muted">${escapeHTML(s.thesis?s.thesis.slice(0,190):'No supporting rationale entered yet.')}</div>`;const entries=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||Number(b.id?.split('-')[0])||0)-(Number(a.createdAt)||Number(a.id?.split('-')[0])||0)).slice(0,3);$('recentJournal').innerHTML=entries.length?entries.map(e=>`<div><b>${escapeHTML(e.title)}</b><div class="tiny muted">${escapeHTML(e.date)} · ${escapeHTML(e.phase)}</div></div>`).join(''):'No entries';const current=fear.slice(-90);drawPlot($('overviewFearChart'),current.length?[{label:'Fear & Greed',color:'#f3bb72',points:current.map((p,i)=>({x:i,y:p.y}))}]:[],{xMin:0,xMax:Math.max(1,current.length-1),xFormat:i=>{const item=current[Math.min(current.length-1,Math.round(i))];return item?new Date(item.x).toISOString().slice(5,10):''}});$('fearUpdated').textContent=last?'Latest observation: '+new Date(last.x).toLocaleDateString('en-US')+' · Alternative.me':'Waiting for Alternative.me';renderV11Overview()}
+function renderOverview(){const last=fear.at(-1);renderPriceCard();$('fearScore').textContent=last?last.y+'/100':'—';$('fearName').textContent=last?fearLabel(last.y):'Sentiment feed unavailable';const s=state.strategy;$('currentFramework').textContent=v13CyclePhase().phase;$('overviewStrategy').innerHTML=`<div>Cycle phase: <b>${escapeHTML(v13CyclePhase().phase)}</b> · Sentiment: <b>${escapeHTML(s.mood)}</b></div><div class="tiny muted">${escapeHTML(s.thesis?s.thesis.slice(0,190):'No supporting rationale entered yet.')}</div>`;const entries=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||Number(b.id?.split('-')[0])||0)-(Number(a.createdAt)||Number(a.id?.split('-')[0])||0)).slice(0,3);$('recentJournal').innerHTML=entries.length?entries.map(e=>`<div><b>${escapeHTML(e.title)}</b><div class="tiny muted">${escapeHTML(e.date)} · ${escapeHTML(e.phase)}</div></div>`).join(''):'No entries';const current=fear.slice(-90);drawPlot($('overviewFearChart'),current.length?[{label:'Fear & Greed',color:'#f3bb72',points:current.map((p,i)=>({x:i,y:p.y}))}]:[],{xMin:0,xMax:Math.max(1,current.length-1),xFormat:i=>{const item=current[Math.min(current.length-1,Math.round(i))];return item?new Date(item.x).toISOString().slice(5,10):''}});$('fearUpdated').textContent=last?'Latest observation: '+new Date(last.x).toLocaleDateString('en-US')+' · Alternative.me':'Waiting for Alternative.me';renderV11Overview()}
 function computedBtcMeasures(){
  const result={};
  if(history.length<25)return result;
@@ -1481,7 +1481,7 @@ function renderV11Cycle(){
  $('v11CycleLastPrice').textContent=f.latest?money(f.latest.price):'—';
  $('v11CycleQuality').textContent=(f.peak?'Observed cycle peak: '+f.peak.date+' · '+money(f.peak.price)+' · '+f.fromPeak+' days since observed peak. ':'')+
  'BTC history: '+q.label+' · '+(q.last||'No data')+'.';
- const user=state.strategy?.phase||'Not configured';
+ const user=v13CyclePhase().phase;
  $('v11CycleContext').textContent='YOUR CYCLE THESIS: '+user+'  |  Objective timer: '+f.year+'. Historical timing does not confirm the market phase. '+'Provider values are observations, not a trading signal.';
 }
 
@@ -1502,8 +1502,8 @@ function v12CycleEvidence(){
  }
  const distance=Number.isFinite(ma)&&Number.isFinite(last)?(last/ma-1)*100:null;
  let caveat=[];
- const user=state.strategy?.phase||'Not configured';
- if(user==='Not configured'||user==='Not set')caveat.push('No cycle thesis recorded.');
+ const user=v13CyclePhase().phase;
+ if(user==='판단 유보')caveat.push('No explicit cycle phase hypothesis recorded.');
  if(!q.daily)caveat.push('Price observations are not daily.');
  if(q.age>4)caveat.push('Price data are stale: '+q.age+' days since last observation.');
  if(f.drawdown!==null&&f.drawdown<=-30)caveat.push('Observed peak drawdown exceeds 30%; review the downside scenario.');
@@ -1534,11 +1534,108 @@ function renderV12CycleValidation(){
   'No preset contradiction flagged by the selected observation checks. This does not validate the cycle hypothesis.';
 }
 
+
+/* Private cycle chronology is NEVER bundled in the public site source or sent to a server.
+   People may enter their own dated and overlapping phase hypotheses into localStorage. */
+const PRIVATE_CYCLE_STORAGE='cycle-terminal-private-phase-history-v1';
+function v13PrivateEntries(){
+ try{
+  const value=JSON.parse(localStorage.getItem(PRIVATE_CYCLE_STORAGE)||'[]');
+  return Array.isArray(value)?value.filter(r=>r&&typeof r.start==='string'&&typeof r.phase==='string').slice(0,100):[];
+ }catch(e){return []}
+}
+function v13CyclePhase(asOf=new Date().toISOString().slice(0,7)){
+ const entries=v13PrivateEntries();
+ const relevant=entries.filter(r=>r.start<=asOf&&(!r.end||r.end>=asOf)).sort((a,b)=>b.start.localeCompare(a.start));
+ if(relevant.length){
+  const r=relevant[0];
+  return {phase:r.phase,source:'private',date:r.start,end:r.end||null,note:r.note||'',overlap:relevant.length>1};
+ }
+ const prior=entries.filter(r=>r.start<=asOf).sort((a,b)=>b.start.localeCompare(a.start))[0];
+ if(prior)return {phase:'최근 기록: '+prior.phase,source:'historical',date:prior.start,end:prior.end||null,note:'현재 국면은 미판정',overlap:false};
+ const legacy=state.strategy?.phase||'';
+ if(legacy&&!['Not configured','Not set','Not set','Not configured','Not configured','Not set'].includes(legacy))
+  return {phase:strategyKoDisplay(legacy),source:'strategy',date:'',end:null,note:'기존 투자 관점에 입력한 가설',overlap:false};
+ return {phase:'판단 유보',source:'empty',date:'',end:null,note:'사이클 국면을 직접 기록할 수 있습니다.',overlap:false};
+}
+function v13ParseCycleInput(text){
+ const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(s=>s&&!s.startsWith('#'));
+ if(lines.length>100)throw Error('최대 100개 구간까지만 저장할 수 있습니다.');
+ const validMonth=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(v)&&Number(v.slice(0,4))>=2010&&Number(v.slice(0,4))<=2100;
+ return lines.map((line,index)=>{
+  const parts=line.split('|').map(x=>x.trim());
+  if(parts.length<3)throw Error((index+1)+'번째 줄: 시작월 | 종료월 | 국면 | 설명 형식으로 입력하세요.');
+  const [start,end,phase,...note]=parts;
+  if(!validMonth(start)||(end&&!validMonth(end))||(end&&end<start))throw Error((index+1)+'번째 줄: YYYY-MM 날짜 또는 기간을 확인하세요.');
+  if(!phase||phase.length>50||note.join('|').length>280)throw Error((index+1)+'번째 줄: 국면명 또는 설명 길이를 확인하세요.');
+  return {start,end,phase,note:note.join(' | ')};
+ }).sort((a,b)=>a.start.localeCompare(b.start));
+}
+function v13TimelineAsText(rows){
+ return rows.map(r=>[r.start,r.end||'',r.phase,r.note||''].join(' | ')).join('\n');
+}
+function v13RenderTimeline(){
+ const root=$('v13CycleRows');if(!root)return;
+ const rows=v13PrivateEntries();
+ root.replaceChildren();
+ const selected=v13CyclePhase();
+ const headline=$('v13CycleSelected');
+ if(headline)headline.textContent='최근/현재 가설: '+selected.phase+(selected.date?' · '+selected.date:'')+(selected.source==='private'?' · 개인 입력, 시장 검증 아님':'');
+ for(const r of rows){
+  const item=document.createElement('div');item.className='ct-v13-timeline-row';
+  const dates=document.createElement('time');dates.textContent=r.start+' — '+(r.end||'종료 미입력');
+  const title=document.createElement('strong');title.textContent=r.phase;
+  const note=document.createElement('p');note.textContent=r.note||'';
+  item.append(dates,title,note);root.append(item);
+ }
+ if(!rows.length)root.textContent='브라우저에 보관된 개인 사이클 기록이 없습니다. 아래 형식으로 붙여넣어 저장할 수 있습니다.';
+ renderV11Overview();renderV11Cycle();if($('currentFramework'))$('currentFramework').textContent=selected.phase;
+}
+function v13InitTimeline(){
+ const page=$('cyclePage'),before=$('cyclePerformancePlot')?.closest('section');
+ if(!page||$('v13PrivateTimeline'))return;
+ const panel=v11CreatePanel('Private Cycle Timeline','Personal market phase hypotheses · stored only in this browser, not published to GitHub.','ct-v13-private');
+ panel.id='v13PrivateTimeline';
+ const caption=document.createElement('p');caption.className='ct-v11-foot';
+ caption.textContent='각 줄: 시작월 | 종료월 | 국면 | 설명. 예: 2020-01 | 2020-03 | 축적 | 개인 관찰. 종료월 생략 가능. 같은 달에 여러 국면이 겹칠 수 있습니다. 코드·GitHub·API로 자동 업로드하지 않습니다.';
+ const stateLine=document.createElement('p');stateLine.className='ct-v13-selected';stateLine.id='v13CycleSelected';
+ const textArea=document.createElement('textarea');textArea.id='v13CycleEditor';textArea.rows=7;
+ textArea.placeholder='YYYY-MM | YYYY-MM | 국면 | 개인 근거\nYYYY-MM | | 다음 국면 | 진행중으로 판단하는 경우';
+ textArea.value=v13TimelineAsText(v13PrivateEntries());
+ const actions=document.createElement('div');actions.className='ct-v13-timeline-actions';
+ const save=document.createElement('button');save.type='button';save.className='btn primary';save.textContent='이 브라우저에 저장';
+ save.addEventListener('click',()=>{
+  try{
+   const parsed=v13ParseCycleInput(textArea.value);
+   if(!parsed.length)return toast('하나 이상의 사이클 구간을 입력하세요.');
+   localStorage.setItem(PRIVATE_CYCLE_STORAGE,JSON.stringify(parsed));
+   v13RenderTimeline();toast('개인 사이클 연혁을 이 브라우저에 저장했습니다. 사이트에는 게시되지 않습니다.');
+  }catch(e){toast('저장 실패: '+e.message)}
+ });
+ const exportButton=document.createElement('button');exportButton.type='button';exportButton.className='btn secondary';exportButton.textContent='개인 기록 백업';
+ exportButton.addEventListener('click',()=>{
+  const rows=v13PrivateEntries();if(!rows.length)return toast('백업할 개인 기록이 없습니다.');
+  download('my-private-cycle-timeline.txt',v13TimelineAsText(rows)+'\n','text/plain');
+ });
+ const clear=document.createElement('button');clear.type='button';clear.className='btn secondary';clear.textContent='개인 기록 비우기';
+ clear.addEventListener('click',()=>{
+  if(!confirm('이 브라우저에 저장된 개인 사이클 연혁을 삭제할까요?'))return;
+  localStorage.removeItem(PRIVATE_CYCLE_STORAGE);textArea.value='';v13RenderTimeline();
+ });
+ actions.append(save,exportButton,clear);
+ const status=document.createElement('p');status.className='ct-v11-foot';
+ status.textContent='주의: 브라우저 저장 정보는 완전한 암호화 비밀 저장소가 아닙니다. 이 기기의 다른 사용자·브라우저 확장 프로그램에 노출될 수 있으므로 민감한 정보는 입력하지 마세요.';
+ const timeline=document.createElement('div');timeline.id='v13CycleRows';timeline.className='ct-v13-timeline';
+ panel.append(stateLine,timeline,caption,textArea,actions,status);
+ if(before)before.before(panel);else page.querySelector('.ct-v11-cycle')?.after(panel);
+ v13RenderTimeline();
+}
+
 function v11InitOverview(){
  const main=$('overviewPage'),band=main?.querySelector('.ct-live-band');if(!main||!band)return;
  const section=v11CreatePanel('Where Are We in the Cycle?','Time, trend and evidence before conviction.','ct-v11-overview');
  const metrics=document.createElement('div');metrics.className='ct-v11-metrics';
- for(const [name,id] of [['USER CYCLE VIEW','v11OverviewPhase'],['DAYS SINCE HALVING','v11OverviewElapsed'],['PEAK DRAWDOWN','v11OverviewDrawdown'],['FEAR & GREED','v11OverviewFear']])metrics.append(v11Metric(name,id));
+ for(const [name,id] of [['사이클 국면','v11OverviewPhase'],['DAYS SINCE HALVING','v11OverviewElapsed'],['PEAK DRAWDOWN','v11OverviewDrawdown'],['FEAR & GREED','v11OverviewFear']])metrics.append(v11Metric(name,id));
  const note=document.createElement('p');note.className='ct-v11-foot';note.id='v11OverviewNote';
  const action=document.createElement('button');action.type='button';action.className='btn secondary';action.textContent='Review Cycle Research ↗';action.addEventListener('click',()=>setPage('cycle'));
  section.append(metrics,note,action);band.after(section);
@@ -1546,11 +1643,11 @@ function v11InitOverview(){
 function renderV11Overview(){
  if(!$('v11OverviewPhase'))return;
  const f=v11CycleFacts();
- $('v11OverviewPhase').textContent=state.strategy?.phase||'Not configured';
+ $('v11OverviewPhase').textContent=v13CyclePhase().phase;
  $('v11OverviewElapsed').textContent=f.days+' days';
  $('v11OverviewDrawdown').textContent=f.drawdown===null?'—':fmt(f.drawdown,1)+'%';
  $('v11OverviewFear').textContent=fear.length?fear.at(-1).y+'/100':'—';
- $('v11OverviewNote').textContent='Price as of '+(f.quality.last||'unavailable')+' · '+f.quality.label+'. Personal cycle view is not independently verified.';
+ $('v11OverviewNote').textContent='사이클 국면: '+(v13CyclePhase().source==='private'?'이 브라우저에 저장한 개인 가설':v13CyclePhase().source==='historical'?'최근 역사 기록 · 현재 판정 아님':'직접 설정한 관점/판단 유보')+' · 가격 관측일 '+(f.quality.last||'—')+' · '+f.quality.label+'. 투자 신호 아님.';
 }
 function v11InitMacro(){
  const grid=$('macroGrid');if(!grid)return;
@@ -1857,7 +1954,7 @@ function renderV11Calibration(){
  root.after(metric);renderV12ForecastCalibration();
 }
 
-readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v12InitLedger();v11InitCycle();v12InitCycleValidation();v11InitOverview();v11InitMacro();v12InitRelativeStrength();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v12InitLedger();v11InitCycle();v12InitCycleValidation();v11InitOverview();v13InitTimeline();v11InitMacro();v12InitRelativeStrength();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
