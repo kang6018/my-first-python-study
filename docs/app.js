@@ -57,10 +57,10 @@ function mountOverview(force=false){
  // The US10Y yield uses source-labelled FRED daily observations, not a surrogate ETF.
  const data=[
   {name:'DXY · US Dollar Index',symbol:'TVC:DXY',category:'USD & LIQUIDITY',description:'TradingView DXY index · not total global liquidity',original:'TVC:DXY'},
-  {name:'US M2 Money Stock',symbol:'FRED:M2SL',category:'USD & LIQUIDITY',description:'FRED M2SL · monthly · seasonally adjusted USD billions · delayed publication',sourceUrl:'https://fred.stlouisfed.org/series/M2SL',interval:'M'},
-  {name:'Federal Reserve Total Assets',symbol:'FRED:WALCL',category:'USD & LIQUIDITY',description:'FRED WALCL · weekly Fed balance sheet · USD millions, not net liquidity',sourceUrl:'https://fred.stlouisfed.org/series/WALCL',interval:'W'},
+  {name:'US M2 Money Stock',symbol:'FRED:M2SL',native:'fred',category:'USD & LIQUIDITY',description:'FRED M2SL · monthly · seasonally adjusted USD billions · delayed publication',sourceUrl:'https://fred.stlouisfed.org/series/M2SL',interval:'M'},
+  {name:'Federal Reserve Total Assets',symbol:'FRED:WALCL',native:'fred',category:'USD & LIQUIDITY',description:'FRED WALCL · weekly Fed balance sheet · USD millions, not net liquidity',sourceUrl:'https://fred.stlouisfed.org/series/WALCL',interval:'W'},
   {name:'US 10Y Treasury Yield',symbol:'FRED:DGS10',native:'treasury',category:'INTEREST RATES',description:'FRED DGS10 · daily nominal 10-year Treasury yield'},
-  {name:'US 10Y Real Yield',symbol:'FRED:DFII10',category:'INTEREST RATES',description:'FRED DFII10 · daily 10-year inflation-indexed Treasury yield · percent',sourceUrl:'https://fred.stlouisfed.org/series/DFII10',interval:'D'},
+  {name:'US 10Y Real Yield',symbol:'FRED:DFII10',native:'fred',category:'INTEREST RATES',description:'FRED DFII10 · daily 10-year inflation-indexed Treasury yield · percent',sourceUrl:'https://fred.stlouisfed.org/series/DFII10',interval:'D'},
   {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official NDX',original:'NASDAQ:NDX'},
   {name:'S&P 500 · Cash CFD',symbol:'FOREXCOM:SPXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official SPX',original:'SP:SPX'},
   {name:'Gold / XAUUSD',symbol:'OANDA:XAUUSD',category:'RELATIVE STRENGTH',description:'OANDA spot gold · USD per troy ounce'},
@@ -107,7 +107,7 @@ function mountOverview(force=false){
  macroMounted=true;
  const load=entry=>{
   if(entry.done)return;entry.done=true;
-  if(entry.item.native==='kospi'){renderKospiIndex(entry.slot);return}if(entry.item.native){renderTreasuryYield(entry.slot);return}
+  if(entry.item.native==='kospi'){renderKospiIndex(entry.slot);return}if(entry.item.native==='treasury'||entry.item.native==='fred'){renderFredSeries(entry.slot,entry.item);return}
   // Avoid pop-up failures from exchanges that TradingView does not license for third-party widgets.
   tv(entry.slot,{symbol:entry.item.symbol,interval:entry.item.interval||'D',mini:true,allowSymbolChange:false});
  };
@@ -168,6 +168,47 @@ async function renderKospiIndex(slot){
   slot.replaceChildren();slot.append(wrap);
  }catch(e){errCard(String(e.message||e))}
 }
+
+async function renderFredSeries(slot,item){
+ const code=String(item.symbol||'').split(':')[1],valid=new Set(['DGS10','DFII10','M2SL','WALCL']);
+ if(!valid.has(code))return;
+ const url='https://fred.stlouisfed.org/series/'+code;
+ const fallback=reason=>{
+  slot.replaceChildren();
+  const box=document.createElement('div');box.className='macro-fred-visual ct-v12-fred-fallback';
+  const title=document.createElement('strong');title.textContent='FRED '+code+' · Dataset unavailable';
+  const message=document.createElement('p');message.textContent=reason+' No alternative series will be substituted.';
+  const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open official FRED '+code+' series ↗';
+  box.append(title,message,link);slot.append(box);
+ };
+ try{
+  const response=await fetch('data/fred-'+code.toLowerCase()+'.json',{cache:'no-store'});
+  if(!response.ok)throw Error('Verified FRED series has not been published.');
+  const payload=await response.json();
+  if(payload.status!=='ok'||payload.id!==code||!Array.isArray(payload.rows))throw Error('Source metadata mismatch.');
+  const rows=payload.rows.filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&Number.isFinite(Number(r.value))).slice(-220);
+  if(rows.length<20)throw Error('Not enough FRED observations.');
+  const latest=rows.at(-1);
+  const age=(dayNum(new Date().toISOString().slice(0,10))-dayNum(latest.date));
+  const maxAge=payload.frequency==='monthly'?75:payload.frequency==='weekly'?24:12;
+  const units=payload.unit==='percent'?'%':payload.unit==='USD billions'?' USD bn':payload.unit==='USD millions'?' USD mn':' '+(payload.unit||'');
+  const wrap=document.createElement('div');wrap.className='macro-native-chart ct-v12-fred-series';
+  const top=document.createElement('div');top.className='macro-native-summary';
+  const val=document.createElement('strong');val.textContent=Number(latest.value).toLocaleString('en-US',{maximumFractionDigits:2})+units;
+  const note=document.createElement('span');note.textContent='FRED '+code+' · '+latest.date+' · '+payload.frequency+(age>maxAge?' · STALE':' · dated observation');
+  const chart=document.createElement('div');chart.className='ct-v12-fred-plot';
+  const source=document.createElement('div');source.className='ct-v12-fred-source';
+  source.textContent=(payload.source||'Federal Reserve via FRED')+' · '+(payload.description||'')+'. Updated by scheduled collector; not live quotes.';
+  const origin=document.createElement('a');origin.href=url;origin.target='_blank';origin.rel='noopener noreferrer';origin.textContent='View FRED source ↗';
+  top.append(val,note);wrap.append(top,chart,source,origin);slot.replaceChildren();slot.append(wrap);
+  drawPlot(chart,[{label:code,color:'#eaa45e',points:rows.map((r,i)=>({x:i,y:Number(r.value)}))}],{
+   xMin:0,xMax:rows.length-1,
+   xFormat:x=>rows[Math.min(rows.length-1,Math.max(0,Math.round(x)))]?.date.slice(0,7)||'',
+   yFormat:y=>Number(y).toLocaleString('en-US',{maximumFractionDigits:2})
+  });
+ }catch(e){fallback(String(e?.message||'FRED data request failed.'))}
+}
+
 async function renderTreasuryYield(slot){
  const officialUrl='https://fred.stlouisfed.org/series/DGS10';
  function showFREDChart(reason){
@@ -466,7 +507,7 @@ function renderCycle(){const days=Math.max(0,dayNum(new Date().toISOString().sli
 for(const [year,date,color] of HALVINGS){const s=cycleSeries(year,date,range);if(s&&s.series.length>1)chart.push({label:year,color,points:s.series});if(!s){rows.push(`<tr><td>${year}</td><td>—</td><td>—</td><td>—</td><td>Data unavailable</td></tr>`);continue}const elapsed=Math.min(days,range);const comparable=s.series.filter(r=>r.x<=elapsed);const at=comparable[comparable.length-1];const max=s.series.reduce((acc,item)=>Math.max(acc,item.y),0);rows.push(`<tr><td>${year}</td><td>${money(s.start.price)}</td><td>${at?(at.y-100>=0?'+':'')+fmt(at.y-100,1)+'%':'—'}</td><td>+${fmt(max-100,1)}%</td><td>${s.series.length} observations</td></tr>`)}$('cycleTable').innerHTML=rows.join('');renderEmissionChart();renderSeasonality();renderHalvingPriceHistory();renderCyclePerformance();renderV11Cycle();renderV12CycleValidation();}
 function parseCsv(content){const lines=content.trim().split(/\r?\n/);if(lines.length<2)throw Error('Not enough CSV rows');let cols=lines[0].replace(/^\uFEFF/,'').split(',').map(s=>s.trim().toLowerCase().replaceAll('"',''));const ix=cols.findIndex(x=>['date','timestamp','time'].includes(x)),iy=cols.findIndex(x=>['close','price','value'].includes(x));if(ix===-1||iy===-1)throw Error('Required columns: date,close or timestamp,price');const output=[];for(const line of lines.slice(1)){const c=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));let date=c[ix];if(/^\d{10,13}$/.test(date))date=new Date(Number(date)*(date.length===10?1000:1)).toISOString().slice(0,10);else if(/^\d{4}\/\d{2}\/\d{2}$/.test(date))date=date.replaceAll('/','-');output.push({date,price:Number(c[iy])})}return normalizeHistory(output)}
 function initCycle(){$('loadHistory').onclick=()=>fetchHistory(true);$('cycleRange').onchange=renderCycle;$('historyFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{setHistory(parseCsv(await file.text()),'CSV: '+file.name);toast('Imported '+history.length+' CSV observations.')}catch(err){toast('CSV read failed: '+err.message)}e.target.value=''};$('downloadCsvTemplate').onclick=()=>download('btc-price-template.csv','date,close\n','text/csv');$('exportHistory').onclick=()=>{if(!history.length)return toast('There is no historical data to export.');download('btc-history.csv','date,close\n'+history.map(r=>r.date+','+r.price).join('\n'),'text/csv')}}
-function drawPlot(node,sets,opts={}){node.replaceChildren();if(!sets.some(s=>s.points?.length)){node.innerHTML='<div class="plot-placeholder">No observations available. Load an external feed or import CSV.</div>';return}const W=900,H=415,pad={l:58,r:22,t:24,b:45};const all=sets.flatMap(s=>s.points),xs=all.map(p=>p.x),ys=all.map(p=>p.y);let xMin=opts.xMin??Math.min(...xs),xMax=opts.xMax??Math.max(...xs),yMin=Math.min(...ys),yMax=Math.max(...ys);if(opts.normalizeY){yMin=Math.max(0,yMin*.87);yMax*=1.07}else{const d=Math.max(1,yMax-yMin);yMin-=d*.11;yMax+=d*.11}if(yMax<=yMin)yMax=yMin+1;if(xMax<=xMin)xMax=xMin+1;const px=x=>pad.l+(x-xMin)/(xMax-xMin)*(W-pad.l-pad.r),py=y=>pad.t+(yMax-y)/(yMax-yMin)*(H-pad.t-pad.b);const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Time series graph');function el(tag,attrs={},text=''){const x=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v));if(text)x.textContent=text;svg.append(x);return x}for(let i=0;i<5;i++){const y=yMin+(yMax-yMin)*(i/4),yp=py(y);el('line',{x1:pad.l,y1:yp,x2:W-pad.r,y2:yp,stroke:'#73503b','stroke-opacity':'.46','stroke-width':'1'});el('text',{x:pad.l-9,y:yp+4,fill:'#d4b69a','fill-opacity':'.95','text-anchor':'end','font-size':'11'},opts.yFormat?opts.yFormat(y):fmt(y,opts.normalizeY?0:1))}for(let i=0;i<6;i++){const x=xMin+(xMax-xMin)*(i/5),xp=px(x);el('text',{x:xp,y:H-17,fill:'#d4b69a','fill-opacity':'.9','text-anchor':'middle','font-size':'11'},opts.xFormat?opts.xFormat(x):fmt(x,0))}if(opts.horizontalLine!==undefined&&opts.horizontalLine>=yMin&&opts.horizontalLine<=yMax)el('line',{x1:pad.l,y1:py(opts.horizontalLine),x2:W-pad.r,y2:py(opts.horizontalLine),stroke:'#92a1b9','stroke-dasharray':'5 5','stroke-opacity':'.6'});sets.forEach(s=>{const values=s.points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=xMin&&p.x<=xMax);if(values.length<2)return;const d=values.map((p,i)=>(i?'L':'M')+px(p.x).toFixed(2)+' '+py(p.y).toFixed(2)).join(' ');el('path',{d,fill:'none',stroke:s.color||'#5c9eff','stroke-width':'2.6','stroke-linejoin':'round','stroke-linecap':'round'})});svg.style.color='#d4b69a';svg.style.background='transparent';node.append(svg)}
+function drawPlot(node,sets,opts={}){node.replaceChildren();if(!sets.some(s=>s.points?.length)){node.innerHTML='<div class="plot-placeholder">No observations available. Load an external feed or import CSV.</div>';return}const W=900,H=415,pad={l:58,r:22,t:24,b:45};const all=sets.flatMap(s=>s.points),xs=all.map(p=>p.x),ys=all.map(p=>p.y);let xMin=opts.xMin??Math.min(...xs),xMax=opts.xMax??Math.max(...xs),yMin=Math.min(...ys),yMax=Math.max(...ys);if(opts.normalizeY){yMin=Math.max(0,yMin*.87);yMax*=1.07}else{const d=Math.max(1,yMax-yMin);yMin-=d*.11;yMax+=d*.11}if(yMax<=yMin)yMax=yMin+1;if(xMax<=xMin)xMax=xMin+1;const px=x=>pad.l+(x-xMin)/(xMax-xMin)*(W-pad.l-pad.r),py=y=>pad.t+(yMax-y)/(yMax-yMin)*(H-pad.t-pad.b);const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Time series graph');function el(tag,attrs={},text=''){const x=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v));if(text)x.textContent=text;svg.append(x);return x}for(let i=0;i<5;i++){const y=yMin+(yMax-yMin)*(i/4),yp=py(y);el('line',{x1:pad.l,y1:yp,x2:W-pad.r,y2:yp,stroke:'#73503b','stroke-opacity':'.46','stroke-width':'1'});el('text',{x:pad.l-9,y:yp+4,fill:'#d4b69a','fill-opacity':'.95','text-anchor':'end','font-size':'11'},opts.yFormat?opts.yFormat(y):opts.yFormat?opts.yFormat(y):fmt(y,opts.normalizeY?0:1))}for(let i=0;i<6;i++){const x=xMin+(xMax-xMin)*(i/5),xp=px(x);el('text',{x:xp,y:H-17,fill:'#d4b69a','fill-opacity':'.9','text-anchor':'middle','font-size':'11'},opts.xFormat?opts.xFormat(x):fmt(x,0))}if(opts.horizontalLine!==undefined&&opts.horizontalLine>=yMin&&opts.horizontalLine<=yMax)el('line',{x1:pad.l,y1:py(opts.horizontalLine),x2:W-pad.r,y2:py(opts.horizontalLine),stroke:'#92a1b9','stroke-dasharray':'5 5','stroke-opacity':'.6'});sets.forEach(s=>{const values=s.points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=xMin&&p.x<=xMax);if(values.length<2)return;const d=values.map((p,i)=>(i?'L':'M')+px(p.x).toFixed(2)+' '+py(p.y).toFixed(2)).join(' ');el('path',{d,fill:'none',stroke:s.color||'#5c9eff','stroke-width':'2.6','stroke-linejoin':'round','stroke-linecap':'round'})});svg.style.color='#d4b69a';svg.style.background='transparent';node.append(svg)}
 function setFear(data){fear=data.filter(d=>Number.isFinite(Number(d.value))&&Number.isFinite(Number(d.timestamp))).map(d=>({x:Number(d.timestamp)*1000,y:Number(d.value)})).sort((a,b)=>a.x-b.x);renderSentiment();renderOverview()}
 async function fetchFear(){try{const res=await jsonGet('https://api.alternative.me/fng/?limit=0');if(!Array.isArray(res.data)||!res.data.length)throw Error('Response data unavailable');setFear(res.data);fetched.fear='Connected ('+fear.length+' records)'}catch(e){fetched.fear='Connection failed ('+e.message+')';renderSentiment();renderOverview()}renderSources()}
 async function fetchPrice(){try{const data=await jsonGet('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');if(!Number.isFinite(Number(data?.bitcoin?.usd)))throw Error('Price unavailable');price={value:Number(data.bitcoin.usd),change:Number(data.bitcoin.usd_24h_change),source:'CoinGecko'};fetched.price='Connected (CoinGecko)'}catch(e){try{const data=await jsonGet('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');if(!Number.isFinite(Number(data.lastPrice)))throw Error('Price unavailable');price={value:Number(data.lastPrice),change:Number(data.priceChangePercent),source:'Binance BTCUSDT'};fetched.price='Connected (Binance fallback)'}catch(e2){fetched.price='Connection failed ('+e2.message+')'}}renderOverview();renderJournal();renderSources()}
