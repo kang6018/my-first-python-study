@@ -77,7 +77,7 @@ function mountOverview(force=false){
  extra.append(summary,extraGrid);grid.after(extra);
  const targets=[];
  data.forEach(item=>{
-  const card=document.createElement('article');card.className='macro-card';
+  const card=document.createElement('article');card.className='macro-card';card.dataset.macroGroup=item.category;
   const head=document.createElement('div');head.className='macro-head';
   const heading=document.createElement('div');heading.className='macro-identity';
   const eyebrow=document.createElement('span');eyebrow.className='macro-category';eyebrow.textContent=item.category;
@@ -89,10 +89,20 @@ function mountOverview(force=false){
   const link=document.createElement('a');link.textContent='Open source ↗';
   link.href=item.sourceUrl||(item.native==='kospi'?'https://www.tradingview.com/symbols/KRX-KOSPI/':(item.native?'https://fred.stlouisfed.org/series/DGS10':'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(item.original||item.symbol)));
   link.rel='noopener noreferrer';link.target='_blank';link.className='macro-external';
-  tools.append(code,link);head.append(heading,tools);
+  const memo=document.createElement('button');memo.type='button';memo.className='btn secondary ct-v12-macro-memo';memo.textContent='Memo';
+  memo.addEventListener('click',()=>{
+   setPage('strategy');
+   const title=$('journalTitle'),body=$('journalEvidence');
+   if(title&&!title.value)title.value='Macro observation · '+item.name;
+   const context='[Macro observation] '+item.name+' / '+item.symbol+' · '+new Date().toISOString().slice(0,16).replace('T',' ')+' UTC · '+item.description+'. Record whether this supports or contradicts the BTC cycle thesis.';
+   if(body)body.value+=(body.value?'\n\n':'')+context;
+   toast('매크로 관찰 항목을 판단 기록으로 보냈습니다. 근거를 확인하고 저장하세요.');
+  });
+  tools.append(code,link,memo);head.append(heading,tools);
   const slot=document.createElement('div');slot.className='tv-slot';
   const loading=document.createElement('div');loading.className='macro-load-note';loading.textContent='Loading '+item.name+'…';slot.append(loading);
   card.append(head,slot);(item.secondary?extraGrid:grid).append(card);targets.push({slot,item,done:false});
+  if(!item.secondary&&state.v12MacroFilter&&state.v12MacroFilter!=='ALL'&&item.category!==state.v12MacroFilter)card.classList.add('ct-v12-macro-filtered');
  });
  macroMounted=true;
  const load=entry=>{
@@ -1488,6 +1498,17 @@ function v11InitMacro(){
  const p=v11CreatePanel('Macro Cross-Check','Compare Bitcoin with risk assets, the dollar, rates and liquidity. Correlation alone does not prove causation.','ct-v11-macro');
  const note=document.createElement('p');note.className='ct-v11-foot';
  note.textContent='Use these as potential challenges to your cycle thesis. Charts are source-labelled proxies; no unsupported live liquidity score is calculated.';
+ const filters=document.createElement('div');filters.className='ct-v12-macro-filters';
+ const categories=[['ALL','All'],['USD & LIQUIDITY','Liquidity'],['INTEREST RATES','Rates'],['RISK APPETITE','Risk Appetite'],['RELATIVE STRENGTH','Gold']];
+ const updateFilter=group=>{
+  filters.querySelectorAll('button').forEach(btn=>{const active=btn.dataset.group===group;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active))});
+  grid.querySelectorAll('.macro-card').forEach(card=>card.classList.toggle('ct-v12-macro-filtered',group!=='ALL'&&card.dataset.macroGroup!==group));
+ };
+ for(const [key,name] of categories){
+  const button=document.createElement('button');button.type='button';button.className='btn secondary';button.textContent=name;button.dataset.group=key;
+  button.addEventListener('click',()=>{state.v12MacroFilter=key;persist();updateFilter(key)});
+  filters.append(button);
+ }
  const axes=document.createElement('div');axes.className='ct-v11-macro-axes';
  for(const [label,question,reference] of [
   ['USD & LIQUIDITY','Is the USD tightening and is the money backdrop growing?','DXY · M2SL (monthly) · WALCL (weekly), all separate proxies'],
@@ -1507,7 +1528,11 @@ function v11InitMacro(){
  }
  const caution=document.createElement('p');caution.className='ct-v11-foot';
  caution.textContent='FRED series update at different intervals (weekly/monthly/daily); these links are reference data and not live widgets. Do not infer a mechanical BTC price signal.';
- p.append(note,axes,sources,caution);grid.before(p);
+ p.append(note,axes,sources,caution);
+ const toolbar=document.createElement('div');toolbar.className='ct-v12-macro-toolbar';
+ const label=document.createElement('strong');label.textContent='MARKET DATA · FILTER';
+ toolbar.append(label,filters);grid.before(p);p.after(toolbar);
+ const valid=categories.some(x=>x[0]===state.v12MacroFilter);updateFilter(valid?state.v12MacroFilter:'ALL');
 }
 
 function v12InitRelativeStrength(){
