@@ -1751,3 +1751,43 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 .ct-v12-macro-filtered{display:none!important}
 .ct-v12-macro-memo{font-size:10px!important;padding:5px 9px!important;min-height:27px!important}
 @media(max-width:780px){.ct-v12-macro-toolbar{align-items:flex-start;flex-direction:column;gap:12px}.ct-v12-macro-filters{gap:5px}.ct-v12-macro-filters .btn{font-size:10px;padding:6px 10px}}
+
+/* V12.2 Hero seamless edge + seven-chart layout */
+.ct-story-hero .ct-bitcoin-photo{
+ overflow:visible!important;
+ background:transparent!important;
+ border:0!important;
+ border-radius:0!important;
+ box-shadow:none!important;
+ filter:none!important;
+ -webkit-mask-image:none!important;
+ mask-image:none!important;
+ isolation:isolate;
+}
+.ct-story-hero .ct-bitcoin-photo img{
+ width:100%!important;height:100%!important;display:block!important;
+ object-fit:cover!important;
+ object-position:50% 50%!important;
+ transform:scale(1.95)!important;
+ filter:contrast(1.13) saturate(.95) brightness(.85)!important;
+ -webkit-mask-image:radial-gradient(ellipse 41% 44% at 50% 50%,#000 47%,rgba(0,0,0,.9) 64%,rgba(0,0,0,.35) 78%,transparent 95%)!important;
+ mask-image:radial-gradient(ellipse 41% 44% at 50% 50%,#000 47%,rgba(0,0,0,.9) 64%,rgba(0,0,0,.35) 78%,transparent 95%)!important;
+}
+.ct-story-hero .ct-scene-photo::after{
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background:linear-gradient(90deg,rgba(12,10,9,.32),transparent 35%,rgba(12,10,9,.12));
+}
+#chartsPage .chart-grid{align-items:stretch}
+#chartsPage .ct-v12-primary-chart{grid-column:1/-1}
+#chartsPage .chart-card:not(.ct-v12-primary-chart){min-width:0}
+.ct-v12-fred-series .ct-v12-fred-plot{height:280px;min-height:240px;margin:10px 0;overflow:hidden}
+.ct-v12-fred-series .ct-v12-fred-plot svg{width:100%;height:100%;display:block}
+.ct-v12-fred-source{font-size:11px;color:#c6a386;line-height:1.6;margin:8px 0}
+.ct-v12-fred-series>a,.ct-v12-fred-fallback a{color:#eabb81;font-size:12px;text-decoration:underline}
+.ct-v12-fred-fallback{padding:20px}
+.ct-v12-fred-fallback p{font-size:12px;line-height:1.8;color:#c8b29b}
+@media(max-width:590px){
+ .ct-story-hero .ct-bitcoin-photo img{transform:scale(2.05)!important;
+ -webkit-mask-image:radial-gradient(ellipse 43% 46% at 50% 50%,#000 42%,rgba(0,0,0,.8) 64%,transparent 91%)!important;
+ mask-image:radial-gradient(ellipse 43% 46% at 50% 50%,#000 42%,rgba(0,0,0,.8) 64%,transparent 91%)!important}
+}
