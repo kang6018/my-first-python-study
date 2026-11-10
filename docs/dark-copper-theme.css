@@ -1693,3 +1693,13 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 @media(max-width:1050px){.ct-v11-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:740px){.ct-v11-panel{padding:17px}.ct-v11-assessment,.ct-v11-holdings-grid{grid-template-columns:1fr}.ct-v11-holdings-grid .ct-v11-metric{grid-column:auto}.ct-v11-overview{max-width:calc(100% - 18px)}}
 @media(max-width:420px){.ct-v11-metrics{grid-template-columns:1fr 1fr;gap:8px}.ct-v11-metric{padding:12px}.ct-v11-metric strong{font-size:17px}.ct-v11-head h2{font-size:20px}}
+
+/* V11 Macro & immutable journal evidence */
+.ct-v11-macro-axes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
+.ct-v11-macro-axes article{background:rgba(12,10,9,.42);border:1px solid rgba(210,139,73,.17);padding:14px;border-radius:10px;min-width:0}
+.ct-v11-macro-axes strong{font-size:11px;display:block;color:var(--accent-strong);margin-bottom:9px;letter-spacing:.04em}
+.ct-v11-macro-axes p{font-size:12px;line-height:1.55;margin:0 0 10px;color:var(--text)}
+.ct-v11-macro-axes small{color:var(--muted);font-size:10px;line-height:1.6;display:block}
+.ct-v11-original-evidence{font-size:12px;color:var(--muted);line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:12px;padding-top:12px;border-top:1px solid rgba(209,137,65,.16)}
+@media(max-width:1100px){.ct-v11-macro-axes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){.ct-v11-macro-axes{grid-template-columns:1fr}}
