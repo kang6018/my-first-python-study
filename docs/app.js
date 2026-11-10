@@ -933,11 +933,32 @@ function renderMarketResearch(){
   return candidates.length?dayNum(new Date(x).toISOString().slice(0,10))-candidates.at(-1):null;
  };
  const currentElapsed=cycleDays(latest.x);
+ // Point-in-time drawdown: historical rolling peak is computed only from prior prices.
+ const drawdowns=new Map();let high=0,halvingIndex=0;
+ for(const r of history){
+  while(halvingIndex<HALVINGS.length&&r.date>=HALVINGS[halvingIndex][1]){high=0;halvingIndex++}
+  high=Math.max(high,Number(r.price)||0);
+  if(high>0)drawdowns.set(r.date,(r.price/high-1)*100);
+ }
+ const nearestDrawdown=date=>{
+  const t=dayNum(date);
+  for(const diff of [0,-1,1,-2,2]){
+   const d=new Date((t+diff)*86400000).toISOString().slice(0,10);
+   if(drawdowns.has(d))return drawdowns.get(d);
+  }
+  return null;
+ };
+ const todayIso=new Date(latest.x).toISOString().slice(0,10);
+ const currentDD=nearestDrawdown(todayIso);
  const phaseAligned=observations.filter(r=>{
   const elapsed=cycleDays(r.x);
   return currentElapsed!==null&&elapsed!==null&&Math.abs(elapsed-currentElapsed)<=180;
  });
- const qualified=phaseAligned.length?phaseAligned:observations;
+ const cycleAndDepth=phaseAligned.filter(r=>{
+  const dd=nearestDrawdown(new Date(r.x).toISOString().slice(0,10));
+  return currentDD!==null&&dd!==null&&Math.abs(dd-currentDD)<=20;
+ });
+ const qualified=cycleAndDepth.length?cycleAndDepth:phaseAligned.length?phaseAligned:observations;
  const picked=[];
  for(const candidate of qualified){
   if(picked.every(p=>Math.abs(p.x-candidate.x)>=30*86400000))picked.push(candidate);
@@ -972,7 +993,7 @@ function renderMarketResearch(){
  const score=(r)=>(r>=0?'+':'')+fmt(r,1)+'%';
  const stats=document.createElement('div');stats.className='ct-analog-stats';
  const warning=document.createElement('p');warning.className='ct-v11-inline-warning';
- warning.textContent='표본 '+cases.length+'개 · '+(phaseAligned.length?'사이클 경과일 ±180일 우선 비교':'같은 사이클 단계에 해당하는 표본 부족 · 심리 점수 기준만 사용')+
+ warning.textContent='표본 '+cases.length+'개 · '+(cycleAndDepth.length?'사이클 경과일 ±180일·고점 대비 낙폭 ±20%p 우선 비교':phaseAligned.length?'낙폭 일치 표본 부족 · 경과일 ±180일 비교':'동일 사이클 위치 표본 부족 · 심리 점수만 비교')+
  ' · '+v11PriceQuality().label+'. '+(cases.length<5?'표본 수가 적어 통계적 예측에 부적합합니다.':'과거 사례는 미래를 보증하지 않습니다.');
  root.append(warning);
  for(const [name,value] of [['독립 사례',cases.length+'개'],['이후 30일 중위수',cases.length>=3?score(med(cases.map(c=>c.r30))):'표본 부족'],['이후 90일 중위수',cases.length>=3?score(med(cases.map(c=>c.r90))):'표본 부족']]){
