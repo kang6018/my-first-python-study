@@ -1827,3 +1827,19 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 .ct-v13-private textarea{width:100%;box-sizing:border-box;min-height:150px;resize:vertical;padding:13px 15px;border-radius:10px;border:1px solid rgba(215,144,77,.33);background:#17120f;color:#ead4bc;font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}
 .ct-v13-timeline-actions{display:flex;gap:10px;flex-wrap:wrap}
 @media(max-width:700px){.ct-v13-timeline{grid-template-columns:1fr}.ct-v13-timeline-actions .btn{flex:1 1 130px}}
+
+/* V12.4.1 Crypto workspace recovery */
+#chartsPage .ct-restore-crypto{
+ border:1px solid rgba(244,159,72,.6)!important;
+ background:linear-gradient(120deg,rgba(144,86,34,.94),rgba(93,52,25,.96))!important;
+ color:#fff0dc!important;
+ white-space:normal;
+ font-weight:750!important;
+}
+#chartsPage .ct-restore-crypto:hover{filter:brightness(1.15)}
+#chartsPage .chart-grid .ct-v12-primary-chart{
+ grid-column:1/-1!important;
+ width:100%!important;
+ min-width:0!important;
+}
+#chartsPage .chart-grid .ct-v12-primary-chart .chart-body{height:clamp(370px,45vw,590px)!important}
