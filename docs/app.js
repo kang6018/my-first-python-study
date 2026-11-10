@@ -37,6 +37,27 @@ function readStorage(){try{const parsed=JSON.parse(localStorage.getItem(KEY));if
   state.charts.push({symbol:'BINANCE:HYPEUSDT',interval:state.charts[5].interval||'D'});
  }
  history=normalizeHistory(state.history);historySource=state.historySource||''}
+
+const CRYPTO_WORKSPACE_FIX_KEY='ct-crypto-seven-btc-hero-v1242';
+function ensureV1242CryptoWorkspace(){
+ // One-time migration of only chart-related settings. Keep the entire previous
+ // workspace available as a separate browser-local backup for user recovery.
+ try{
+  if(localStorage.getItem(CRYPTO_WORKSPACE_FIX_KEY)==='done')return;
+  const saved={charts:state.charts,cols:state.cols,height:state.height,preset:state.preset};
+  localStorage.setItem(CRYPTO_WORKSPACE_FIX_KEY+'-backup',JSON.stringify(saved));
+  const existing=Array.isArray(state.charts)?state.charts:[];
+  // Put the existing BTC card first if present, preserve its selected interval.
+  const btc=existing.find(x=>x.symbol==='BINANCE:BTCUSDT');
+  const cryptoSymbols=presets.crypto.map(([symbol])=>symbol);
+  const bySymbol=new Map(existing.filter(x=>x&&cryptoSymbols.includes(x.symbol)).map(x=>[x.symbol,x]));
+  state.charts=presets.crypto.map(([symbol,interval])=>({...bySymbol.get(symbol),symbol,interval:bySymbol.get(symbol)?.interval||(symbol===btc?.symbol?btc.interval:interval)}));
+  state.preset='crypto';state.cols=2;
+  state.height=Math.max(360,Math.min(Number(state.height)||360,600));
+  if(persist())localStorage.setItem(CRYPTO_WORKSPACE_FIX_KEY,'done');
+ }catch(e){console.warn('Crypto workspace upgrade was not completed:',e)}
+}
+
 function persist(notify=false){try{localStorage.setItem(KEY,JSON.stringify(state));if(notify)toast('Saved to this browser.');return true}catch(e){toast('Unable to save. Check browser permissions or export a JSON backup.');return false}}
 function toast(message){const node=$('toast');node.textContent=message;node.style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>node.style.display='none',3100)}
 const fmt=(v,d=0)=>Number.isFinite(Number(v))?Number(v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}):'—';const money=v=>Number.isFinite(Number(v))?'$'+fmt(v,0):'—';const dayNum=d=>Math.floor(Date.parse(d+'T00:00:00Z')/DAYS);const dayIso=n=>new Date(n*DAYS).toISOString().slice(0,10);const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const validSymbol=v=>/^[A-Za-z0-9_.!\-^]+:[A-Za-z0-9_.!\-^]+$/.test(v);
@@ -292,7 +313,7 @@ function renderCharts(){const grid=$('chartGrid');grid.replaceChildren();$('pres
  if(evidence)evidence.value+=(evidence.value?'\n\n':'')+'[Chart observation] '+entry.symbol+' / '+entry.interval+' · '+new Date().toISOString().slice(0,16).replace('T',' ')+' UTC. Describe the observed move and what could invalidate this view.';
  toast('차트 정보를 판단 기록에 전달했습니다. 근거를 추가한 후 저장하세요.');
 },'secondary');
-if(i===0&&entry.symbol==='BINANCE:BTCUSDT')card.classList.add('ct-v12-primary-chart');
+if(entry.symbol==='BINANCE:BTCUSDT')card.classList.add('ct-v12-primary-chart');
 head.append(symbol,interval,apply,before,after,remove,memo);card.append(head,body);grid.append(card);tv(body,entry)});function swap(a,b){[state.charts[a],state.charts[b]]=[state.charts[b],state.charts[a]];state.preset='custom';renderCharts();persist()}}
 function btn(text,action,cls='secondary'){const b=document.createElement('button');b.type='button';b.className='btn '+cls;b.textContent=text;b.onclick=action;return b}
 function initCharts(){
@@ -309,7 +330,19 @@ function initCharts(){
    renderCharts();persist();
    toast('BTC 대형 차트와 HYPE 포함 7개 차트를 복구했습니다.');
   });
+  const backup=document.createElement('button');backup.id='restorePreviousCharts';backup.type='button';backup.className='btn secondary';
+  backup.textContent='이전 차트 설정';backup.title='V12.4.2 자동 복구 전 저장된 차트 구성으로 되돌립니다.';
+  backup.addEventListener('click',()=>{
+   try{
+    const saved=JSON.parse(localStorage.getItem(CRYPTO_WORKSPACE_FIX_KEY+'-backup')||'null');
+    if(!saved||!Array.isArray(saved.charts)||!saved.charts.length)return toast('복구할 이전 차트 설정이 없습니다.');
+    if(!confirm('BTC + HYPE 7차트 대신 이전 차트 배치를 불러올까요?'))return;
+    state.charts=saved.charts;state.cols=saved.cols||2;state.height=saved.height||360;state.preset=saved.preset||'custom';
+    renderCharts();persist();
+   }catch(e){toast('이전 차트 설정을 복원하지 못했습니다.')}
+  });
   toolbar.insertBefore(restore,$('resetCharts'));
+  toolbar.insertBefore(backup,$('resetCharts'));
  }
  $('preset').onchange=e=>{const name=e.target.value;state.preset=name;if(presets[name])state.charts=presets[name].map(([symbol,interval])=>({symbol,interval}));renderCharts();persist()};$('layout').onchange=e=>{state.cols=Number(e.target.value);$('chartGrid').style.setProperty('--cols',state.cols);persist()};$('chartHeight').onchange=e=>{state.height=Number(e.target.value);$('chartGrid').style.setProperty('--chart-height',state.height+'px');persist()};$('applyAllInterval').onclick=()=>{const interval=$('allInterval').value;state.charts.forEach(c=>c.interval=interval);state.preset='custom';renderCharts();persist()};$('addChart').onclick=()=>{if(state.charts.length>=16)return toast('You can have up to 16 charts.');state.charts.push({symbol:'BINANCE:BTCUSDT',interval:'D'});state.preset='custom';renderCharts();persist()};$('resetCharts').onclick=()=>{if(confirm('Reset all charts to the default layout?')){Object.assign(state,{charts:defaults().charts,cols:2,height:360,preset:'crypto'});renderCharts();persist()}};$('saveCharts').onclick=()=>persist(true)}
 function normalizeHistory(rows){const m=new Map();for(const r of Array.isArray(rows)?rows:[]){if(!r)continue;let date=String(r.date||'');const value=Number(r.price??r.close);if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(value)&&value>0)m.set(date,value)}return [...m].map(([date,price])=>({date,price})).sort((a,b)=>a.date.localeCompare(b.date))}
@@ -1972,7 +2005,7 @@ function renderV11Calibration(){
  root.after(metric);renderV12ForecastCalibration();
 }
 
-readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v12InitLedger();v11InitCycle();v12InitCycleValidation();v11InitOverview();v13InitTimeline();v11InitMacro();v12InitRelativeStrength();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+readStorage();ensureV1242CryptoWorkspace();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v12InitLedger();v11InitCycle();v12InitCycleValidation();v11InitOverview();v13InitTimeline();v11InitMacro();v12InitRelativeStrength();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
