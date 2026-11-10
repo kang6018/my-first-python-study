@@ -655,6 +655,18 @@ interpretations.push(observation('심리 지수 데이터','연결 대기 중','
 }
 $('sentimentInterpretation').innerHTML=interpretations.join('');
 const m=computedBtcMeasures();
+ const btcSummary=$('ctCleanBtc30'),btcLabel=$('ctCleanBtc30Date');
+ if(btcSummary){
+  btcSummary.textContent=Number.isFinite(m.return30)?(m.return30>=0?'+':'')+fmt(m.return30,1)+'%':'—';
+  btcLabel.textContent=m.latest?'Observed '+m.latest:'Historical price data required';
+ }
+ const etfSummary=$('ctCleanEtf5'),etfLabel=$('ctCleanEtf5Date');
+ if(etfSummary){
+  const observations=etfAuto?.rows||[],lastFive=observations.slice(-5);
+  const flow=lastFive.length===5?lastFive.reduce((n,r)=>n+Number(r[1]),0):null;
+  etfSummary.textContent=flow===null?'—':(flow>=0?'+':'')+fmt(flow,1)+'M USD';
+  etfLabel.textContent=observations.length?'Observed '+observations.at(-1)[0]+' · historical':'ETF observation unavailable';
+ }
  const signed=(n,d=1)=>Number.isFinite(n)?(n>=0?'+':'')+fmt(n,d)+'%':'데이터 확인 중';
  const metric=(label,value,note,available=true)=>({label,value,note,available});
  const etfFlows=liveInstitution?.etf?.length?liveInstitution.etf:(etfExternal||etfAuto?.rows||ETF_SEED);
@@ -1184,6 +1196,19 @@ function initFinalCleanup(){
   evidence.append(psychEvidence);
   const headline=psych.querySelector('.ct-psych-head h2');if(headline)headline.textContent='현재 시장 해석';
   hide(psych.querySelector('.ct-psych-foot'));
+ }
+ const summaryGrid=sentiment.querySelector('.stats-grid');
+ if(summaryGrid){
+  hide($('sentDelta')?.closest('.stat'));
+  for(const [id,label] of [['ctCleanBtc30','BTC 30D RETURN'],['ctCleanEtf5','ETF 5-DAY FLOW']]){
+   if($(id))continue;
+   const card=document.createElement('div');card.className='stat ct-clean-summary-card';
+   const heading=document.createElement('div');heading.className='stat-label';heading.textContent=label;
+   const number=document.createElement('div');number.className='stat-value';number.id=id;number.textContent='—';
+   const foot=document.createElement('div');foot.className='stat-sub';foot.id=id+'Date';
+   foot.textContent='Waiting for verified observations';
+   card.append(heading,number,foot);summaryGrid.append(card);
+  }
  }
  const divergence=$('divergenceSection'),marketResearch=sentiment.querySelector('.ct-data-research');
  if(divergence&&marketResearch)marketResearch.before(divergence);
