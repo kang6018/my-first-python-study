@@ -434,7 +434,7 @@ function renderHalvingPriceHistory(){
   'Loading BTC/USD history. No values are estimated when observations are unavailable.';
 }
 function renderCycle(){const days=Math.max(0,dayNum(new Date().toISOString().slice(0,10))-dayNum('2024-04-20'));$('halvingDays').textContent=fmt(days)+' days';animateElapsedDays();beginHalvingCountdown();$('cycleYear').textContent='Since the halving: '+(days/365.25).toFixed(2)+' years';$('historyCount').textContent=history.length?fmt(history.length)+' records':'None';$('historySource').textContent=historySource||'API request or CSV upload required';const range=Number($('cycleRange').value),rows=[],chart=[];const current=cycleSeries('2024','2024-04-20',Math.max(range,days));if(current){const observed=interpolateNearest(history,dayNum(new Date().toISOString().slice(0,10)),7)||history[history.length-1];const y=observed.price/current.start.price*100-100;$('cycleReturn').textContent=(y>=0?'+':'')+fmt(y,1)+'%';$('cycleReturn').className='stat-value '+(y<0?'negative':'positive')}else{$('cycleReturn').textContent='—';$('cycleReturn').className='stat-value'}
-for(const [year,date,color] of HALVINGS){const s=cycleSeries(year,date,range);if(s&&s.series.length>1)chart.push({label:year,color,points:s.series});if(!s){rows.push(`<tr><td>${year}</td><td>—</td><td>—</td><td>—</td><td>Data unavailable</td></tr>`);continue}const elapsed=Math.min(days,range);const comparable=s.series.filter(r=>r.x<=elapsed);const at=comparable[comparable.length-1];const max=s.series.reduce((acc,item)=>Math.max(acc,item.y),0);rows.push(`<tr><td>${year}</td><td>${money(s.start.price)}</td><td>${at?(at.y-100>=0?'+':'')+fmt(at.y-100,1)+'%':'—'}</td><td>+${fmt(max-100,1)}%</td><td>${s.series.length} observations</td></tr>`)}$('cycleTable').innerHTML=rows.join('');renderEmissionChart();renderSeasonality();renderHalvingPriceHistory();}
+for(const [year,date,color] of HALVINGS){const s=cycleSeries(year,date,range);if(s&&s.series.length>1)chart.push({label:year,color,points:s.series});if(!s){rows.push(`<tr><td>${year}</td><td>—</td><td>—</td><td>—</td><td>Data unavailable</td></tr>`);continue}const elapsed=Math.min(days,range);const comparable=s.series.filter(r=>r.x<=elapsed);const at=comparable[comparable.length-1];const max=s.series.reduce((acc,item)=>Math.max(acc,item.y),0);rows.push(`<tr><td>${year}</td><td>${money(s.start.price)}</td><td>${at?(at.y-100>=0?'+':'')+fmt(at.y-100,1)+'%':'—'}</td><td>+${fmt(max-100,1)}%</td><td>${s.series.length} observations</td></tr>`)}$('cycleTable').innerHTML=rows.join('');renderEmissionChart();renderSeasonality();renderHalvingPriceHistory();renderCyclePerformance();}
 function parseCsv(content){const lines=content.trim().split(/\r?\n/);if(lines.length<2)throw Error('Not enough CSV rows');let cols=lines[0].replace(/^\uFEFF/,'').split(',').map(s=>s.trim().toLowerCase().replaceAll('"',''));const ix=cols.findIndex(x=>['date','timestamp','time'].includes(x)),iy=cols.findIndex(x=>['close','price','value'].includes(x));if(ix===-1||iy===-1)throw Error('Required columns: date,close or timestamp,price');const output=[];for(const line of lines.slice(1)){const c=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));let date=c[ix];if(/^\d{10,13}$/.test(date))date=new Date(Number(date)*(date.length===10?1000:1)).toISOString().slice(0,10);else if(/^\d{4}\/\d{2}\/\d{2}$/.test(date))date=date.replaceAll('/','-');output.push({date,price:Number(c[iy])})}return normalizeHistory(output)}
 function initCycle(){$('loadHistory').onclick=()=>fetchHistory(true);$('cycleRange').onchange=renderCycle;$('historyFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{setHistory(parseCsv(await file.text()),'CSV: '+file.name);toast('Imported '+history.length+' CSV observations.')}catch(err){toast('CSV read failed: '+err.message)}e.target.value=''};$('downloadCsvTemplate').onclick=()=>download('btc-price-template.csv','date,close\n','text/csv');$('exportHistory').onclick=()=>{if(!history.length)return toast('There is no historical data to export.');download('btc-history.csv','date,close\n'+history.map(r=>r.date+','+r.price).join('\n'),'text/csv')}}
 function drawPlot(node,sets,opts={}){node.replaceChildren();if(!sets.some(s=>s.points?.length)){node.innerHTML='<div class="plot-placeholder">No observations available. Load an external feed or import CSV.</div>';return}const W=900,H=415,pad={l:58,r:22,t:24,b:45};const all=sets.flatMap(s=>s.points),xs=all.map(p=>p.x),ys=all.map(p=>p.y);let xMin=opts.xMin??Math.min(...xs),xMax=opts.xMax??Math.max(...xs),yMin=Math.min(...ys),yMax=Math.max(...ys);if(opts.normalizeY){yMin=Math.max(0,yMin*.87);yMax*=1.07}else{const d=Math.max(1,yMax-yMin);yMin-=d*.11;yMax+=d*.11}if(yMax<=yMin)yMax=yMin+1;if(xMax<=xMin)xMax=xMin+1;const px=x=>pad.l+(x-xMin)/(xMax-xMin)*(W-pad.l-pad.r),py=y=>pad.t+(yMax-y)/(yMax-yMin)*(H-pad.t-pad.b);const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Time series graph');function el(tag,attrs={},text=''){const x=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v));if(text)x.textContent=text;svg.append(x);return x}for(let i=0;i<5;i++){const y=yMin+(yMax-yMin)*(i/4),yp=py(y);el('line',{x1:pad.l,y1:yp,x2:W-pad.r,y2:yp,stroke:'#73503b','stroke-opacity':'.46','stroke-width':'1'});el('text',{x:pad.l-9,y:yp+4,fill:'#d4b69a','fill-opacity':'.95','text-anchor':'end','font-size':'11'},fmt(y,opts.normalizeY?0:1))}for(let i=0;i<6;i++){const x=xMin+(xMax-xMin)*(i/5),xp=px(x);el('text',{x:xp,y:H-17,fill:'#d4b69a','fill-opacity':'.9','text-anchor':'middle','font-size':'11'},opts.xFormat?opts.xFormat(x):fmt(x,0))}if(opts.horizontalLine!==undefined&&opts.horizontalLine>=yMin&&opts.horizontalLine<=yMax)el('line',{x1:pad.l,y1:py(opts.horizontalLine),x2:W-pad.r,y2:py(opts.horizontalLine),stroke:'#92a1b9','stroke-dasharray':'5 5','stroke-opacity':'.6'});sets.forEach(s=>{const values=s.points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=xMin&&p.x<=xMax);if(values.length<2)return;const d=values.map((p,i)=>(i?'L':'M')+px(p.x).toFixed(2)+' '+py(p.y).toFixed(2)).join(' ');el('path',{d,fill:'none',stroke:s.color||'#5c9eff','stroke-width':'2.6','stroke-linejoin':'round','stroke-linecap':'round'})});svg.style.color='#d4b69a';svg.style.background='transparent';node.append(svg)}
@@ -1138,7 +1138,130 @@ const oldRenderSentiment=renderSentiment;renderSentiment=function(...args){const
 window.addEventListener('focus',()=>{if(!document.hidden&&Date.now()-v4LastCheck>180000){v4LastCheck=Date.now();refreshAll(false)}});let v4LastCheck=Date.now();
 }
 
-readStorage();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+
+/* V10.3 FINAL CLEANUP — presentation-only DOM reorganization.
+   Preserve all existing element IDs and localStorage keys for backwards compatibility. */
+function initFinalCleanup(){
+ const cycle=$('cyclePage'),sentiment=$('sentimentPage'),strategy=$('strategyPage'),settings=$('settingsPage');
+ if(!cycle||!sentiment||!strategy||!settings)return;
+ const hide=(node)=>{if(node)node.classList.add('ct-cleanup-hidden')};
+ const details=(title,location,open=false)=>{
+  const el=document.createElement('details');el.className='ct-clean-details';
+  el.open=open;
+  const summary=document.createElement('summary');summary.textContent=title;el.append(summary);
+  location.append(el);return el;
+ };
+ const firstDirect=(root,selector)=>[...root.children].find(el=>el.matches(selector));
+ // Cycle: one countdown, one halving history, one performance summary/chart, one seasonality chart.
+ const countdown=firstDirect(cycle,'.halving-dashboard');
+ const halving=firstDirect(cycle,'.ct-halving-history');
+ if(countdown&&halving)countdown.after(halving);
+ const season=$('coinglassSection'),research=$('cycleResearch');
+ if(research&&season){season.before(research);research.classList.add('ct-clean-research')}
+ const performance=document.createElement('section');performance.className='card ct-clean-performance';
+ performance.innerHTML='<div class="card-head"><div><div class="eyebrow">CYCLE PERFORMANCE</div><h2>Post-Halving Returns</h2><p>Observed BTC price change indexed to the halving date. Compare cycles on the same elapsed-day axis.</p></div></div><div class="ct-clean-chart" id="cyclePerformancePlot"></div><p class="muted tiny">Historical observations only. Different cycles and missing samples do not imply a repeatable return path.</p>';
+ if(research)research.before(performance);else if(season)season.before(performance);
+ const metricsTable=research?.querySelector('.v4-table-wrap');
+ const metricsNotes=research?.querySelector('.v4-footnote');
+ if(research){
+  const extra=details('Detailed cycle metrics',research);
+  if(metricsTable)extra.append(metricsTable);
+  if(metricsNotes)extra.append(metricsNotes);
+  const heading=research.querySelector('.v4-heading h2');if(heading)heading.textContent='Cycle Peaks & Drawdowns';
+  const desc=research.querySelector('.v4-heading p');if(desc)desc.textContent='Key price observations by historical cycle';
+ }
+ const supply=[...cycle.querySelectorAll('.card')].find(el=>el.querySelector('h2')?.textContent?.includes('Bitcoin Supply Convergence'));
+ hide(supply);
+ hide(cycle.querySelector('.halving-facts'));
+ const oldComparison=[...cycle.querySelectorAll('.content-columns')].find(el=>el.querySelector('#cycleTable'));
+ hide(oldComparison);
+ const upload=[...cycle.querySelectorAll('.card')].find(el=>el.querySelector('#historyFile'));
+ // Sentiment: concise analysis, comparison chart, historical analogs, eight questions.
+ const psych=sentiment.querySelector('.ct-psych-engine');
+ const psychEvidence=psych?.querySelector('.ct-psych-detail-grid');
+ if(psych&&psychEvidence){
+  const evidence=details('근거 및 반대 시나리오 자세히 보기',psych);
+  evidence.append(psychEvidence);
+  const headline=psych.querySelector('.ct-psych-head h2');if(headline)headline.textContent='현재 시장 해석';
+  hide(psych.querySelector('.ct-psych-foot'));
+ }
+ const divergence=$('divergenceSection'),marketResearch=sentiment.querySelector('.ct-data-research');
+ if(divergence&&marketResearch)marketResearch.before(divergence);
+ if(marketResearch)marketResearch.after(document.createComment('Market research end'));
+ const standalone=sentiment.querySelector('.sentiment-analysis-card');
+ const checks=standalone?.querySelector('.ct-eight-checks');
+ if(checks){
+  const holder=document.createElement('section');holder.className='card ct-clean-sentiment-checks';
+  const heading=document.createElement('div');heading.className='card-head';
+  heading.innerHTML='<div><h2>시장 심리 점검 질문</h2><p>시장에 대한 확신과 준비 상태를 확인하는 8개 질문</p></div>';
+  const fold=details('8개 질문 펼쳐보기',holder);
+  fold.append(checks);
+  holder.prepend(heading);
+  if(marketResearch)marketResearch.after(holder);else sentiment.append(holder);
+ }
+ hide(sentiment.querySelector('.sentiment-columns'));
+ const extraIndicators=[...sentiment.children].find(el=>el.classList.contains('card')&&el.querySelector('#indicators'));
+ hide(extraIndicators);
+ hide($('institutionalSection'));
+ // Journal: existing forms, rules and history stay editable; verification is grouped with saved records.
+ const ruleChecks=strategy.querySelector('.content-columns .checklist');
+ const ruleContainer=ruleChecks?.parentElement;
+ if(ruleChecks){hide(ruleChecks);const title=ruleChecks.previousElementSibling;if(title?.tagName==='H3')hide(title)}
+ const journal=strategy.querySelector('.journal-integrated'),review=$('journalVerification');
+ const journalCards=journal?.querySelectorAll('.content-columns > .card');
+ const journalHistory=journalCards?.[1];
+ if(journalHistory&&review){
+  const status=$('journalReviewStats');
+  if(status){status.classList.add('ct-clean-review-stats');journalHistory.append(status)}
+  const fold=details('상세 결과 검토 · 가격 변화 및 방향 적중률',journalHistory);
+  fold.append(review);
+  review.classList.add('ct-clean-embedded-review');
+ }
+ const reviewField=$('journalReview')?.closest('label');if(reviewField){
+  const more=details('사후 분석 메모 (선택)',reviewField.parentElement);
+  more.append(reviewField);
+ }
+ // Settings: data health + local backups are primary; technical controls tucked into Advanced.
+ const settingsColumns=firstDirect(settings,'.content-columns');
+ const sourceCard=settingsColumns?.querySelector('.card:first-child');
+ const storageCard=settingsColumns?.querySelector('.card:nth-child(2)');
+ const quality=$('dataQuality');
+ if(sourceCard&&quality){
+  const fold=details('Detailed source diagnostics',sourceCard);
+  fold.append(quality);
+ }
+ const advanced=details('Advanced Settings',settings);
+ const api=sourceCard?.querySelector('.data-endpoint-box');
+ if(api)advanced.append(api);
+ if(upload)advanced.append(upload);
+ const etfControls=$('etfCsv')?.closest('.intel-inline');
+ if(etfControls)advanced.append(etfControls);
+ const deleteRow=$('clearLocal')?.closest('.actions');
+ if(deleteRow)advanced.append(deleteRow);
+ const limitations=[...settings.querySelectorAll('.card')].find(el=>el.querySelector('h2')?.textContent==='Sources & technical limitations');
+ if(limitations)advanced.append(limitations);
+ if(storageCard)storageCard.classList.add('ct-clean-storage');
+ if(sourceCard)sourceCard.classList.add('ct-clean-sources');
+ settings.classList.add('ct-clean-settings');
+ sentiment.classList.add('ct-clean-sentiment');
+ cycle.classList.add('ct-clean-cycle');
+ strategy.classList.add('ct-clean-strategy');
+}
+function renderCyclePerformance(){
+ const node=$('cyclePerformancePlot');if(!node)return;
+ const range=Number($('cycleRange')?.value||1460);
+ const series=[];
+ for(const [year,date,color] of [...HALVINGS].reverse()){
+  const result=cycleSeries(year,date,range);
+  if(result?.series?.length>1)series.push({label:year,color,points:result.series.map(point=>({x:point.x,y:point.y-100}))});
+ }
+ if(!series.length){node.textContent='Historical BTC observations are required for cycle comparisons.';return}
+ const values=series.flatMap(s=>s.points.map(p=>p.y)).filter(Number.isFinite);
+ const min=Math.min(-10,...values),max=Math.max(10,...values);
+ drawPlot(node,series,{xMin:0,xMax:range,yMin:min,yMax:max,xFormat:v=>Math.round(v)+'d'});
+}
+
+readStorage();initFinalCleanup();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
