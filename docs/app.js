@@ -20,6 +20,13 @@ function readStorage(){try{const parsed=JSON.parse(localStorage.getItem(KEY));if
    for(const k of ['phase','mood','action'])if(typeof rule[k]==='string')rule[k]=norm(rule[k]);
   });
  }
+ // Migrate only the unchanged legacy Crypto Market preset's last Nasdaq slot.
+ // User-modified / custom configurations remain untouched.
+ if(state.preset==='crypto'&&Array.isArray(state.charts)&&state.charts.length===6
+   &&state.charts.slice(0,5).every((c,i)=>c.symbol===presets.crypto[i][0])
+   &&state.charts[5].symbol==='NASDAQ:NDX'){
+   state.charts[5]={...state.charts[5],symbol:'BINANCE:SOLUSDT'};
+ }
  history=normalizeHistory(state.history);historySource=state.historySource||''}
 function persist(notify=false){try{localStorage.setItem(KEY,JSON.stringify(state));if(notify)toast('Saved to this browser.');return true}catch(e){toast('Unable to save. Check browser permissions or export a JSON backup.');return false}}
 function toast(message){const node=$('toast');node.textContent=message;node.style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>node.style.display='none',3100)}
