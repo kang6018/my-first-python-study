@@ -75,15 +75,15 @@ function mountOverview(force=false){
  // The US10Y yield uses source-labelled FRED daily observations, not a surrogate ETF.
  const data=[
   {name:'Bitcoin / USD · Macro Anchor',symbol:'COINBASE:BTCUSD',category:'RISK APPETITE',description:'Coinbase BTC/USD spot · crypto benchmark against macro conditions',original:'COINBASE:BTCUSD'},
-  {name:'DXY · US Dollar Index',symbol:'TVC:DXY',category:'USD & LIQUIDITY',description:'TradingView DXY index · not total global liquidity',original:'TVC:DXY'},
-  {name:'US M2 Money Stock',symbol:'FRED:M2SL',native:'fred',category:'USD & LIQUIDITY',description:'FRED M2SL · monthly · seasonally adjusted USD billions · delayed publication',sourceUrl:'https://fred.stlouisfed.org/series/M2SL',interval:'M'},
-  {name:'Federal Reserve Total Assets',symbol:'FRED:WALCL',native:'fred',category:'USD & LIQUIDITY',description:'FRED WALCL · weekly Fed balance sheet · USD millions, not net liquidity',sourceUrl:'https://fred.stlouisfed.org/series/WALCL',interval:'W'},
-  {name:'US 10Y Treasury Yield',symbol:'FRED:DGS10',native:'treasury',category:'INTEREST RATES',description:'FRED DGS10 · daily nominal 10-year Treasury yield'},
-  {name:'US 10Y Real Yield',symbol:'FRED:DFII10',native:'fred',category:'INTEREST RATES',description:'FRED DFII10 · daily 10-year inflation-indexed Treasury yield · percent',sourceUrl:'https://fred.stlouisfed.org/series/DFII10',interval:'D'},
+  {name:'DXY · US Dollar Index',symbol:'TVC:DXY',category:'ADDITIONAL INDICATORS',description:'TradingView dollar index · may not be available in third-party embeds',original:'TVC:DXY',secondary:true},
+  {name:'US M2 Money Stock',symbol:'FRED:M2SL',category:'USD & LIQUIDITY',description:'FRED M2SL · monthly · seasonally adjusted USD billions · delayed publication',sourceUrl:'https://fred.stlouisfed.org/series/M2SL',interval:'M'},
+  {name:'Federal Reserve Total Assets',symbol:'FRED:WALCL',category:'ADDITIONAL INDICATORS',description:'FRED WALCL on TradingView · weekly Fed assets · widget may be unavailable',sourceUrl:'https://fred.stlouisfed.org/series/WALCL',interval:'W',secondary:true},
+  {name:'US 10Y Treasury Yield',symbol:'TVC:US10Y',category:'INTEREST RATES',description:'TradingView US 10-year yield; this is a market chart, not the Fed DGS10 release',original:'TVC:US10Y',interval:'D'},
+  {name:'US 10Y Real Yield',symbol:'FRED:DFII10',category:'INTEREST RATES',description:'FRED DFII10 · daily 10-year inflation-indexed Treasury yield · percent',sourceUrl:'https://fred.stlouisfed.org/series/DFII10',interval:'D'},
   {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official NDX',original:'NASDAQ:NDX'},
   {name:'S&P 500 · Cash CFD',symbol:'FOREXCOM:SPXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official SPX',original:'SP:SPX'},
   {name:'Gold / XAUUSD',symbol:'OANDA:XAUUSD',category:'RELATIVE STRENGTH',description:'OANDA spot gold · USD per troy ounce'},
-  {name:'VIX Volatility Index',symbol:'TVC:VIX',category:'RISK APPETITE',description:'Equity implied-volatility index · not a BTC volatility reading'},
+  {name:'VIX Volatility Index',symbol:'TVC:VIX',category:'ADDITIONAL INDICATORS',description:'Equity implied-volatility index · widget may not load · not BTC volatility',original:'TVC:VIX',secondary:true},
   {name:'Silver / XAGUSD',symbol:'OANDA:XAGUSD',category:'ADDITIONAL MARKETS',description:'OANDA silver spot · USD per troy ounce',secondary:true},
   {name:'Brent Crude · Cash CFD',symbol:'OANDA:BCOUSD',category:'ADDITIONAL MARKETS',description:'OANDA Brent CFD proxy · not ICE continuous future',original:'ICEEUR:BRN1!',secondary:true},
   {name:'USD / KRW',symbol:'FX_IDC:USDKRW',category:'ADDITIONAL MARKETS',description:'Indicative USD/KRW quote',secondary:true}
@@ -91,7 +91,7 @@ function mountOverview(force=false){
  grid.replaceChildren();
  const previous=$('v12MacroExtra');if(previous)previous.remove();
  const extra=document.createElement('details');extra.id='v12MacroExtra';extra.className='ct-clean-details ct-v12-macro-extra';
- const summary=document.createElement('summary');summary.textContent='Additional Markets · Silver, Brent, USD/KRW';
+ const summary=document.createElement('summary');summary.textContent='Additional Indicators · DXY, VIX, Fed Assets, Silver, Brent, USD/KRW';
  const extraGrid=document.createElement('div');extraGrid.className='macro-grid';
  extra.append(summary,extraGrid);grid.after(extra);
  const targets=[];
@@ -104,9 +104,9 @@ function mountOverview(force=false){
   const desc=document.createElement('small');desc.className='macro-data-note';desc.textContent=item.description;
   heading.append(eyebrow,label,desc);
   const tools=document.createElement('div');tools.className='macro-actions';
-  const code=document.createElement('span');code.className='macro-symbol';code.textContent=item.native==='kospi'?'KOSPI / KS11':(item.native?'FRED · DGS10':item.symbol);
+  const code=document.createElement('span');code.className='macro-symbol';code.textContent=item.symbol;
   const link=document.createElement('a');link.textContent='Open source ↗';
-  link.href=item.sourceUrl||(item.native==='kospi'?'https://www.tradingview.com/symbols/KRX-KOSPI/':(item.native?'https://fred.stlouisfed.org/series/DGS10':'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(item.original||item.symbol)));
+  link.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(item.original||item.symbol);
   link.rel='noopener noreferrer';link.target='_blank';link.className='macro-external';
   const memo=document.createElement('button');memo.type='button';memo.className='btn secondary ct-v12-macro-memo';memo.textContent='Memo';
   memo.addEventListener('click',()=>{
@@ -126,8 +126,7 @@ function mountOverview(force=false){
  macroMounted=true;
  const load=entry=>{
   if(entry.done)return;entry.done=true;
-  if(entry.item.native==='kospi'){renderKospiIndex(entry.slot);return}if(entry.item.native==='treasury'||entry.item.native==='fred'){renderFredSeries(entry.slot,entry.item);return}
-  // Avoid pop-up failures from exchanges that TradingView does not license for third-party widgets.
+  // Use TradingView consistently across every macro card; source-only links remain available.
   tv(entry.slot,{symbol:entry.item.symbol,interval:entry.item.interval||'D',mini:true,allowSymbolChange:false});
  };
  if('IntersectionObserver' in window){
@@ -1571,8 +1570,8 @@ function v11InitMacro(){
  }
  const axes=document.createElement('div');axes.className='ct-v11-macro-axes';
  for(const [label,question,reference] of [
-  ['USD & LIQUIDITY','Is the USD tightening and is the money backdrop growing?','DXY · M2SL (monthly) · WALCL (weekly), all separate proxies'],
-  ['INTEREST RATES','Are nominal and real yields changing the risk backdrop?','DGS10 nominal · DFII10 TIPS real yield'],
+  ['USD & LIQUIDITY','Is the liquidity backdrop expanding?','M2SL monthly · DXY and Fed assets in Additional Indicators'],
+  ['INTEREST RATES','Are nominal and real yields changing the risk backdrop?','TradingView US10Y nominal · FRED DFII10 real yield on TradingView'],
   ['RISK APPETITE','Is BTC moving with or against equities?','Nasdaq 100 · S&P 500'],
   ['RELATIVE STRENGTH','Is crypto uniquely weak or is the entire market under pressure?','Gold · Silver · Equity benchmarks']
  ]){
@@ -1587,7 +1586,7 @@ function v11InitMacro(){
   const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=title+' ↗';sources.append(link);
  }
  const caution=document.createElement('p');caution.className='ct-v11-foot';
- caution.textContent='FRED series update at different intervals (weekly/monthly/daily); these links are reference data and not live widgets. Do not infer a mechanical BTC price signal.';
+ caution.textContent='Every chart on this page is a TradingView widget. FRED tickers may update monthly, weekly or daily and are not live market quotes. If a symbol is restricted in embeds, use its TradingView link. DXY, VIX and WALCL are grouped under Additional Indicators.';
  p.append(note,axes,sources,caution);
  const toolbar=document.createElement('div');toolbar.className='ct-v12-macro-toolbar';
  const label=document.createElement('strong');label.textContent='MARKET DATA · FILTER';
