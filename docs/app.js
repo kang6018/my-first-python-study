@@ -738,7 +738,7 @@ function renderSources(){
  ];
  const captions={ok:'CONNECTED',check:'CHECK SOURCE',snapshot:'SNAPSHOT',missing:'NOT CONNECTED',info:'EXTERNAL'};
  root.replaceChildren();
- datasets.forEach(row=>{
+ datasets.filter(row=>['Bitcoin spot price','Fear & Greed Index','BTC daily history','ETF & institutional holdings'].includes(row.name)).forEach(row=>{
   const card=document.createElement('article');card.className='ct-source-card ct-source-'+row.kind;
   const heading=document.createElement('div');heading.className='ct-source-heading';
   const title=document.createElement('strong');title.textContent=row.name;
@@ -1187,7 +1187,6 @@ function initFinalCleanup(){
  }
  const divergence=$('divergenceSection'),marketResearch=sentiment.querySelector('.ct-data-research');
  if(divergence&&marketResearch)marketResearch.before(divergence);
- if(marketResearch)marketResearch.after(document.createComment('Market research end'));
  const standalone=sentiment.querySelector('.sentiment-analysis-card');
  const checks=standalone?.querySelector('.ct-eight-checks');
  if(checks){
@@ -1257,8 +1256,7 @@ function renderCyclePerformance(){
  }
  if(!series.length){node.textContent='Historical BTC observations are required for cycle comparisons.';return}
  const values=series.flatMap(s=>s.points.map(p=>p.y)).filter(Number.isFinite);
- const min=Math.min(-10,...values),max=Math.max(10,...values);
- drawPlot(node,series,{xMin:0,xMax:range,yMin:min,yMax:max,xFormat:v=>Math.round(v)+'d'});
+ drawPlot(node,series,{xMin:0,xMax:range,xFormat:v=>Math.round(v)+'d',horizontalLine:0});
 }
 
 readStorage();initFinalCleanup();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
