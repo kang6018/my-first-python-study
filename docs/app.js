@@ -30,8 +30,10 @@ function readStorage(){try{const parsed=JSON.parse(localStorage.getItem(KEY));if
 
  // Move only the unchanged six-asset crypto preset to seven assets;
  // preserve any custom chart layout or user-added symbols.
- if(state.preset==='crypto'&&Array.isArray(state.charts)&&state.charts.length===6
+ if(Array.isArray(state.charts)&&state.charts.length===6
   &&state.charts.every((c,i)=>c.symbol===presets.crypto[i][0])){
+  // Upgrade legacy six-chart layout even if a previous interval change marked it "custom".
+  // Keep intervals and all unrelated saved chart layouts untouched.
   state.charts.push({symbol:'BINANCE:HYPEUSDT',interval:state.charts[5].interval||'D'});
  }
  history=normalizeHistory(state.history);historySource=state.historySource||''}
@@ -290,7 +292,7 @@ function renderCharts(){const grid=$('chartGrid');grid.replaceChildren();$('pres
  if(evidence)evidence.value+=(evidence.value?'\n\n':'')+'[Chart observation] '+entry.symbol+' / '+entry.interval+' · '+new Date().toISOString().slice(0,16).replace('T',' ')+' UTC. Describe the observed move and what could invalidate this view.';
  toast('차트 정보를 판단 기록에 전달했습니다. 근거를 추가한 후 저장하세요.');
 },'secondary');
-if(i===0&&state.preset==='crypto')card.classList.add('ct-v12-primary-chart');
+if(i===0&&entry.symbol==='BINANCE:BTCUSDT')card.classList.add('ct-v12-primary-chart');
 head.append(symbol,interval,apply,before,after,remove,memo);card.append(head,body);grid.append(card);tv(body,entry)});function swap(a,b){[state.charts[a],state.charts[b]]=[state.charts[b],state.charts[a]];state.preset='custom';renderCharts();persist()}}
 function btn(text,action,cls='secondary'){const b=document.createElement('button');b.type='button';b.className='btn '+cls;b.textContent=text;b.onclick=action;return b}
 function initCharts(){ $('preset').onchange=e=>{const name=e.target.value;state.preset=name;if(presets[name])state.charts=presets[name].map(([symbol,interval])=>({symbol,interval}));renderCharts();persist()};$('layout').onchange=e=>{state.cols=Number(e.target.value);$('chartGrid').style.setProperty('--cols',state.cols);persist()};$('chartHeight').onchange=e=>{state.height=Number(e.target.value);$('chartGrid').style.setProperty('--chart-height',state.height+'px');persist()};$('applyAllInterval').onclick=()=>{const interval=$('allInterval').value;state.charts.forEach(c=>c.interval=interval);state.preset='custom';renderCharts();persist()};$('addChart').onclick=()=>{if(state.charts.length>=16)return toast('You can have up to 16 charts.');state.charts.push({symbol:'BINANCE:BTCUSDT',interval:'D'});state.preset='custom';renderCharts();persist()};$('resetCharts').onclick=()=>{if(confirm('Reset all charts to the default layout?')){Object.assign(state,{charts:defaults().charts,cols:2,height:360,preset:'crypto'});renderCharts();persist()}};$('saveCharts').onclick=()=>persist(true)}
