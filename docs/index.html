@@ -42,6 +42,63 @@
         </figure>
       </div>
     </div>
+
+    <aside id="ctOwnershipFlow" class="ct-ownership-flow" aria-label="Illustrative Bitcoin global flow animation. Simulated visual, not real geographic transfer or custody data.">
+      <div class="ct-flow-eyebrow"><span class="ct-flow-live-dot"></span> BTC / GLOBAL FLOW <span class="ct-flow-sim-tag">VISUAL SIMULATION</span></div>
+      <svg id="ctOwnershipFlowSvg" class="ct-flow-map" viewBox="0 0 680 382" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stylized world map with animated Bitcoin coins of different sizes crossing illustrative regional routes">
+        <defs>
+          <radialGradient id="ctFlowNodeGlow"><stop offset="0%" stop-color="#f8bd74" stop-opacity=".58"/><stop offset="55%" stop-color="#e78c3c" stop-opacity=".16"/><stop offset="100%" stop-color="#e78c3c" stop-opacity="0"/></radialGradient>
+          <pattern id="ctFlowGrid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="#54717c" stroke-opacity=".12" stroke-width=".8"/></pattern>
+          <path id="ctFlowRoute1" d="M139 147 Q221 30 329 125"/>
+          <path id="ctFlowRoute2" d="M329 125 Q435 49 523 159"/>
+          <path id="ctFlowRoute3" d="M139 147 Q301 83 523 159"/>
+          <path id="ctFlowRoute4" d="M216 264 Q236 170 329 125"/>
+          <path id="ctFlowRoute5" d="M329 125 Q377 138 404 184"/>
+          <path id="ctFlowRoute6" d="M404 184 Q459 149 523 159"/>
+          <path id="ctFlowRoute7" d="M523 159 Q494 286 588 302"/>
+          <path id="ctFlowRoute8" d="M216 264 Q290 292 404 184"/>
+        </defs>
+        <rect width="680" height="382" fill="url(#ctFlowGrid)" opacity=".8"/>
+        <g class="ct-flow-continent">
+          <path d="M57 93L86 74L115 60L142 69L158 53L178 69L190 91L175 113L158 117L156 140L139 151L138 170L114 171L103 153L89 160L80 142L59 131L45 112Z"/>
+          <path d="M115 168L145 179L157 207L148 225L160 247L143 271L141 305L120 334L112 318L119 288L106 261L110 233L95 215L99 192Z"/>
+          <path d="M271 94L290 79L309 92L337 87L346 108L368 106L377 128L363 141L345 139L331 158L307 148L306 129L282 125Z"/>
+          <path d="M303 160L340 152L358 167L367 195L359 227L339 255L318 283L309 258L288 237L279 200L289 170Z"/>
+          <path d="M360 89L396 75L435 82L466 70L509 79L542 91L568 115L576 145L556 160L540 154L531 182L512 187L502 206L480 192L465 160L447 168L421 155L402 173L382 144L364 141Z"/>
+          <path d="M548 271L576 258L602 273L614 297L604 315L570 324L546 303Z"/>
+          <path d="M205 45L216 29L241 36L236 54L220 60Z"/>
+          <path d="M609 208L621 194L630 218L617 228Z"/>
+        </g>
+        <g class="ct-flow-routes">
+          <use href="#ctFlowRoute1" class="ct-flow-route-major"/>
+          <use href="#ctFlowRoute2" class="ct-flow-route-major"/>
+          <use href="#ctFlowRoute3" class="ct-flow-route-medium"/>
+          <use href="#ctFlowRoute4" class="ct-flow-route-minor"/>
+          <use href="#ctFlowRoute5" class="ct-flow-route-minor"/>
+          <use href="#ctFlowRoute6" class="ct-flow-route-medium"/>
+          <use href="#ctFlowRoute7" class="ct-flow-route-minor"/>
+          <use href="#ctFlowRoute8" class="ct-flow-route-minor"/>
+        </g>
+        <g class="ct-flow-hubs">
+          <g transform="translate(139 147)"><circle r="38" fill="url(#ctFlowNodeGlow)"/><circle r="9" class="ct-flow-ring"/><circle r="4" class="ct-flow-core"/></g>
+          <g transform="translate(329 125)"><circle r="29" fill="url(#ctFlowNodeGlow)"/><circle r="7" class="ct-flow-ring"/><circle r="3.5" class="ct-flow-core"/></g>
+          <g transform="translate(523 159)"><circle r="38" fill="url(#ctFlowNodeGlow)"/><circle r="9" class="ct-flow-ring"/><circle r="4" class="ct-flow-core"/></g>
+          <g transform="translate(216 264)"><circle r="19" fill="url(#ctFlowNodeGlow)"/><circle r="5" class="ct-flow-ring"/><circle r="2.5" class="ct-flow-core"/></g>
+          <g transform="translate(404 184)"><circle r="23" fill="url(#ctFlowNodeGlow)"/><circle r="6" class="ct-flow-ring"/><circle r="3" class="ct-flow-core"/></g>
+          <g transform="translate(588 302)"><circle r="16" fill="url(#ctFlowNodeGlow)"/><circle r="4" class="ct-flow-ring"/><circle r="2" class="ct-flow-core"/></g>
+        </g>
+        <g class="ct-flow-coin ct-flow-coin-large"><circle r="17" class="ct-flow-coin-fill"/><circle r="13" class="ct-flow-coin-outline"/><text text-anchor="middle" dy="7" font-size="22">₿</text><animateMotion dur="10s" begin="-4s" repeatCount="indefinite" rotate="0"><mpath href="#ctFlowRoute1"/></animateMotion></g>
+        <g class="ct-flow-coin ct-flow-coin-large"><circle r="16" class="ct-flow-coin-fill"/><circle r="12" class="ct-flow-coin-outline"/><text text-anchor="middle" dy="6" font-size="21">₿</text><animateMotion dur="12s" begin="-8s" repeatCount="indefinite" rotate="0"><mpath href="#ctFlowRoute2"/></animateMotion></g>
+        <g class="ct-flow-coin ct-flow-coin-medium"><circle r="11" class="ct-flow-coin-fill"/><circle r="8.5" class="ct-flow-coin-outline"/><text text-anchor="middle" dy="5" font-size="14">₿</text><animateMotion dur="13s" begin="-1s" repeatCount="indefinite" rotate="0"><mpath href="#ctFlowRoute3"/></animateMotion></g>
+        <g class="ct-flow-coin ct-flow-coin-small"><circle r="7" class="ct-flow-coin-fill"/><text text-anchor="middle" dy="3" font-size="9">₿</text><animateMotion dur="16s" begin="-10s" repeatCount="indefinite" rotate="0"><mpath href="#ctFlowRoute4"/></animateMotion></g>
+        <g class="ct-flow-coin ct-flow-coin-small"><circle r="7" class="ct-flow-coin-fill"/><text text-anchor="middle" dy="3" font-size="9">₿</text><animateMotion dur="13s" begin="-6s" repeatCount="indefinite" rotate="0"><mpath href="#ctFlowRoute5"/></animateMotion></g>
+        <g class="ct-flow-coin ct-flow-coin-medium"><circle r="10" class="ct-flow-coin-fill"/><circle r="8" class="ct-flow-coin-outline"/><text text-anchor="middle" dy="4" font-size="13">₿</text><animateMotion dur="11s" begin="-4s" repeatCount="indefinite" rotate="0"><mpath href="#ctFlowRoute6"/></animateMotion></g>
+        <g class="ct-flow-coin ct-flow-coin-small"><circle r="7" class="ct-flow-coin-fill"/><text text-anchor="middle" dy="3" font-size="9">₿</text><animateMotion dur="18s" begin="-7s" repeatCount="indefinite" rotate="0"><mpath href="#ctFlowRoute7"/></animateMotion></g>
+        <g class="ct-flow-coin ct-flow-coin-small"><circle r="7" class="ct-flow-coin-fill"/><text text-anchor="middle" dy="3" font-size="9">₿</text><animateMotion dur="17s" begin="-11s" repeatCount="indefinite" rotate="0"><mpath href="#ctFlowRoute8"/></animateMotion></g>
+        <g class="ct-flow-label"><text x="122" y="122">NA</text><text x="313" y="105">EU</text><text x="504" y="133">ASIA</text><text x="187" y="294">LATAM</text><text x="389" y="214">ME</text></g>
+      </svg>
+      <div class="ct-flow-footer"><span class="ct-flow-key"><i class="ct-flow-key-lg"></i> LARGE <i class="ct-flow-key-sm"></i> SMALL</span><span>Illustrative routes · not real transfer data</span></div>
+    </aside>
     <div class="ct-hero-bottom"><span>₿ / THE LONG GAME</span><span>BUILT FOR INDEPENDENT THINKING</span></div>
   </section>
 
