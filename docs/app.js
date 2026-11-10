@@ -1398,7 +1398,20 @@ function v11InitMacro(){
  const p=v11CreatePanel('Macro Cross-Check','Compare Bitcoin with risk assets, the dollar, rates and liquidity. Correlation alone does not prove causation.','ct-v11-macro');
  const note=document.createElement('p');note.className='ct-v11-foot';
  note.textContent='Use these as potential challenges to your cycle thesis. Charts are source-labelled proxies; no unsupported live liquidity score is calculated.';
- p.append(note);grid.before(p);
+ const axes=document.createElement('div');axes.className='ct-v11-macro-axes';
+ for(const [label,question,reference] of [
+  ['USD & LIQUIDITY','Is US dollar strength tightening financial conditions?','USD/KRW · USD and rates as partial proxies'],
+  ['INTEREST RATES','Are yields making risk assets less attractive?','US Treasury yields · distinguish nominal from real rates'],
+  ['RISK APPETITE','Is BTC moving with or against equities?','Nasdaq 100 · S&P 500'],
+  ['RELATIVE STRENGTH','Is crypto uniquely weak or is the entire market under pressure?','Gold · Silver · Equity benchmarks']
+ ]){
+  const card=document.createElement('article');
+  const title=document.createElement('strong');title.textContent=label;
+  const body=document.createElement('p');body.textContent=question;
+  const hint=document.createElement('small');hint.textContent=reference;
+  card.append(title,body,hint);axes.append(card);
+ }
+ p.append(note,axes);grid.before(p);
 }
 function renderV11Quality(){
  const q=v11PriceQuality();
@@ -1537,7 +1550,12 @@ function renderV11Journal(){
    info.textContent='사이클: '+(v.phase||'미기록')+'\n확신도: '+(v.confidence||'—')+'% · 틀릴 확률: '+(v.wrongProbability||'—')+
    '%\n3개월: '+(v.direction3||'—')+' · 6개월: '+(v.direction6||'—')+'\n보유 수량 위험: '+(v.quantityRisk||'—')+
    '\n시장 심리: '+(v.fearAtSave??'—')+'/100';
-   detail.append(summary,info);card.append(detail);
+   if(r.originalEvidence){
+    const initial=document.createElement('p');initial.className='ct-v11-original-evidence';
+    initial.textContent='최초 판단 근거: '+r.originalEvidence;
+    detail.append(summary,info,initial);
+   }else detail.append(summary,info);
+   card.append(detail);
   }
  });
 }
