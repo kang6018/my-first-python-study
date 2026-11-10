@@ -1657,3 +1657,39 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 .ct-clean-sentiment .ct-clean-summary-card .stat-value{font-size:clamp(19px,2.2vw,29px)!important;overflow-wrap:anywhere}
 @media(max-width:900px){.ct-clean-cycle .halving-banner-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:620px){.ct-clean-cycle .halving-banner-grid{grid-template-columns:1fr!important}.ct-clean-sentiment>.stats-grid{grid-template-columns:1fr!important}}
+
+/* V11 Investment System — preserve the existing dark-copper aesthetic. */
+.ct-v11-panel{margin:18px 0 22px;padding:22px 24px;border:1px solid rgba(209,137,65,.27);border-radius:14px;background:linear-gradient(145deg,rgba(30,23,19,.96),rgba(16,13,12,.97));color:var(--text);box-shadow:0 6px 26px rgba(0,0,0,.09)}
+.ct-v11-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:16px}
+.ct-v11-head h2{font-size:clamp(19px,2.1vw,27px);letter-spacing:-.025em;line-height:1.35;margin:5px 0 6px}
+.ct-v11-head p{color:var(--muted);font-size:12px;line-height:1.6;max-width:70ch;margin:0}
+.ct-v11-kicker{color:var(--accent-strong);font-size:10px;letter-spacing:.17em;font-weight:800}
+.ct-v11-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.ct-v11-metric{min-width:0;padding:15px 16px;border:1px solid rgba(185,125,78,.20);border-radius:10px;background:rgba(11,9,8,.45)}
+.ct-v11-metric small{color:var(--muted);font-size:10px;letter-spacing:.06em;display:block;margin-bottom:10px;text-transform:uppercase;font-weight:700}
+.ct-v11-metric strong{display:block;font-size:clamp(16px,1.7vw,24px);font-weight:800;line-height:1.3;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.ct-v11-foot{color:var(--muted);font-size:11px;line-height:1.7;margin:13px 0 0}
+.ct-v11-context{padding:12px 0 0;font-size:12px;color:#d4b99f;line-height:1.75}
+.ct-v11-overview{margin:20px auto!important;max-width:min(1200px,calc(100% - 38px))}
+.ct-v11-overview .btn{margin-top:14px}
+.ct-v11-inline-warning{font-size:11px;line-height:1.65;padding:12px 14px;color:#deb88e;border-radius:9px;background:rgba(169,108,49,.08);border:1px solid rgba(169,108,49,.18)}
+.ct-v11-assessment{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:10px}
+.ct-v11-assessment-field{display:flex!important;flex-direction:column;gap:9px;min-width:0;padding:15px;border:1px solid rgba(192,130,72,.17);border-radius:10px;background:rgba(16,13,12,.65)}
+.ct-v11-assessment-field>strong{font-size:12px;font-weight:750;color:var(--text);line-height:1.6}
+.ct-v11-assessment-field input,.ct-v11-assessment-field select,.ct-v11-assessment-field textarea{width:100%;min-width:0;border-radius:7px;border:1px solid rgba(179,126,90,.35);background:#17120f;color:var(--text);padding:10px;font-size:13px;box-sizing:border-box}
+.ct-v11-assessment-field textarea{resize:vertical}
+.ct-v11-answer-current{margin:0!important;color:var(--accent-strong)!important;font-size:14px!important;line-height:2.2}
+.ct-v11-dual{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ct-v11-dual label{display:flex;flex-direction:column;gap:6px;font-size:11px}
+.ct-v11-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;grid-column:1/-1}
+.ct-v11-holdings-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+.ct-v11-holdings-grid>label{display:flex;flex-direction:column;gap:12px;color:var(--muted);font-size:12px;font-weight:700}
+.ct-v11-holdings-grid>label>input{width:100%;box-sizing:border-box;border:1px solid rgba(198,137,72,.3);border-radius:9px;background:#15110f;color:var(--text);padding:13px 14px;font-size:15px;font-variant-numeric:tabular-nums}
+.ct-v11-holdings-grid .ct-v11-metric{padding:12px}
+.ct-v11-holdings .ct-v11-actions{margin-top:14px}
+.ct-v11-snapshot{white-space:pre-wrap;overflow-wrap:anywhere;color:#d6c4b4;font-size:12px;line-height:1.8;padding:12px 0 0;background:none;border:0}
+.ct-v11-calibration{font-size:12px;color:var(--muted);line-height:1.7;padding:12px 5px 0}
+.ct-v11-macro{margin:0 0 18px}
+@media(max-width:1050px){.ct-v11-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:740px){.ct-v11-panel{padding:17px}.ct-v11-assessment,.ct-v11-holdings-grid{grid-template-columns:1fr}.ct-v11-holdings-grid .ct-v11-metric{grid-column:auto}.ct-v11-overview{max-width:calc(100% - 18px)}}
+@media(max-width:420px){.ct-v11-metrics{grid-template-columns:1fr 1fr;gap:8px}.ct-v11-metric{padding:12px}.ct-v11-metric strong{font-size:17px}.ct-v11-head h2{font-size:20px}}
