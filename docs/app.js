@@ -57,7 +57,10 @@ function mountOverview(force=false){
  // The US10Y yield uses source-labelled FRED daily observations, not a surrogate ETF.
  const data=[
   {name:'DXY · US Dollar Index',symbol:'TVC:DXY',category:'USD & LIQUIDITY',description:'TradingView DXY index · not total global liquidity',original:'TVC:DXY'},
+  {name:'US M2 Money Stock',symbol:'FRED:M2SL',category:'USD & LIQUIDITY',description:'FRED M2SL · monthly · seasonally adjusted USD billions · delayed publication',sourceUrl:'https://fred.stlouisfed.org/series/M2SL',interval:'M'},
+  {name:'Federal Reserve Total Assets',symbol:'FRED:WALCL',category:'USD & LIQUIDITY',description:'FRED WALCL · weekly Fed balance sheet · USD millions, not net liquidity',sourceUrl:'https://fred.stlouisfed.org/series/WALCL',interval:'W'},
   {name:'US 10Y Treasury Yield',symbol:'FRED:DGS10',native:'treasury',category:'INTEREST RATES',description:'FRED DGS10 · daily nominal 10-year Treasury yield'},
+  {name:'US 10Y Real Yield',symbol:'FRED:DFII10',category:'INTEREST RATES',description:'FRED DFII10 · daily 10-year inflation-indexed Treasury yield · percent',sourceUrl:'https://fred.stlouisfed.org/series/DFII10',interval:'D'},
   {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official NDX',original:'NASDAQ:NDX'},
   {name:'S&P 500 · Cash CFD',symbol:'FOREXCOM:SPXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official SPX',original:'SP:SPX'},
   {name:'Gold / XAUUSD',symbol:'OANDA:XAUUSD',category:'RELATIVE STRENGTH',description:'OANDA spot gold · USD per troy ounce'},
@@ -84,7 +87,7 @@ function mountOverview(force=false){
   const tools=document.createElement('div');tools.className='macro-actions';
   const code=document.createElement('span');code.className='macro-symbol';code.textContent=item.native==='kospi'?'KOSPI / KS11':(item.native?'FRED · DGS10':item.symbol);
   const link=document.createElement('a');link.textContent='Open source ↗';
-  link.href=item.native==='kospi'?'https://www.tradingview.com/symbols/KRX-KOSPI/':(item.native?'https://fred.stlouisfed.org/series/DGS10':'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(item.original||item.symbol));
+  link.href=item.sourceUrl||(item.native==='kospi'?'https://www.tradingview.com/symbols/KRX-KOSPI/':(item.native?'https://fred.stlouisfed.org/series/DGS10':'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(item.original||item.symbol)));
   link.rel='noopener noreferrer';link.target='_blank';link.className='macro-external';
   tools.append(code,link);head.append(heading,tools);
   const slot=document.createElement('div');slot.className='tv-slot';
@@ -96,7 +99,7 @@ function mountOverview(force=false){
   if(entry.done)return;entry.done=true;
   if(entry.item.native==='kospi'){renderKospiIndex(entry.slot);return}if(entry.item.native){renderTreasuryYield(entry.slot);return}
   // Avoid pop-up failures from exchanges that TradingView does not license for third-party widgets.
-  tv(entry.slot,{symbol:entry.item.symbol,interval:'D',mini:true,allowSymbolChange:false});
+  tv(entry.slot,{symbol:entry.item.symbol,interval:entry.item.interval||'D',mini:true,allowSymbolChange:false});
  };
  if('IntersectionObserver' in window){
   const observer=new IntersectionObserver(entries=>{
@@ -1487,8 +1490,8 @@ function v11InitMacro(){
  note.textContent='Use these as potential challenges to your cycle thesis. Charts are source-labelled proxies; no unsupported live liquidity score is calculated.';
  const axes=document.createElement('div');axes.className='ct-v11-macro-axes';
  for(const [label,question,reference] of [
-  ['USD & LIQUIDITY','Is US dollar strength tightening financial conditions?','USD/KRW · USD and rates as partial proxies'],
-  ['INTEREST RATES','Are yields making risk assets less attractive?','US Treasury yields · distinguish nominal from real rates'],
+  ['USD & LIQUIDITY','Is the USD tightening and is the money backdrop growing?','DXY · M2SL (monthly) · WALCL (weekly), all separate proxies'],
+  ['INTEREST RATES','Are nominal and real yields changing the risk backdrop?','DGS10 nominal · DFII10 TIPS real yield'],
   ['RISK APPETITE','Is BTC moving with or against equities?','Nasdaq 100 · S&P 500'],
   ['RELATIVE STRENGTH','Is crypto uniquely weak or is the entire market under pressure?','Gold · Silver · Equity benchmarks']
  ]){
