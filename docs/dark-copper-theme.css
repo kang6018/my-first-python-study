@@ -1855,3 +1855,91 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  #chartsPage #chartGrid>.ct-v12-primary-chart{grid-column:1/-1!important;min-height:330px!important}
  #chartsPage #chartGrid>.ct-v12-primary-chart>.chart-body{height:400px!important;min-height:300px!important}
 }
+
+
+/* V12.7 — User-approved edge-to-edge world map hero.
+   Map and BTC flight symbols are illustration, not geolocated custody data. */
+#overviewPage .ct-story-hero{
+ isolation:isolate!important;overflow:hidden!important;
+ background:linear-gradient(122deg,#100b09 0%,#20130d 46%,#1e100b 78%,#130d0b 100%)!important
+}
+#overviewPage .ct-story-hero .ct-hero-map-background{
+ position:absolute!important;inset:-5% -8% -6% -13%!important;
+ z-index:0!important;overflow:hidden!important;
+ pointer-events:none!important;opacity:.68!important;
+ -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.88) 0%,#000 30%,#000 83%,rgba(0,0,0,.86) 100%)!important;
+ mask-image:linear-gradient(90deg,rgba(0,0,0,.88) 0%,#000 30%,#000 83%,rgba(0,0,0,.86) 100%)!important
+}
+#overviewPage .ct-story-hero .ct-hero-map-background img{
+ width:100%!important;height:100%!important;
+ display:block!important;object-fit:cover!important;object-position:center center!important;
+ filter:brightness(.82) saturate(.90)!important
+}
+#overviewPage .ct-story-hero::before{
+ content:"";position:absolute;z-index:1;inset:0;pointer-events:none;
+ background:
+ linear-gradient(90deg,rgba(10,8,8,.74) 0%,rgba(13,9,8,.68) 17%,rgba(12,8,7,.45) 31%,rgba(18,10,8,.15) 52%,rgba(11,7,6,.06) 78%,rgba(8,6,5,.24) 100%),
+ linear-gradient(0deg,rgba(12,8,7,.62) 0%,transparent 21%,transparent 81%,rgba(11,8,7,.44) 100%)
+}
+#overviewPage .ct-story-hero .ct-story-grain{z-index:2!important;opacity:.08!important}
+#overviewPage .ct-story-hero .ct-hero-content{
+ z-index:6!important;position:relative!important;
+ filter:drop-shadow(0 2px 12px rgba(7,5,4,.45))!important
+}
+#overviewPage .ct-story-hero .ct-hero-bottom{z-index:7!important;position:absolute!important}
+#overviewPage .ct-story-hero .ct-scene.ct-scene-photo{
+ position:absolute!important;z-index:3!important;
+ right:-26%!important;top:13%!important;width:52%!important;height:85%!important;
+ opacity:.8!important;overflow:visible!important;pointer-events:none!important;
+ filter:none!important;perspective:none!important
+}
+#overviewPage .ct-story-hero .ct-scene-inner.ct-scene-image{
+ display:grid!important;place-items:center!important;
+ width:100%!important;height:100%!important;
+ transform:none!important;animation:none!important;filter:none!important
+}
+#overviewPage .ct-story-hero .ct-bitcoin-photo{
+ position:relative!important;display:block!important;
+ width:100%!important;height:100%!important;margin:0!important;
+ border:0!important;border-radius:50%!important;
+ background:transparent!important;overflow:hidden!important;
+ box-shadow:none!important;filter:none!important;
+ -webkit-mask-image:radial-gradient(ellipse 44% 44% at 50% 50%,#000 56%,rgba(0,0,0,.85) 79%,transparent 100%)!important;
+ mask-image:radial-gradient(ellipse 44% 44% at 50% 50%,#000 56%,rgba(0,0,0,.85) 79%,transparent 100%)!important
+}
+#overviewPage .ct-story-hero .ct-bitcoin-photo img{
+ width:100%!important;height:100%!important;display:block!important;
+ object-fit:cover!important;object-position:center center!important;
+ transform:scale(1.56)!important;filter:contrast(1.12) brightness(.86) saturate(.95)!important;
+ -webkit-mask-image:none!important;mask-image:none!important
+}
+#overviewPage .ct-story-hero .ct-scene-photo::before,
+#overviewPage .ct-story-hero .ct-scene-photo::after{display:none!important}
+@media(min-width:1600px){
+ #overviewPage .ct-story-hero .ct-hero-map-background{inset:-7% -6% -7% -17%!important}
+ #overviewPage .ct-story-hero .ct-scene.ct-scene-photo{right:-26%!important;width:51%!important}
+}
+@media(min-width:981px) and (max-width:1320px){
+ #overviewPage .ct-story-hero .ct-hero-map-background{inset:-4% -18% -3% -20%!important;opacity:.6!important}
+ #overviewPage .ct-story-hero .ct-scene.ct-scene-photo{right:-31%!important;width:57%!important;opacity:.62!important}
+ #overviewPage .ct-story-hero::before{background:linear-gradient(90deg,rgba(9,7,7,.79) 0%,rgba(9,7,7,.71) 31%,rgba(9,7,7,.37) 57%,rgba(9,7,7,.05) 100%)}
+}
+@media(min-width:701px) and (max-width:980px){
+ #overviewPage .ct-story-hero .ct-hero-map-background{inset:6% -30% 0 -42%!important;opacity:.49!important}
+ #overviewPage .ct-story-hero .ct-scene.ct-scene-photo{right:-39%!important;top:19%!important;width:65%!important;opacity:.4!important}
+ #overviewPage .ct-story-hero::before{background:linear-gradient(90deg,rgba(9,7,7,.82) 0%,rgba(9,7,7,.74) 49%,rgba(9,7,7,.1) 100%)}
+}
+@media(max-width:700px){
+ #overviewPage .ct-story-hero .ct-hero-map-background{inset:15% -70% 4% -75%!important;opacity:.4!important}
+ #overviewPage .ct-story-hero .ct-hero-map-background img{object-position:47% center!important}
+ #overviewPage .ct-story-hero .ct-scene.ct-scene-photo{
+  right:-52%!important;top:30%!important;width:89%!important;height:62%!important;opacity:.24!important
+ }
+ #overviewPage .ct-story-hero::before{
+  background:linear-gradient(180deg,rgba(11,8,7,.82) 0%,rgba(11,8,7,.75) 51%,rgba(11,8,7,.32) 100%)
+ }
+ #overviewPage .ct-story-hero .ct-hero-content{z-index:6!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #overviewPage .ct-story-hero .ct-hero-map-background img{animation:none!important}
+}
