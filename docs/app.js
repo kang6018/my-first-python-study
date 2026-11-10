@@ -1549,6 +1549,43 @@ function renderV11Assessment(){
 }
 
 
+
+/* V12: record interval-specific probabilities without changing legacy snapshots. */
+function v12InitForecasts(){
+ const form=$('sentimentPage')?.querySelector('.ct-v11-assessment');
+ if(!form)return;
+ const section=document.createElement('section');section.className='ct-v12-forecast-confidence';
+ const title=document.createElement('h3');title.textContent='기간별 예상 방향의 확신도';
+ const note=document.createElement('p');note.textContent='각 기간의 상승·하락·횡보 전망에 대해 별도 확신도를 기록합니다. 판단 결과는 확률적으로 보정되며 매매 신호가 아닙니다.';
+ section.append(title,note);
+ for(const [key,text] of [['confidence3','3개월 예상 방향 확신도 (%)'],['confidence6','6개월 예상 방향 확신도 (%)']]){
+  const label=document.createElement('label');label.textContent=text;
+  const input=document.createElement('input');input.dataset.v11Answer=key;input.type='number';input.min='0';input.max='100';input.step='1';input.placeholder='0–100%';
+  input.value=state.v11Assessment?.[key]??'';
+  label.append(input);section.append(label);
+ }
+ const actions=form.querySelector('.ct-v11-actions');if(actions)actions.before(section);else form.append(section);
+}
+function renderV12ForecastCalibration(){
+ const existing=$('v11Calibration');if(!existing)return;
+ const scores={90:[],180:[]},all=[];
+ for(const record of state.journal||[]){
+  const snapshot=record.assessmentSnapshot;if(!snapshot)continue;
+  for(const [days,key,probKey] of [[90,'direction3','confidence3'],[180,'direction6','confidence6']]){
+   const c=Number(snapshot[probKey]);if(snapshot[probKey]==null||snapshot[probKey]===''||!Number.isFinite(c)||c<0||c>100)continue;
+   const direction={상승:'up',하락:'down',횡보:'flat'}[snapshot[key]];if(!direction)continue;
+   const evaluation=v4JournalResult({...record,horizon:String(days),direction});
+   if(evaluation.status!=='Verification available'||!Number.isFinite(evaluation.change))continue;
+   const success=direction==='up'?evaluation.change>0:direction==='down'?evaluation.change<0:Math.abs(evaluation.change)<=5;
+   const score=Math.pow(c/100-(success?1:0),2);
+   scores[days].push(score);all.push(score);
+  }
+ }
+ const mean=a=>a.length?fmt(a.reduce((x,y)=>x+y,0)/a.length,3)+' ('+a.length+' entries)':'Not enough verified forecasts';
+ existing.textContent='Forecast confidence calibration · 90d Brier: '+mean(scores[90])+' · 180d Brier: '+mean(scores[180])+
+ '. Confidence means probability of the chosen direction. Lower Brier score is better; these scores do not represent actual trading returns.';
+}
+
 function v11InitHoldings(){
  const page=$('strategyPage'),journal=page?.querySelector('.journal-integrated');if(!page||!journal)return;
  const panel=v11CreatePanel('BTC 수량 관리','달러 수익률과 별개로 실제 보유 BTC가 줄었는지 확인합니다. 수량은 직접 입력하며 거래소와 연결되지 않습니다.','ct-v11-holdings');
@@ -1630,10 +1667,10 @@ function renderV11Calibration(){
  metric.textContent=samples.length?
  '확신 보정 · Brier score '+fmt(samples.reduce((a,b)=>a+b,0)/samples.length,3)+' ('+samples.length+'건, 낮을수록 좋음). 선택한 결과 확인 기간의 실제 방향을 평가합니다.':
  '확신 보정 · 검증 완료된 전망과 틀릴 확률 기록이 쌓이면 Brier score를 표시합니다.';
- root.after(metric);
+ root.after(metric);renderV12ForecastCalibration();
 }
 
-readStorage();initFinalCleanup();v11InitAssessment();v11InitHoldings();v11InitCycle();v12InitCycleValidation();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v11InitCycle();v12InitCycleValidation();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
