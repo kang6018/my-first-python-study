@@ -1538,7 +1538,6 @@ function renderV12CycleValidation(){
 /* Private cycle chronology is NEVER bundled in the public site source or sent to a server.
    People may enter their own dated and overlapping phase hypotheses into localStorage. */
 const PRIVATE_CYCLE_STORAGE='cycle-terminal-private-phase-history-v1';
-const SIMPLE_CYCLE_STORAGE='cycle-terminal-private-current-phase-v1';
 function v13PrivateEntries(){
  try{
   const value=JSON.parse(localStorage.getItem(PRIVATE_CYCLE_STORAGE)||'[]');
@@ -1546,12 +1545,6 @@ function v13PrivateEntries(){
  }catch(e){return []}
 }
 function v13CyclePhase(asOf=new Date().toISOString().slice(0,7)){
- // A one-click choice overrides old chronology, without deleting any saved history.
- try{
-  const choice=localStorage.getItem(SIMPLE_CYCLE_STORAGE);
-  if(choice&&['축적','초기 상승','강한 상승','분배','하락','하락장 반등','횡보·바닥 다지기','판단 유보'].includes(choice))
-   return {phase:choice,source:'simple',date:'',end:null,note:'이 브라우저에서 선택한 현재 국면',overlap:false};
- }catch(e){}
  const entries=v13PrivateEntries();
  const relevant=entries.filter(r=>r.start<=asOf&&(!r.end||r.end>=asOf)).sort((a,b)=>b.start.localeCompare(a.start));
  if(relevant.length){
@@ -1581,28 +1574,61 @@ function v13ParseCycleInput(text){
 function v13TimelineAsText(rows){
  return rows.map(r=>[r.start,r.end||'',r.phase,r.note||''].join(' | ')).join('\n');
 }
-
-function v13InitSimplePhase(){
- const root=$('v11OverviewPhase');if(!root)return;
- const parent=root.closest('.ct-v11-metric');if(!parent||$('v13SimplePhase'))return;
- const label=document.createElement('label');label.className='ct-v13-phase-chooser';
- label.textContent='현재 국면 선택';
- const select=document.createElement('select');select.id='v13SimplePhase';select.setAttribute('aria-label','현재 사이클 국면');
- for(const value of ['판단 유보','축적','초기 상승','강한 상승','분배','하락','하락장 반등','횡보·바닥 다지기']){
-  const opt=document.createElement('option');opt.value=value;opt.textContent=value;select.append(opt);
+function v13RenderTimeline(){
+ const root=$('v13CycleRows');if(!root)return;
+ const rows=v13PrivateEntries();
+ root.replaceChildren();
+ const selected=v13CyclePhase();
+ const headline=$('v13CycleSelected');
+ if(headline)headline.textContent='최근/현재 가설: '+selected.phase+(selected.date?' · '+selected.date:'')+(selected.source==='private'?' · 개인 입력, 시장 검증 아님':'');
+ for(const r of rows){
+  const item=document.createElement('div');item.className='ct-v13-timeline-row';
+  const dates=document.createElement('time');dates.textContent=r.start+' — '+(r.end||'종료 미입력');
+  const title=document.createElement('strong');title.textContent=r.phase;
+  const note=document.createElement('p');note.textContent=r.note||'';
+  item.append(dates,title,note);root.append(item);
  }
- label.append(select);parent.append(label);
- const current=v13CyclePhase();
- select.value=[...select.options].some(o=>o.value===current.phase)?current.phase:'판단 유보';
- select.addEventListener('change',()=>{
-  try{localStorage.setItem(SIMPLE_CYCLE_STORAGE,select.value)}
-  catch(e){toast('이 브라우저의 저장소를 사용할 수 없습니다.');return}
-  renderV11Overview();
-  renderV11Cycle();
-  renderV12CycleValidation();
-  if($('currentFramework'))$('currentFramework').textContent=select.value;
-  toast('사이클 국면을 저장했습니다.');
+ if(!rows.length)root.textContent='브라우저에 보관된 개인 사이클 기록이 없습니다. 아래 형식으로 붙여넣어 저장할 수 있습니다.';
+ renderV11Overview();renderV11Cycle();if($('currentFramework'))$('currentFramework').textContent=selected.phase;
+}
+function v13InitTimeline(){
+ const page=$('cyclePage'),before=$('cyclePerformancePlot')?.closest('section');
+ if(!page||$('v13PrivateTimeline'))return;
+ const panel=v11CreatePanel('Private Cycle Timeline','Personal market phase hypotheses · stored only in this browser, not published to GitHub.','ct-v13-private');
+ panel.id='v13PrivateTimeline';
+ const caption=document.createElement('p');caption.className='ct-v11-foot';
+ caption.textContent='각 줄: 시작월 | 종료월 | 국면 | 설명. 예: 2020-01 | 2020-03 | 축적 | 개인 관찰. 종료월 생략 가능. 같은 달에 여러 국면이 겹칠 수 있습니다. 코드·GitHub·API로 자동 업로드하지 않습니다.';
+ const stateLine=document.createElement('p');stateLine.className='ct-v13-selected';stateLine.id='v13CycleSelected';
+ const textArea=document.createElement('textarea');textArea.id='v13CycleEditor';textArea.rows=7;
+ textArea.placeholder='YYYY-MM | YYYY-MM | 국면 | 개인 근거\nYYYY-MM | | 다음 국면 | 진행중으로 판단하는 경우';
+ textArea.value=v13TimelineAsText(v13PrivateEntries());
+ const actions=document.createElement('div');actions.className='ct-v13-timeline-actions';
+ const save=document.createElement('button');save.type='button';save.className='btn primary';save.textContent='이 브라우저에 저장';
+ save.addEventListener('click',()=>{
+  try{
+   const parsed=v13ParseCycleInput(textArea.value);
+   if(!parsed.length)return toast('하나 이상의 사이클 구간을 입력하세요.');
+   localStorage.setItem(PRIVATE_CYCLE_STORAGE,JSON.stringify(parsed));
+   v13RenderTimeline();toast('개인 사이클 연혁을 이 브라우저에 저장했습니다. 사이트에는 게시되지 않습니다.');
+  }catch(e){toast('저장 실패: '+e.message)}
  });
+ const exportButton=document.createElement('button');exportButton.type='button';exportButton.className='btn secondary';exportButton.textContent='개인 기록 백업';
+ exportButton.addEventListener('click',()=>{
+  const rows=v13PrivateEntries();if(!rows.length)return toast('백업할 개인 기록이 없습니다.');
+  download('my-private-cycle-timeline.txt',v13TimelineAsText(rows)+'\n','text/plain');
+ });
+ const clear=document.createElement('button');clear.type='button';clear.className='btn secondary';clear.textContent='개인 기록 비우기';
+ clear.addEventListener('click',()=>{
+  if(!confirm('이 브라우저에 저장된 개인 사이클 연혁을 삭제할까요?'))return;
+  localStorage.removeItem(PRIVATE_CYCLE_STORAGE);textArea.value='';v13RenderTimeline();
+ });
+ actions.append(save,exportButton,clear);
+ const status=document.createElement('p');status.className='ct-v11-foot';
+ status.textContent='주의: 브라우저 저장 정보는 완전한 암호화 비밀 저장소가 아닙니다. 이 기기의 다른 사용자·브라우저 확장 프로그램에 노출될 수 있으므로 민감한 정보는 입력하지 마세요.';
+ const timeline=document.createElement('div');timeline.id='v13CycleRows';timeline.className='ct-v13-timeline';
+ panel.append(stateLine,timeline,caption,textArea,actions,status);
+ if(before)before.before(panel);else page.querySelector('.ct-v11-cycle')?.after(panel);
+ v13RenderTimeline();
 }
 
 function v11InitOverview(){
@@ -1621,7 +1647,7 @@ function renderV11Overview(){
  $('v11OverviewElapsed').textContent=f.days+' days';
  $('v11OverviewDrawdown').textContent=f.drawdown===null?'—':fmt(f.drawdown,1)+'%';
  $('v11OverviewFear').textContent=fear.length?fear.at(-1).y+'/100':'—';
- $('v11OverviewNote').textContent='사이클 국면: '+(v13CyclePhase().source==='simple'?'직접 선택한 개인 가설':v13CyclePhase().source==='private'?'이 브라우저에 저장한 개인 가설':v13CyclePhase().source==='historical'?'최근 역사 기록 · 현재 판정 아님':'직접 설정한 관점/판단 유보')+' · 가격 관측일 '+(f.quality.last||'—')+' · '+f.quality.label+'. 투자 신호 아님.';
+ $('v11OverviewNote').textContent='사이클 국면: '+(v13CyclePhase().source==='private'?'이 브라우저에 저장한 개인 가설':v13CyclePhase().source==='historical'?'최근 역사 기록 · 현재 판정 아님':'직접 설정한 관점/판단 유보')+' · 가격 관측일 '+(f.quality.last||'—')+' · '+f.quality.label+'. 투자 신호 아님.';
 }
 function v11InitMacro(){
  const grid=$('macroGrid');if(!grid)return;
@@ -1928,7 +1954,7 @@ function renderV11Calibration(){
  root.after(metric);renderV12ForecastCalibration();
 }
 
-readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v12InitLedger();v11InitCycle();v12InitCycleValidation();v11InitOverview();v13InitSimplePhase();v11InitMacro();v12InitRelativeStrength();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v12InitLedger();v11InitCycle();v12InitCycleValidation();v11InitOverview();v13InitTimeline();v11InitMacro();v12InitRelativeStrength();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
