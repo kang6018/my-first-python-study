@@ -1791,3 +1791,19 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  -webkit-mask-image:radial-gradient(ellipse 43% 46% at 50% 50%,#000 42%,rgba(0,0,0,.8) 64%,transparent 91%)!important;
  mask-image:radial-gradient(ellipse 43% 46% at 50% 50%,#000 42%,rgba(0,0,0,.8) 64%,transparent 91%)!important}
 }
+
+/* V12.2 Verified-provider chart fallbacks */
+.tv-slot{position:relative}
+.ct-tv-source-direct{
+ position:absolute;right:12px;bottom:10px;z-index:5;
+ font-size:11px;font-weight:700;line-height:1.2;
+ color:#f0c38e!important;text-decoration:none!important;
+ border:1px solid rgba(241,168,90,.35);
+ background:rgba(12,9,8,.93);padding:7px 10px;border-radius:8px;
+ box-shadow:0 3px 10px rgba(0,0,0,.18)
+}
+.ct-tv-source-direct:hover{background:rgba(59,37,21,.96)}
+.ct-tv-load-failed{padding:24px;color:#e4c2a0;font-size:12px;line-height:1.7}
+.ct-v12-ratio-disclaimer{margin:8px 0 0!important;padding:6px 10px 40px;color:#bca58e;font-size:11px;line-height:1.6}
+.macro-card .macro-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+@media(max-width:660px){.ct-tv-source-direct{font-size:10px;padding:6px 8px;right:8px;bottom:6px}}
