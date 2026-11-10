@@ -1648,3 +1648,12 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 .ct-clean-strategy .ct-clean-review-stats{grid-template-columns:1fr!important}
 .ct-clean-performance .ct-clean-chart{height:270px}
 }
+
+/* V10.3 final pass: consistent three-metric rhythm. */
+.ct-clean-cycle .halving-banner-card:nth-child(4){display:none!important}
+.ct-clean-cycle .halving-banner-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.ct-clean-sentiment>.stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.ct-clean-sentiment .ct-clean-summary-card{min-width:0}
+.ct-clean-sentiment .ct-clean-summary-card .stat-value{font-size:clamp(19px,2.2vw,29px)!important;overflow-wrap:anywhere}
+@media(max-width:900px){.ct-clean-cycle .halving-banner-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:620px){.ct-clean-cycle .halving-banner-grid{grid-template-columns:1fr!important}.ct-clean-sentiment>.stats-grid{grid-template-columns:1fr!important}}
