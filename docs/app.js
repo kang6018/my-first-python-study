@@ -434,7 +434,7 @@ function renderHalvingPriceHistory(){
   'Loading BTC/USD history. No values are estimated when observations are unavailable.';
 }
 function renderCycle(){const days=Math.max(0,dayNum(new Date().toISOString().slice(0,10))-dayNum('2024-04-20'));$('halvingDays').textContent=fmt(days)+' days';animateElapsedDays();beginHalvingCountdown();$('cycleYear').textContent='Since the halving: '+(days/365.25).toFixed(2)+' years';$('historyCount').textContent=history.length?fmt(history.length)+' records':'None';$('historySource').textContent=historySource||'API request or CSV upload required';const range=Number($('cycleRange').value),rows=[],chart=[];const current=cycleSeries('2024','2024-04-20',Math.max(range,days));if(current){const observed=interpolateNearest(history,dayNum(new Date().toISOString().slice(0,10)),7)||history[history.length-1];const y=observed.price/current.start.price*100-100;$('cycleReturn').textContent=(y>=0?'+':'')+fmt(y,1)+'%';$('cycleReturn').className='stat-value '+(y<0?'negative':'positive')}else{$('cycleReturn').textContent='—';$('cycleReturn').className='stat-value'}
-for(const [year,date,color] of HALVINGS){const s=cycleSeries(year,date,range);if(s&&s.series.length>1)chart.push({label:year,color,points:s.series});if(!s){rows.push(`<tr><td>${year}</td><td>—</td><td>—</td><td>—</td><td>Data unavailable</td></tr>`);continue}const elapsed=Math.min(days,range);const comparable=s.series.filter(r=>r.x<=elapsed);const at=comparable[comparable.length-1];const max=s.series.reduce((acc,item)=>Math.max(acc,item.y),0);rows.push(`<tr><td>${year}</td><td>${money(s.start.price)}</td><td>${at?(at.y-100>=0?'+':'')+fmt(at.y-100,1)+'%':'—'}</td><td>+${fmt(max-100,1)}%</td><td>${s.series.length} observations</td></tr>`)}$('cycleTable').innerHTML=rows.join('');renderEmissionChart();renderSeasonality();renderHalvingPriceHistory();renderCyclePerformance();}
+for(const [year,date,color] of HALVINGS){const s=cycleSeries(year,date,range);if(s&&s.series.length>1)chart.push({label:year,color,points:s.series});if(!s){rows.push(`<tr><td>${year}</td><td>—</td><td>—</td><td>—</td><td>Data unavailable</td></tr>`);continue}const elapsed=Math.min(days,range);const comparable=s.series.filter(r=>r.x<=elapsed);const at=comparable[comparable.length-1];const max=s.series.reduce((acc,item)=>Math.max(acc,item.y),0);rows.push(`<tr><td>${year}</td><td>${money(s.start.price)}</td><td>${at?(at.y-100>=0?'+':'')+fmt(at.y-100,1)+'%':'—'}</td><td>+${fmt(max-100,1)}%</td><td>${s.series.length} observations</td></tr>`)}$('cycleTable').innerHTML=rows.join('');renderEmissionChart();renderSeasonality();renderHalvingPriceHistory();renderCyclePerformance();renderV11Cycle();}
 function parseCsv(content){const lines=content.trim().split(/\r?\n/);if(lines.length<2)throw Error('Not enough CSV rows');let cols=lines[0].replace(/^\uFEFF/,'').split(',').map(s=>s.trim().toLowerCase().replaceAll('"',''));const ix=cols.findIndex(x=>['date','timestamp','time'].includes(x)),iy=cols.findIndex(x=>['close','price','value'].includes(x));if(ix===-1||iy===-1)throw Error('Required columns: date,close or timestamp,price');const output=[];for(const line of lines.slice(1)){const c=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));let date=c[ix];if(/^\d{10,13}$/.test(date))date=new Date(Number(date)*(date.length===10?1000:1)).toISOString().slice(0,10);else if(/^\d{4}\/\d{2}\/\d{2}$/.test(date))date=date.replaceAll('/','-');output.push({date,price:Number(c[iy])})}return normalizeHistory(output)}
 function initCycle(){$('loadHistory').onclick=()=>fetchHistory(true);$('cycleRange').onchange=renderCycle;$('historyFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{setHistory(parseCsv(await file.text()),'CSV: '+file.name);toast('Imported '+history.length+' CSV observations.')}catch(err){toast('CSV read failed: '+err.message)}e.target.value=''};$('downloadCsvTemplate').onclick=()=>download('btc-price-template.csv','date,close\n','text/csv');$('exportHistory').onclick=()=>{if(!history.length)return toast('There is no historical data to export.');download('btc-history.csv','date,close\n'+history.map(r=>r.date+','+r.price).join('\n'),'text/csv')}}
 function drawPlot(node,sets,opts={}){node.replaceChildren();if(!sets.some(s=>s.points?.length)){node.innerHTML='<div class="plot-placeholder">No observations available. Load an external feed or import CSV.</div>';return}const W=900,H=415,pad={l:58,r:22,t:24,b:45};const all=sets.flatMap(s=>s.points),xs=all.map(p=>p.x),ys=all.map(p=>p.y);let xMin=opts.xMin??Math.min(...xs),xMax=opts.xMax??Math.max(...xs),yMin=Math.min(...ys),yMax=Math.max(...ys);if(opts.normalizeY){yMin=Math.max(0,yMin*.87);yMax*=1.07}else{const d=Math.max(1,yMax-yMin);yMin-=d*.11;yMax+=d*.11}if(yMax<=yMin)yMax=yMin+1;if(xMax<=xMin)xMax=xMin+1;const px=x=>pad.l+(x-xMin)/(xMax-xMin)*(W-pad.l-pad.r),py=y=>pad.t+(yMax-y)/(yMax-yMin)*(H-pad.t-pad.b);const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Time series graph');function el(tag,attrs={},text=''){const x=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v));if(text)x.textContent=text;svg.append(x);return x}for(let i=0;i<5;i++){const y=yMin+(yMax-yMin)*(i/4),yp=py(y);el('line',{x1:pad.l,y1:yp,x2:W-pad.r,y2:yp,stroke:'#73503b','stroke-opacity':'.46','stroke-width':'1'});el('text',{x:pad.l-9,y:yp+4,fill:'#d4b69a','fill-opacity':'.95','text-anchor':'end','font-size':'11'},fmt(y,opts.normalizeY?0:1))}for(let i=0;i<6;i++){const x=xMin+(xMax-xMin)*(i/5),xp=px(x);el('text',{x:xp,y:H-17,fill:'#d4b69a','fill-opacity':'.9','text-anchor':'middle','font-size':'11'},opts.xFormat?opts.xFormat(x):fmt(x,0))}if(opts.horizontalLine!==undefined&&opts.horizontalLine>=yMin&&opts.horizontalLine<=yMax)el('line',{x1:pad.l,y1:py(opts.horizontalLine),x2:W-pad.r,y2:py(opts.horizontalLine),stroke:'#92a1b9','stroke-dasharray':'5 5','stroke-opacity':'.6'});sets.forEach(s=>{const values=s.points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=xMin&&p.x<=xMax);if(values.length<2)return;const d=values.map((p,i)=>(i?'L':'M')+px(p.x).toFixed(2)+' '+py(p.y).toFixed(2)).join(' ');el('path',{d,fill:'none',stroke:s.color||'#5c9eff','stroke-width':'2.6','stroke-linejoin':'round','stroke-linecap':'round'})});svg.style.color='#d4b69a';svg.style.background='transparent';node.append(svg)}
@@ -507,7 +507,7 @@ async function fetchQuickPrice(){
 }
 async function fetchDerivatives(){const base='https://fapi.binance.com';const requests=await Promise.allSettled([jsonGet(base+'/fapi/v1/premiumIndex?symbol=BTCUSDT'),jsonGet(base+'/fapi/v1/openInterest?symbol=BTCUSDT')]);if(requests[0].status==='fulfilled'&&Number.isFinite(Number(requests[0].value.lastFundingRate))){funding={value:Number(requests[0].value.lastFundingRate)*100,time:Number(requests[0].value.time||Date.now())};fetched.funding='Connected'}else fetched.funding='Connection failed / regional restrictions possible';if(requests[1].status==='fulfilled'&&Number.isFinite(Number(requests[1].value.openInterest))){oi=Number(requests[1].value.openInterest);oiObservedAt=Number(requests[1].value.time)||0;fetched.oi='Connected'}else {oiObservedAt=0;fetched.oi='Connection failed / regional restrictions possible'};renderSentiment();renderSources()}
 function fearLabel(x){return x<=24?'Extreme Fear':x<=44?'Fear':x<=54?'Neutral':x<=74?'Greed':'Extreme Greed'}function renderPriceCard(){const p=$('btcPrice'),s=$('btcSource'),c=$('btcChange');if(!p||!s||!c)return;p.textContent=price?money(price.value):'—';s.textContent=price?.source||'Not connected';c.textContent=price&&Number.isFinite(price.change)?'24h '+(price.change>=0?'+':'')+fmt(price.change,2)+'%':'Price unavailable / awaiting connection';c.className='stat-sub '+(price?.change>=0?'positive':'negative');}
-function renderOverview(){const last=fear.at(-1);renderPriceCard();$('fearScore').textContent=last?last.y+'/100':'—';$('fearName').textContent=last?fearLabel(last.y):'Sentiment feed unavailable';const s=state.strategy;$('currentFramework').textContent=s.phase==='Not configured'?'Not configured':s.phase;$('overviewStrategy').innerHTML=`<div>Cycle view: <b>${escapeHTML(s.phase)}</b> · Sentiment: <b>${escapeHTML(s.mood)}</b></div><div class="tiny muted">${escapeHTML(s.thesis?s.thesis.slice(0,190):'No supporting rationale entered yet.')}</div>`;const entries=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||Number(b.id?.split('-')[0])||0)-(Number(a.createdAt)||Number(a.id?.split('-')[0])||0)).slice(0,3);$('recentJournal').innerHTML=entries.length?entries.map(e=>`<div><b>${escapeHTML(e.title)}</b><div class="tiny muted">${escapeHTML(e.date)} · ${escapeHTML(e.phase)}</div></div>`).join(''):'No entries';const current=fear.slice(-90);drawPlot($('overviewFearChart'),current.length?[{label:'Fear & Greed',color:'#f3bb72',points:current.map((p,i)=>({x:i,y:p.y}))}]:[],{xMin:0,xMax:Math.max(1,current.length-1),xFormat:i=>{const item=current[Math.min(current.length-1,Math.round(i))];return item?new Date(item.x).toISOString().slice(5,10):''}});$('fearUpdated').textContent=last?'Latest observation: '+new Date(last.x).toLocaleDateString('en-US')+' · Alternative.me':'Waiting for Alternative.me'}
+function renderOverview(){const last=fear.at(-1);renderPriceCard();$('fearScore').textContent=last?last.y+'/100':'—';$('fearName').textContent=last?fearLabel(last.y):'Sentiment feed unavailable';const s=state.strategy;$('currentFramework').textContent=s.phase==='Not configured'?'Not configured':s.phase;$('overviewStrategy').innerHTML=`<div>Cycle view: <b>${escapeHTML(s.phase)}</b> · Sentiment: <b>${escapeHTML(s.mood)}</b></div><div class="tiny muted">${escapeHTML(s.thesis?s.thesis.slice(0,190):'No supporting rationale entered yet.')}</div>`;const entries=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||Number(b.id?.split('-')[0])||0)-(Number(a.createdAt)||Number(a.id?.split('-')[0])||0)).slice(0,3);$('recentJournal').innerHTML=entries.length?entries.map(e=>`<div><b>${escapeHTML(e.title)}</b><div class="tiny muted">${escapeHTML(e.date)} · ${escapeHTML(e.phase)}</div></div>`).join(''):'No entries';const current=fear.slice(-90);drawPlot($('overviewFearChart'),current.length?[{label:'Fear & Greed',color:'#f3bb72',points:current.map((p,i)=>({x:i,y:p.y}))}]:[],{xMin:0,xMax:Math.max(1,current.length-1),xFormat:i=>{const item=current[Math.min(current.length-1,Math.round(i))];return item?new Date(item.x).toISOString().slice(5,10):''}});$('fearUpdated').textContent=last?'Latest observation: '+new Date(last.x).toLocaleDateString('en-US')+' · Alternative.me':'Waiting for Alternative.me';renderV11Overview()}
 function computedBtcMeasures(){
  const result={};
  if(history.length<25)return result;
@@ -759,7 +759,7 @@ function renderSources(){
   const desc=document.createElement('div');desc.className='ct-source-desc';desc.textContent=row.description;
   const status=document.createElement('p');status.className='ct-source-value';status.textContent=row.value;
   card.append(heading,desc,status);root.append(card)
- })
+ });renderV11Quality()
 }
 async function refreshAll(notify=false){if(refreshBusy)return;refreshBusy=true;$('networkStatus').textContent='Fetching market data…';try{const shouldHistory=Date.now()-lastHistoryRefresh>(history.length?12*3600000:15*60000);const jobs=[livePriceConnected?Promise.resolve():fetchPrice(),fetchFear(),refreshBlockHeight(),refreshInstitutional(),loadMarketSeries()];if(shouldHistory){lastHistoryRefresh=Date.now();jobs.push(fetchHistory(false))}await Promise.allSettled(jobs);$('networkStatus').textContent='Checked at '+new Date().toLocaleTimeString('en-US')+' · according to provider frequency';$('networkStatus').classList.add('ok');renderSources();animateLiveUpdate();if(notify)toast('Source refresh completed. Check each card for observation dates.')}finally{refreshBusy=false}}
 function download(name,content,mime){const blob=new Blob([content],{type:mime+';charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}function downloadBackup(){download('cycle-terminal-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'cycle-terminal',version:2,savedAt:new Date().toISOString(),state},null,2),'application/json')}
@@ -1277,14 +1277,114 @@ function renderCyclePerformance(){
  const series=[];
  for(const [year,date,color] of [...HALVINGS].reverse()){
   const result=cycleSeries(year,date,range);
-  if(result?.series?.length>1)series.push({label:year,color,points:result.series.map(point=>({x:point.x,y:point.y-100}))});
+  if(result?.series?.length>1)series.push({label:year,color,points:result.series.filter(point=>point.y>0).map(point=>({x:point.x,y:Math.log10(point.y/100)}))});
  }
  if(!series.length){node.textContent='Historical BTC observations are required for cycle comparisons.';return}
  const values=series.flatMap(s=>s.points.map(p=>p.y)).filter(Number.isFinite);
  drawPlot(node,series,{xMin:0,xMax:range,xFormat:v=>Math.round(v)+'d',horizontalLine:0});
 }
 
-readStorage();initFinalCleanup();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+
+/* V11 — four-year cycle conviction framework, evidence quality, and investor workflow. */
+function v11PriceQuality(){
+ if(history.length<2)return {daily:false,ratio:0,interval:null,label:'No historical BTC prices'};
+ const recent=history.slice(-Math.min(92,history.length));
+ const gaps=recent.slice(1).map((r,i)=>dayNum(r.date)-dayNum(recent[i].date)).filter(Number.isFinite);
+ const daily=gaps.filter(n=>n===1).length/Math.max(1,gaps.length);
+ const sorted=[...gaps].sort((a,b)=>a-b),median=sorted[Math.floor(sorted.length/2)];
+ const last=history.at(-1).date,age=dayNum(new Date().toISOString().slice(0,10))-dayNum(last);
+ return {daily:daily>=0.85,ratio:daily,interval:median,age,last,
+  label:daily>=0.85?'Daily observations':'Sampled every '+median+' days (NOT daily)'};
+}
+function v11CycleFacts(){
+ const halving='2024-04-20';
+ const days=dayNum(new Date().toISOString().slice(0,10))-dayNum(halving);
+ const latest=history.at(-1)||null;
+ const since=history.filter(r=>r.date>=halving&&(!latest||r.date<=latest.date));
+ let peak=null;
+ for(const r of since)if(!peak||r.price>peak.price)peak=r;
+ const drawdown=peak&&latest?(latest.price/peak.price-1)*100:null;
+ const fromPeak=peak?dayNum(latest.date)-dayNum(peak.date):null;
+ const year=days<365?'Year 1':days<730?'Year 2':days<1095?'Year 3':'Year 4+';
+ return {days,year,peak,drawdown,fromPeak,latest,quality:v11PriceQuality()};
+}
+function v11CreatePanel(title,description,className){
+ const panel=document.createElement('section');panel.className='ct-v11-panel '+(className||'');
+ const h=document.createElement('div');h.className='ct-v11-head';
+ const text=document.createElement('div');const tag=document.createElement('span');tag.className='ct-v11-kicker';tag.textContent='CYCLE TERMINAL / V11';
+ const heading=document.createElement('h2');heading.textContent=title;const sub=document.createElement('p');sub.textContent=description;
+ text.append(tag,heading,sub);h.append(text);panel.append(h);return panel;
+}
+function v11Metric(label,id){
+ const block=document.createElement('div');block.className='ct-v11-metric';
+ const heading=document.createElement('small');heading.textContent=label;
+ const value=document.createElement('strong');value.id=id;value.textContent='—';
+ block.append(heading,value);return block;
+}
+function v11InitCycle(){
+ const page=$('cyclePage');if(!page)return;
+ const panel=v11CreatePanel('Cycle Position','Time since halving is an observation, not a forecast.','ct-v11-cycle');
+ const metrics=document.createElement('div');metrics.className='ct-v11-metrics';
+ for(const [label,id] of [['TIME SINCE HALVING','v11CycleElapsed'],['CYCLE WINDOW','v11CycleWindow'],['DRAWDOWN FROM PEAK','v11CycleDrawdown'],['LAST OBSERVED PRICE','v11CycleLastPrice']])metrics.append(v11Metric(label,id));
+ const summary=document.createElement('p');summary.className='ct-v11-foot';summary.id='v11CycleQuality';
+ const context=document.createElement('div');context.className='ct-v11-context';context.id='v11CycleContext';
+ panel.append(metrics,summary,context);
+ const halving=page.querySelector('.ct-halving-history');
+ if(halving)halving.before(panel);else page.querySelector('.halving-dashboard')?.after(panel);
+ // A logarithmic multiple of initial halving price avoids hiding later cycles behind 2012.
+ const chart=page.querySelector('.ct-clean-performance');
+ const title=chart?.querySelector('h2');if(title)title.textContent='Post-Halving Growth · Log Multiples';
+ const foot=chart?.querySelector('p.muted');if(foot)foot.textContent='Vertical axis: log10 of observed BTC price / observed halving-date price; 0 = 1×, 1 = 10×, 2 = 100×. Not a prediction. '+v11PriceQuality().label;
+}
+function renderV11Cycle(){
+ const root=$('v11CycleElapsed');if(!root)return;
+ const f=v11CycleFacts(),q=f.quality;
+ root.textContent=f.days+' days';
+ $('v11CycleWindow').textContent=f.year+' / 2024 epoch';
+ $('v11CycleDrawdown').textContent=f.drawdown===null?'—':fmt(f.drawdown,1)+'%';
+ $('v11CycleLastPrice').textContent=f.latest?money(f.latest.price):'—';
+ $('v11CycleQuality').textContent=(f.peak?'Observed cycle peak: '+f.peak.date+' · '+money(f.peak.price)+' · '+f.fromPeak+' days since observed peak. ':'')+
+ 'BTC history: '+q.label+' · '+(q.last||'No data')+'.';
+ const user=state.strategy?.phase||'Not configured';
+ $('v11CycleContext').textContent='YOUR CYCLE THESIS: '+user+'  |  Objective timer: '+f.year+'. Historical timing does not confirm the market phase. '+'Provider values are observations, not a trading signal.';
+}
+function v11InitOverview(){
+ const main=$('overviewPage'),band=main?.querySelector('.ct-live-band');if(!main||!band)return;
+ const section=v11CreatePanel('Where Are We in the Cycle?','Time, trend and evidence before conviction.','ct-v11-overview');
+ const metrics=document.createElement('div');metrics.className='ct-v11-metrics';
+ for(const [name,id] of [['USER CYCLE VIEW','v11OverviewPhase'],['DAYS SINCE HALVING','v11OverviewElapsed'],['PEAK DRAWDOWN','v11OverviewDrawdown'],['FEAR & GREED','v11OverviewFear']])metrics.append(v11Metric(name,id));
+ const note=document.createElement('p');note.className='ct-v11-foot';note.id='v11OverviewNote';
+ const action=document.createElement('button');action.type='button';action.className='btn secondary';action.textContent='Review Cycle Research ↗';action.addEventListener('click',()=>setPage('cycle'));
+ section.append(metrics,note,action);band.after(section);
+}
+function renderV11Overview(){
+ if(!$('v11OverviewPhase'))return;
+ const f=v11CycleFacts();
+ $('v11OverviewPhase').textContent=state.strategy?.phase||'Not configured';
+ $('v11OverviewElapsed').textContent=f.days+' days';
+ $('v11OverviewDrawdown').textContent=f.drawdown===null?'—':fmt(f.drawdown,1)+'%';
+ $('v11OverviewFear').textContent=fear.length?fear.at(-1).y+'/100':'—';
+ $('v11OverviewNote').textContent='Price as of '+(f.quality.last||'unavailable')+' · '+f.quality.label+'. Personal cycle view is not independently verified.';
+}
+function v11InitMacro(){
+ const grid=$('macroGrid');if(!grid)return;
+ const p=v11CreatePanel('Macro Cross-Check','Compare Bitcoin with risk assets, the dollar, rates and liquidity. Correlation alone does not prove causation.','ct-v11-macro');
+ const note=document.createElement('p');note.className='ct-v11-foot';
+ note.textContent='Use these as potential challenges to your cycle thesis. Charts are source-labelled proxies; no unsupported live liquidity score is calculated.';
+ p.append(note);grid.before(p);
+}
+function renderV11Quality(){
+ const q=v11PriceQuality();
+ const target=$('v11PriceQualityNote');
+ if(target)target.textContent='BTC historical data: '+q.label+'. Last observed '+(q.last||'—')+
+ ' · '+history.length+' observations. '+(q.daily?'Daily return metrics can be evaluated.':'Daily RSI, volatility and historical sentiment analog precision are limited; no missing dates are fabricated.');
+}
+function v11InitQuality(){
+ const target=$('dataSources');if(!target)return;
+ const node=document.createElement('p');node.className='ct-v11-foot';node.id='v11PriceQualityNote';target.after(node);
+}
+
+readStorage();initFinalCleanup();v11InitCycle();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
