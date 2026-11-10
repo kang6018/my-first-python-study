@@ -1943,3 +1943,54 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 @media(prefers-reduced-motion:reduce){
  #overviewPage .ct-story-hero .ct-hero-map-background img{animation:none!important}
 }
+
+
+/* V12.7.1 — site screenshot fixes: coin within viewport, Korea on land, map shifted left */
+@media(min-width:1321px){
+ #overviewPage .ct-story-hero .ct-hero-map-background{
+  inset:-6% 7% -6% -21%!important;opacity:.65!important
+ }
+ #overviewPage .ct-story-hero .ct-hero-map-background img{
+  object-position:42% center!important
+ }
+ #overviewPage .ct-story-hero .ct-scene.ct-scene-photo{
+  right:-3%!important;top:13%!important;width:37%!important;height:83%!important;
+  opacity:.85!important
+ }
+}
+@media(min-width:1600px){
+ #overviewPage .ct-story-hero .ct-hero-map-background{
+  inset:-6% 7% -6% -22%!important;opacity:.63!important
+ }
+ #overviewPage .ct-story-hero .ct-scene.ct-scene-photo{
+  right:-2%!important;top:12%!important;width:36%!important;height:84%!important
+ }
+}
+@media(min-width:981px) and (max-width:1320px){
+ #overviewPage .ct-story-hero .ct-hero-map-background{
+  inset:-5% 4% -5% -24%!important
+ }
+ #overviewPage .ct-story-hero .ct-hero-map-background img{object-position:42% center!important}
+ #overviewPage .ct-story-hero .ct-scene.ct-scene-photo{
+  right:-6%!important;top:15%!important;width:43%!important;height:81%!important;opacity:.73!important
+ }
+}
+@media(min-width:701px) and (max-width:980px){
+ #overviewPage .ct-story-hero .ct-hero-map-background{inset:1% -6% 0 -43%!important}
+ #overviewPage .ct-story-hero .ct-hero-map-background img{object-position:41% center!important}
+ #overviewPage .ct-story-hero .ct-scene.ct-scene-photo{
+  right:-10%!important;top:24%!important;width:52%!important;height:70%!important
+ }
+}
+@media(max-width:700px){
+ #overviewPage .ct-story-hero .ct-hero-map-background img{object-position:42% center!important}
+ #overviewPage .ct-story-hero .ct-scene.ct-scene-photo{right:-18%!important;top:33%!important;width:77%!important;height:60%!important}
+}
+#overviewPage .ct-story-hero .ct-bitcoin-photo{
+ -webkit-mask-image:radial-gradient(ellipse 46% 46% at 50% 50%,#000 55%,rgba(0,0,0,.86) 78%,transparent 100%)!important;
+ mask-image:radial-gradient(ellipse 46% 46% at 50% 50%,#000 55%,rgba(0,0,0,.86) 78%,transparent 100%)!important
+}
+#overviewPage .ct-story-hero .ct-bitcoin-photo img{
+ transform:scale(1.41)!important;
+ filter:contrast(1.09) brightness(.88) saturate(.94)!important
+}
