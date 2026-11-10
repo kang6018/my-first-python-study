@@ -1845,13 +1845,13 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 #chartsPage .chart-grid .ct-v12-primary-chart .chart-body{height:clamp(370px,45vw,590px)!important}
 
 /* V12.4.2 guaranteed 7-chart BTC-first responsive trading desk */
-#chartsPage #chartGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;width:100%!important}
-#chartsPage #chartGrid>.ct-v12-primary-chart{grid-column:1/-1!important;grid-row:auto!important;min-height:470px!important;width:100%!important}
-#chartsPage #chartGrid>.ct-v12-primary-chart>.chart-body{height:520px!important;min-height:440px!important}
-#chartsPage #chartGrid>.chart-card:not(.ct-v12-primary-chart){grid-column:auto!important;width:100%!important;min-width:0!important}
+#chartsPage #chartGrid.ct-v1242-crypto-layout{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;width:100%!important}
+#chartsPage #chartGrid.ct-v1242-crypto-layout>.ct-v12-primary-chart{grid-column:1/-1!important;grid-row:auto!important;min-height:470px!important;width:100%!important}
+#chartsPage #chartGrid.ct-v1242-crypto-layout>.ct-v12-primary-chart>.chart-body{height:520px!important;min-height:440px!important}
+#chartsPage #chartGrid.ct-v1242-crypto-layout>.chart-card:not(.ct-v12-primary-chart){grid-column:auto!important;width:100%!important;min-width:0!important}
 #chartsPage #restoreCryptoSeven{background:#b6783e!important;color:#110d0a!important;font-weight:800!important}
 @media(max-width:680px){
- #chartsPage #chartGrid{grid-template-columns:minmax(0,1fr)!important}
+ #chartsPage #chartGrid.ct-v1242-crypto-layout{grid-template-columns:minmax(0,1fr)!important}
  #chartsPage #chartGrid>.ct-v12-primary-chart{grid-column:1/-1!important;min-height:330px!important}
  #chartsPage #chartGrid>.ct-v12-primary-chart>.chart-body{height:400px!important;min-height:300px!important}
 }
