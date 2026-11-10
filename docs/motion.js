@@ -59,24 +59,4 @@ if('IntersectionObserver' in window&&!motion()){
  },{threshold:.08,rootMargin:'0px 0px -25px 0px'});
  for(const el of sections){el.classList.add('ct-entering');io.observe(el)}
 }
-
-/* Decorative-only global BTC flow: avoid animating when hidden or reduced-motion requested. */
-const flowMap=document.getElementById('ctOwnershipFlowSvg');
-if(flowMap){
- const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
- let flowOnScreen=true;
- const syncFlow=()=>{
-  if(document.hidden||reduceMotion?.matches||!flowOnScreen)flowMap.pauseAnimations?.();
-  else flowMap.unpauseAnimations?.();
- };
- if('IntersectionObserver' in window){
-  const flowObserver=new IntersectionObserver(entries=>{
-   flowOnScreen=!!entries[0]?.isIntersecting;syncFlow();
-  },{threshold:.04});
-  flowObserver.observe(flowMap);
- }
- document.addEventListener('visibilitychange',syncFlow);
- reduceMotion?.addEventListener?.('change',syncFlow);
- syncFlow();
-}
 })();
