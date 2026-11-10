@@ -1815,3 +1815,15 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 #macroPage .ct-v12-macro-extra{margin-top:26px!important;margin-bottom:34px!important}
 #macroPage .ct-v12-macro-extra>summary{font-size:13px!important;font-weight:750!important;color:#e9c399!important}
 #macroPage .ct-v12-macro-extra>.macro-grid{margin-top:20px!important}
+
+/* V12.4 — browser-private cycle phase chronology. Public CSS contains no private data. */
+.ct-v13-private{display:grid;gap:13px}
+.ct-v13-private .ct-v13-selected{font-size:14px;color:#f0bd83;font-weight:750;line-height:1.7;margin:0}
+.ct-v13-timeline{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;max-height:540px;overflow:auto;padding:4px 0}
+.ct-v13-timeline-row{padding:12px 14px;border:1px solid rgba(202,143,83,.22);border-radius:11px;background:rgba(14,11,9,.35);display:grid;gap:6px;min-width:0}
+.ct-v13-timeline-row time{font-size:10px;letter-spacing:.03em;color:#c69769}
+.ct-v13-timeline-row strong{font-size:13px;color:#f2d9bd}
+.ct-v13-timeline-row p{font-size:11px;line-height:1.55;color:#cbb5a0;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.ct-v13-private textarea{width:100%;box-sizing:border-box;min-height:150px;resize:vertical;padding:13px 15px;border-radius:10px;border:1px solid rgba(215,144,77,.33);background:#17120f;color:#ead4bc;font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}
+.ct-v13-timeline-actions{display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:700px){.ct-v13-timeline{grid-template-columns:1fr}.ct-v13-timeline-actions .btn{flex:1 1 130px}}
