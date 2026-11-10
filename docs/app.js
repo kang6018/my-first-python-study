@@ -755,19 +755,25 @@ async function restoreBackup(e){const f=e.target.files?.[0];if(!f)return;try{con
 function restoreChecks(){document.querySelectorAll('[data-check]').forEach(x=>{x.checked=!!state.checks?.[x.dataset.check];x.addEventListener('change',()=>{state.checks[x.dataset.check]=x.checked;persist()})})}
 
 // Community: verified public profiles through the official X embed, plus live-source RSS.
-const LEADERS=[['Michael Saylor','saylor'],['Cathie Wood','CathieDWood'],['Balaji Srinivasan','balajis'],['Eric Balchunas','EricBalchunas'],['Bitcoin Magazine','BitcoinMagazine'],['Davinci Jeremie','Davincij15'],['Cameron Winklevoss','cameron'],['Tyler Winklevoss','tyler'],['Grant Cardone','GrantCardone'],['Vitalik Buterin','VitalikButerin'],['Justin Sun','justinsuntron'],['Elon Musk','elonmusk'],['Jeff Yan · Hyperliquid','chameleon_jeff']];
+const LEADERS=[['Michael Saylor','saylor'],['Cathie Wood','CathieDWood'],['Balaji Srinivasan','balajis'],['Eric Balchunas','EricBalchunas'],['Paolo Ardoino','paoloardoino'],['Bitcoin Magazine','BitcoinMagazine'],['Davinci Jeremie','Davincij15'],['Cameron Winklevoss','cameron'],['Tyler Winklevoss','tyler'],['Grant Cardone','GrantCardone'],['Vitalik Buterin','VitalikButerin'],['Justin Sun','justinsuntron'],['Elon Musk','elonmusk'],['Jeff Yan · Hyperliquid','chameleon_jeff']];
 let activeLeader='saylor',communityTab='all',newsItems=[],newsPending=false,newsEverLoaded=false;
 function renderCommunity(){
  const x=$('xTimeline');if(!x)return;
  x.replaceChildren();x.classList.remove('community-profile-card');x.classList.add('ct-leader-grid');
  const roles={
   saylor:'Bitcoin treasury strategy',CathieDWood:'Innovation & investment',balajis:'Technology & macro',EricBalchunas:'ETF research',
-  BitcoinMagazine:'Bitcoin news & analysis',Davincij15:'Bitcoin market commentary',cameron:'Digital assets',tyler:'Digital assets',
+  paoloardoino:'CEO · Tether',BitcoinMagazine:'Bitcoin news & analysis',Davincij15:'Bitcoin market commentary',cameron:'Digital assets',tyler:'Digital assets',
   GrantCardone:'Business & investing',VitalikButerin:'Ethereum & research',justinsuntron:'Crypto markets',elonmusk:'Technology',chameleon_jeff:'DeFi market structure'
  };
  for(const [name,handle] of LEADERS){
   const card=document.createElement('article');card.className='ct-leader-card';
   const monogram=document.createElement('div');monogram.className='ct-leader-monogram';monogram.textContent=name.split(' ').map(v=>v[0]).slice(0,2).join('').toUpperCase();
+  const portrait=document.createElement('div');portrait.className='ct-leader-portrait';
+  const img=document.createElement('img');img.className='ct-leader-photo';
+  img.alt=name+' · public X profile photo';img.loading='lazy';img.decoding='async';
+  img.referrerPolicy='no-referrer';img.src='https://unavatar.io/x/'+encodeURIComponent(handle);
+  img.addEventListener('error',()=>{img.remove();portrait.classList.add('ct-avatar-failed')},{once:true});
+  portrait.append(img,monogram);
   const body=document.createElement('div');body.className='ct-leader-body';
   const title=document.createElement('h3');title.textContent=name;
   const detail=document.createElement('p');detail.textContent=roles[handle]||'Market commentary';
@@ -775,7 +781,7 @@ function renderCommunity(){
   const actions=document.createElement('div');actions.className='ct-leader-actions';
   const profile=document.createElement('a');profile.href='https://x.com/'+encodeURIComponent(handle);profile.target='_blank';profile.rel='noopener noreferrer';profile.textContent='X Profile ↗';
   const search=document.createElement('a');search.href='https://www.google.com/search?q='+encodeURIComponent('site:x.com/'+handle+' bitcoin market');search.target='_blank';search.rel='noopener noreferrer';search.textContent='Recent Posts ↗';
-  actions.append(profile,search);body.append(title,detail,tag,actions);card.append(monogram,body);x.append(card);
+  actions.append(profile,search);body.append(title,detail,tag,actions);card.append(portrait,body);x.append(card);
  }
  const xOn=communityTab!=='news',newsOn=communityTab!=='x';
  $('communityXPanel').classList.toggle('hidden',!xOn);
