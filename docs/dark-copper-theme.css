@@ -1594,3 +1594,57 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 @media(max-width:1200px){#communityPage .community-x.ct-leader-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media(max-width:780px){#communityPage .community-x.ct-leader-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#communityPage .ct-leader-portrait{height:155px}}
 @media(max-width:480px){#communityPage .community-x.ct-leader-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}#communityPage .ct-leader-card{padding:9px!important}#communityPage .ct-leader-portrait{height:122px}#communityPage .ct-leader-body h3{font-size:13px!important}#communityPage .ct-leader-actions a{font-size:11px!important}}
+
+/* V10.3 Final Cleanup — preserve existing Copper Terminal typography / colors. */
+.ct-cleanup-hidden{display:none!important}
+.ct-clean-cycle>.notice{display:none!important}
+.ct-clean-cycle>.halving-dashboard{margin-bottom:20px!important}
+.ct-clean-cycle>.ct-halving-history{margin-bottom:20px!important}
+.ct-clean-performance{margin:0 0 18px!important;padding:22px!important}
+.ct-clean-performance .ct-clean-chart{height:340px;width:100%;min-width:0;margin:16px 0 8px}
+.ct-clean-performance .ct-clean-chart svg{display:block;width:100%;height:100%}
+.ct-clean-research{margin:0 0 18px!important}
+.ct-clean-cycle #coinglassSection{margin-top:18px!important}
+.ct-clean-details{margin:12px 0 0;padding:12px 15px;border:1px solid var(--border);background:rgba(21,16,13,.66);border-radius:12px}
+.ct-clean-details>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:750;color:var(--muted);line-height:1.5;user-select:none}
+.ct-clean-details>summary::-webkit-details-marker{display:none}
+.ct-clean-details>summary::after{content:'+';font-size:18px;font-weight:400;color:var(--accent-strong)}
+.ct-clean-details[open]>summary::after{content:'−'}
+.ct-clean-details[open]>summary{color:var(--text);padding-bottom:14px}
+.ct-clean-details .v4-table-wrap{margin-top:10px}
+.ct-clean-sentiment>.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:16px!important}
+.ct-clean-sentiment .ct-psych-engine{margin-bottom:18px!important}
+.ct-clean-sentiment .ct-psych-head{padding-bottom:12px!important}
+.ct-clean-sentiment .ct-psych-head p{max-width:58ch}
+.ct-clean-sentiment .ct-psych-main{margin-top:12px!important}
+.ct-clean-sentiment .ct-psych-detail-grid{margin-top:8px!important}
+.ct-clean-sentiment .ct-data-research{margin:20px 0!important}
+.ct-clean-sentiment .ct-data-title{margin-bottom:12px!important}
+.ct-clean-sentiment .ct-data-panels{margin-bottom:16px!important}
+.ct-clean-sentiment #divergenceSection{margin:18px 0!important}
+.ct-clean-sentiment #divergenceCards{margin:8px 0 16px!important}
+.ct-clean-sentiment .ct-clean-sentiment-checks{margin-top:18px!important}
+.ct-clean-sentiment .ct-clean-sentiment-checks .ct-clean-details{margin:0}
+.ct-clean-sentiment .ct-eight-checks{padding:8px 2px 2px}
+.ct-clean-sentiment .ct-eight-checks label{font-size:13px;line-height:1.65;padding:9px 0!important}
+.ct-clean-strategy .content-columns{gap:16px}
+.ct-clean-strategy .journal-integrated{margin-top:25px!important}
+.ct-clean-strategy .ct-clean-review-stats{margin:16px 0!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.ct-clean-strategy .ct-clean-embedded-review{background:transparent!important;border:none!important;box-shadow:none!important;margin:8px 0!important;padding:0!important}
+.ct-clean-strategy .ct-clean-embedded-review>.v4-heading{display:none!important}
+.ct-clean-settings>.page-header{margin-bottom:18px}
+.ct-clean-settings>.content-columns{margin-bottom:18px!important}
+.ct-clean-settings .ct-clean-sources,.ct-clean-settings .ct-clean-storage{min-width:0}
+.ct-clean-settings .ct-clean-sources .ct-clean-details{margin-top:18px}
+.ct-clean-settings>.ct-clean-details{margin:12px 0 24px;padding:16px 18px}
+.ct-clean-settings>.ct-clean-details>.card{margin:14px 0!important}
+.ct-clean-settings>.ct-clean-details .data-endpoint-box{margin:15px 0}
+.ct-clean-settings .ct-clean-details #dataQuality{margin:8px 0!important}
+.ct-clean-settings #dataSources{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ct-clean-settings .ct-source-card{padding:13px 15px!important}
+.ct-clean-settings .ct-source-desc{font-size:11px!important}
+@media(max-width:800px){
+.ct-clean-settings #dataSources{grid-template-columns:1fr}
+.ct-clean-strategy .ct-clean-review-stats{grid-template-columns:1fr!important}
+.ct-clean-performance .ct-clean-chart{height:270px}
+}
