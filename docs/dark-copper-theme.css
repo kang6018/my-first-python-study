@@ -1994,3 +1994,26 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
  transform:scale(1.41)!important;
  filter:contrast(1.09) brightness(.88) saturate(.94)!important
 }
+
+/* V12.7.2 · Amber coin backdrop
+   Screen blending replaces the original photograph's black pixels with a
+   warm radial underlay instead of coloring a sharp rectangular image. */
+#overviewPage .ct-story-hero .ct-scene.ct-scene-photo{
+ background:radial-gradient(ellipse 52% 50% at 50% 50%,
+  rgba(189,96,28,.23) 0%,
+  rgba(123,55,20,.18) 36%,
+  rgba(67,29,15,.08) 67%,
+  transparent 90%)!important;
+}
+#overviewPage .ct-story-hero .ct-bitcoin-photo{
+ isolation:isolate!important;
+ background:radial-gradient(ellipse 55% 54% at 50% 50%,
+  rgba(136,65,24,.52) 0%,
+  rgba(86,38,19,.48) 42%,
+  rgba(48,23,16,.31) 70%,
+  transparent 100%)!important;
+}
+#overviewPage .ct-story-hero .ct-bitcoin-photo img{
+ mix-blend-mode:screen!important;
+ filter:contrast(1.12) brightness(.93) saturate(1.08) sepia(.08)!important;
+}
