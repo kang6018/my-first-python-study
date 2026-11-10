@@ -1485,6 +1485,23 @@ function v11InitMacro(){
  caution.textContent='FRED series update at different intervals (weekly/monthly/daily); these links are reference data and not live widgets. Do not infer a mechanical BTC price signal.';
  p.append(note,axes,sources,caution);grid.before(p);
 }
+
+function v12InitRelativeStrength(){
+ const grid=$('macroGrid');if(!grid||$('v12RelativePanel'))return;
+ const panel=v11CreatePanel('BTC Relative Strength','Bitcoin compared with other assets · TradingView spread expressions, not an independently validated price feed.','ct-v12-relative');
+ panel.id='v12RelativePanel';
+ const row=document.createElement('div');row.className='ct-v12-relative-controls';
+ const picker=document.createElement('select');picker.id='v12RelativePair';
+ for(const [value,label] of [['COINBASE:BTCUSD/OANDA:XAUUSD','BTC / Gold'],['COINBASE:BTCUSD/FOREXCOM:NSXUSD','BTC / Nasdaq CFD'],['COINBASE:BTCUSD/FOREXCOM:SPXUSD','BTC / S&P 500 CFD']])picker.add(new Option(label,value));
+ const origin=document.createElement('a');origin.id='v12RelativeOpen';origin.target='_blank';origin.rel='noopener noreferrer';origin.textContent='Open comparison on TradingView ↗';
+ row.append(picker,origin);
+ const slot=document.createElement('div');slot.className='ct-v12-relative-chart tv-slot';slot.id='v12RelativeChart';
+ const note=document.createElement('p');note.className='ct-v11-foot';note.textContent='If TradingView rejects a composite ticker in an embed, use the source link. Nasdaq and S&P 500 use labelled CFD proxies; signals are not inferred automatically.';
+ const draw=()=>{origin.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(picker.value);tv(slot,{symbol:picker.value,interval:'W',mini:true,allowSymbolChange:false})};
+ picker.addEventListener('change',draw);panel.append(row,slot,note);grid.before(panel);
+ draw();
+}
+
 function renderV11Quality(){
  const q=v11PriceQuality();
  const target=$('v11PriceQualityNote');
@@ -1727,7 +1744,7 @@ function renderV11Calibration(){
  root.after(metric);renderV12ForecastCalibration();
 }
 
-readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v12InitLedger();v11InitCycle();v12InitCycleValidation();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v12InitLedger();v11InitCycle();v12InitCycleValidation();v11InitOverview();v11InitMacro();v12InitRelativeStrength();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
