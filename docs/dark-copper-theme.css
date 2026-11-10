@@ -1741,3 +1741,13 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 .ct-v12-relative-chart{height:370px;min-height:310px;border:1px solid rgba(211,147,75,.16);border-radius:11px;overflow:hidden}
 @media(max-width:760px){.ct-v12-ledger-form{grid-template-columns:1fr 1fr}.ct-v12-ledger-form #v12Note{grid-column:span 2}.ct-v12-ledger-form #v12Add{grid-column:span 2}.ct-v12-forecast-confidence{grid-template-columns:1fr}}
 @media(max-width:520px){.ct-v12-ledger{padding:15px}.ct-v12-ledger-form{grid-template-columns:1fr}.ct-v12-ledger-form #v12Note,.ct-v12-ledger-form #v12Add{grid-column:span 1}#chartsPage .ct-v12-primary-chart .chart-body{height:380px!important}.ct-v12-ledger-row{flex-direction:column;align-items:flex-start}}
+
+/* V12.1 Macro grouping */
+.ct-v12-macro-toolbar{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:14px 0 22px}
+.ct-v12-macro-toolbar>strong{font-size:11px;letter-spacing:.13em;color:#c59b73;font-weight:800}
+.ct-v12-macro-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ct-v12-macro-filters .btn{min-height:34px;padding:7px 12px;border-color:rgba(195,132,68,.25);font-size:11px}
+.ct-v12-macro-filters .btn.active{color:#f0c28a!important;border-color:rgba(235,149,62,.65)!important;background:rgba(221,137,51,.15)!important}
+.ct-v12-macro-filtered{display:none!important}
+.ct-v12-macro-memo{font-size:10px!important;padding:5px 9px!important;min-height:27px!important}
+@media(max-width:780px){.ct-v12-macro-toolbar{align-items:flex-start;flex-direction:column;gap:12px}.ct-v12-macro-filters{gap:5px}.ct-v12-macro-filters .btn{font-size:10px;padding:6px 10px}}
