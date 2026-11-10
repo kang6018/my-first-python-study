@@ -1807,3 +1807,11 @@ html,body{width:100%;min-width:0;overflow-x:hidden}
 .ct-v12-ratio-disclaimer{margin:8px 0 0!important;padding:6px 10px 40px;color:#bca58e;font-size:11px;line-height:1.6}
 .macro-card .macro-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 @media(max-width:660px){.ct-tv-source-direct{font-size:10px;padding:6px 8px;right:8px;bottom:6px}}
+
+/* V12.3 macro terminal: uniform TradingView cards and bottom secondary indicators. */
+@media(min-width:661px){
+ #macroGrid>.macro-card:last-child:nth-child(odd){grid-column:1/-1}
+}
+#macroPage .ct-v12-macro-extra{margin-top:26px!important;margin-bottom:34px!important}
+#macroPage .ct-v12-macro-extra>summary{font-size:13px!important;font-weight:750!important;color:#e9c399!important}
+#macroPage .ct-v12-macro-extra>.macro-grid{margin-top:20px!important}
