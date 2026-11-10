@@ -78,7 +78,7 @@ function mountOverview(force=false){
   {name:'DXY · US Dollar Index',symbol:'TVC:DXY',category:'ADDITIONAL INDICATORS',description:'TradingView dollar index · may not be available in third-party embeds',original:'TVC:DXY',secondary:true},
   {name:'US M2 Money Stock',symbol:'FRED:M2SL',category:'USD & LIQUIDITY',description:'FRED M2SL · monthly · seasonally adjusted USD billions · delayed publication',sourceUrl:'https://fred.stlouisfed.org/series/M2SL',interval:'M'},
   {name:'Federal Reserve Total Assets',symbol:'FRED:WALCL',category:'ADDITIONAL INDICATORS',description:'FRED WALCL on TradingView · weekly Fed assets · widget may be unavailable',sourceUrl:'https://fred.stlouisfed.org/series/WALCL',interval:'W',secondary:true},
-  {name:'US 10Y Treasury Yield',symbol:'TVC:US10Y',category:'INTEREST RATES',description:'TradingView US 10-year yield; this is a market chart, not the Fed DGS10 release',original:'TVC:US10Y',interval:'D'},
+  {name:'US Treasury 7–10Y Bond ETF · IEF',symbol:'NASDAQ:IEF',category:'INTEREST RATES',description:'iShares 7–10 Year Treasury Bond ETF · fund price, NOT 10-year Treasury yield; prices often move inversely to yields',original:'NASDAQ:IEF',interval:'D'},
   {name:'US 10Y Real Yield',symbol:'FRED:DFII10',category:'INTEREST RATES',description:'FRED DFII10 · daily 10-year inflation-indexed Treasury yield · percent',sourceUrl:'https://fred.stlouisfed.org/series/DFII10',interval:'D'},
   {name:'Nasdaq 100 · Cash CFD',symbol:'FOREXCOM:NSXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official NDX',original:'NASDAQ:NDX'},
   {name:'S&P 500 · Cash CFD',symbol:'FOREXCOM:SPXUSD',category:'RISK APPETITE',description:'FOREX.com CFD proxy; not official SPX',original:'SP:SPX'},
@@ -1571,7 +1571,7 @@ function v11InitMacro(){
  const axes=document.createElement('div');axes.className='ct-v11-macro-axes';
  for(const [label,question,reference] of [
   ['USD & LIQUIDITY','Is the liquidity backdrop expanding?','M2SL monthly · DXY and Fed assets in Additional Indicators'],
-  ['INTEREST RATES','Are nominal and real yields changing the risk backdrop?','TradingView US10Y nominal · FRED DFII10 real yield on TradingView'],
+  ['INTEREST RATES','How do Treasury bond prices and real yields evolve?','NASDAQ:IEF is a 7–10Y Treasury ETF price, not a Treasury yield · DFII10 real yield'],
   ['RISK APPETITE','Is BTC moving with or against equities?','Nasdaq 100 · S&P 500'],
   ['RELATIVE STRENGTH','Is crypto uniquely weak or is the entire market under pressure?','Gold · Silver · Equity benchmarks']
  ]){
