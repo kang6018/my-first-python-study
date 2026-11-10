@@ -1612,6 +1612,41 @@ function v11InitHoldings(){
  });
  footer.append(save,detail);panel.append(form,footer);journal.before(panel);renderV11Holdings();
 }
+
+function v12InitLedger(){
+ const ref=$('strategyPage').querySelector('.ct-v11-holdings');
+ if(!ref)return;
+ const panel=document.createElement('section');panel.className='ct-v12-ledger';
+ panel.innerHTML='<h3>BTC Activity Ledger</h3><p class="muted tiny">Record buys, sells, deposits, withdrawals and BTC fees. Quantities are not investment profits.</p><div class="ct-v12-ledger-form"><select id="v12Type"><option value="buy">매수</option><option value="sell">매도</option><option value="deposit">외부 입금</option><option value="withdrawal">외부 출금</option><option value="fee">수수료</option></select><input id="v12Date" type="date"><input id="v12Qty" type="number" step="0.00000001" min="0" placeholder="BTC 수량"><input id="v12Usd" type="number" min="0" step="0.01" placeholder="USD/BTC (선택)"><input id="v12Note" type="text" maxlength="180" placeholder="메모"><button id="v12Add" class="btn primary">기록 추가</button></div><div id="v12LedgerRows"></div><p class="ct-v11-foot">거래 수량의 변화는 수익률이 아닙니다. 입금과 매수에 사용한 외부 현금을 평가하려면 별도 USD 현금 흐름과 보유 가치가 필요합니다.</p>';
+ ref.after(panel);
+ $('v12Date').value=new Date().toISOString().slice(0,10);
+ $('v12Add').onclick=()=>{
+  const q=Number($('v12Qty').value),px=$('v12Usd').value===''?null:Number($('v12Usd').value);
+  if(!Number.isFinite(q)||q<=0||q>21000000||!$('v12Date').value||(px!==null&&(!Number.isFinite(px)||px<0))){toast('날짜·BTC 수량·가격을 확인하세요.');return}
+  state.v12Ledger=Array.isArray(state.v12Ledger)?state.v12Ledger:[];
+  state.v12Ledger.push({id:String(Date.now())+Math.random(),type:$('v12Type').value,date:$('v12Date').value,quantity:q,usd:px,note:$('v12Note').value.trim()});
+  persist();$('v12Qty').value='';$('v12Usd').value='';$('v12Note').value='';renderV12Ledger();
+ };
+ renderV12Ledger();
+}
+function renderV12Ledger(){
+ const root=$('v12LedgerRows');if(!root)return;
+ const rows=Array.isArray(state.v12Ledger)?state.v12Ledger:[];root.replaceChildren();
+ const sum={buy:0,sell:0,deposit:0,withdrawal:0,fee:0};
+ for(const item of rows)if(Object.prototype.hasOwnProperty.call(sum,item.type))sum[item.type]+=Number(item.quantity)||0;
+ const info=document.createElement('p');info.className='ct-v12-ledger-summary';
+ info.textContent='Net trades: '+(sum.buy-sum.sell).toFixed(8)+' BTC · External transfers: '+(sum.deposit-sum.withdrawal).toFixed(8)+' BTC · BTC fees: '+sum.fee.toFixed(8)+' BTC · Total recorded change: '+(sum.buy-sum.sell+sum.deposit-sum.withdrawal-sum.fee).toFixed(8)+' BTC';
+ root.append(info);
+ for(const item of [...rows].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,80)){
+  const div=document.createElement('div');div.className='ct-v12-ledger-row';
+  const span=document.createElement('span');span.textContent=item.date+' · '+item.type+' · '+Number(item.quantity).toFixed(8)+' BTC'+(item.usd==null?'':' · USD/BTC '+item.usd)+(item.note?' · '+item.note:'');
+  const del=document.createElement('button');del.type='button';del.className='btn secondary';del.textContent='삭제';
+  del.onclick=()=>{if(!confirm('선택한 BTC 기록을 삭제할까요?'))return;state.v12Ledger=rows.filter(x=>x.id!==item.id);persist();renderV12Ledger()};
+  div.append(span,del);root.append(div);
+ }
+ if(!rows.length){const empty=document.createElement('p');empty.className='muted tiny';empty.textContent='아직 기록이 없습니다.';root.append(empty)}
+}
+
 function renderV11Holdings(){
  const val=$('v11QuantityChange');if(!val)return;
  const h=state.v11Holdings||{},initial=Number(h.initial),current=Number(h.current);
@@ -1670,7 +1705,7 @@ function renderV11Calibration(){
  root.after(metric);renderV12ForecastCalibration();
 }
 
-readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v11InitCycle();v12InitCycleValidation();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+readStorage();initFinalCleanup();v11InitAssessment();v12InitForecasts();v11InitHoldings();v12InitLedger();v11InitCycle();v12InitCycleValidation();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
