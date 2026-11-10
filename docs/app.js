@@ -41,7 +41,18 @@ const fmt=(v,d=0)=>Number.isFinite(Number(v))?Number(v).toLocaleString('en-US',{
 function setPage(page){if(page==='journal')page='strategy';document.querySelectorAll('.page').forEach(el=>el.classList.toggle('hidden',el.id!==page+'Page'));document.querySelectorAll('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===page));document.body.classList.toggle('chart-focus',page==='charts');window.scrollTo({top:0,behavior:'instant'});if(page==='overview'){mountOverview();renderOverview()}if(page==='charts')renderCharts();if(page==='cycle')renderCycle();if(page==='sentiment')renderSentiment();if(page==='macro'){mountMacro();$('v12RelativeChart')?.__renderRatio?.()}if(page==='strategy'){renderStrategy();renderJournal()};if(page==='journal')renderJournal();if(page==='settings')renderSources();if(page==='community')renderCommunity()}
 function initNav(){document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.goto)));$('exportAll').onclick=downloadBackup;$('backupBtn').onclick=downloadBackup;$('restoreInput').onchange=restoreBackup;$('clearLocal').onclick=()=>{if(confirm('Delete all saved chart layouts, strategies, decision records, and cached prices?')){localStorage.removeItem(KEY);location.reload()}}}
 function applyTheme(){state.light=false;document.body.classList.remove('light');const b=$('themeBtn');if(b)b.textContent='☾ Dark Mode'}
-function tv(target,chart){target.replaceChildren();let wrapper=document.createElement('div');wrapper.className='tradingview-widget-container';let inner=document.createElement('div');inner.className='tradingview-widget-container__widget';let credit=document.createElement('div');credit.className='tv-attribution';let link=document.createElement('a');link.href='https://www.tradingview.com/';link.target='_blank';link.rel='noopener nofollow';link.textContent='Chart by TradingView';credit.append(link);wrapper.append(inner,credit);target.append(wrapper);const sc=document.createElement('script');sc.async=true;sc.type='text/javascript';sc.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';sc.textContent=JSON.stringify({autosize:true,symbol:chart.symbol,interval:chart.interval,timezone:'Asia/Seoul',theme:'dark',style:'1',locale:'en',allow_symbol_change:chart.allowSymbolChange??!!chart.mini,hide_side_toolbar:!!chart.mini,hide_top_toolbar:!!chart.mini,hide_volume:false,withdateranges:!chart.mini,save_image:true,support_host:'https://www.tradingview.com'});wrapper.append(sc)}
+function tv(target,chart){target.replaceChildren();let wrapper=document.createElement('div');wrapper.className='tradingview-widget-container';let inner=document.createElement('div');inner.className='tradingview-widget-container__widget';let credit=document.createElement('div');credit.className='tv-attribution';let link=document.createElement('a');link.href='https://www.tradingview.com/';link.target='_blank';link.rel='noopener nofollow';link.textContent='Chart by TradingView';credit.append(link);wrapper.append(inner,credit);target.append(wrapper);const sc=document.createElement('script');sc.async=true;sc.type='text/javascript';sc.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';sc.textContent=JSON.stringify({autosize:true,symbol:chart.symbol,interval:chart.interval,timezone:'Asia/Seoul',theme:'dark',style:'1',locale:'en',allow_symbol_change:chart.allowSymbolChange??!!chart.mini,hide_side_toolbar:!!chart.mini,hide_top_toolbar:!!chart.mini,hide_volume:false,withdateranges:!chart.mini,save_image:true,support_host:'https://www.tradingview.com'});wrapper.append(sc);
+ const direct=document.createElement('a');direct.className='ct-tv-source-direct';
+ direct.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(chart.symbol);
+ direct.target='_blank';direct.rel='noopener noreferrer';direct.textContent='Open on TradingView ↗';
+ sc.onerror=()=>{
+  inner.replaceChildren();const warning=document.createElement('p');
+  warning.className='ct-tv-load-failed';
+  warning.textContent='TradingView embed did not load. Open the original chart using the link below.';
+  inner.append(warning);
+ };
+ target.append(direct);
+}
 let overviewMounted=false,macroMounted=false,overviewObserver=null;
 function mountOverview(force=false){
  const target=$('overviewTv');if(!target)return;
@@ -1595,7 +1606,13 @@ function v12InitRelativeStrength(){
  row.append(picker,origin);
  const slot=document.createElement('div');slot.className='ct-v12-relative-chart tv-slot';slot.id='v12RelativeChart';
  const note=document.createElement('p');note.className='ct-v11-foot';note.textContent='If TradingView rejects a composite ticker in an embed, use the source link. Nasdaq and S&P 500 use labelled CFD proxies; signals are not inferred automatically.';
- const draw=()=>{origin.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(picker.value);tv(slot,{symbol:picker.value,interval:'W',mini:true,allowSymbolChange:false})};
+ const draw=()=>{
+  origin.href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(picker.value);
+  tv(slot,{symbol:picker.value,interval:'W',mini:true,allowSymbolChange:false});
+  const note=document.createElement('p');note.className='ct-v12-ratio-disclaimer';
+  note.textContent='Composite ratios are not guaranteed to load in third-party embeds. If blank, use the official TradingView link or compare the individual instruments. No substituted data are displayed.';
+  slot.append(note);
+ };
  picker.addEventListener('change',draw);slot.__renderRatio=draw;panel.append(row,slot,note);grid.before(panel);
 }
 
