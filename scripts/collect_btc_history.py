@@ -67,7 +67,7 @@ def cryptocompare():
     return valid(rows),"CryptoCompare BTC/USD daily close"
 
 def blockchain():
-    response=fetch("https://api.blockchain.info/charts/market-price?timespan=all&format=json&sampled=true")
+    response=fetch("https://api.blockchain.info/charts/market-price?timespan=all&format=json&sampled=false")
     series=response.get("values",[])
     if not isinstance(series,list):raise RuntimeError("Blockchain.com did not return observations")
     rows=[]
@@ -77,7 +77,7 @@ def blockchain():
             rows.append({"date":date,"price":row["y"]})
         except (KeyError,ValueError,TypeError,OverflowError):
             continue
-    return valid(rows),"Blockchain.com sampled BTC/USD market-price"
+    return valid(rows),"Blockchain.com BTC/USD market-price (unsampled request; average market price, not exchange close)"
 
 def main():
     original=load_existing()
@@ -86,13 +86,16 @@ def main():
         try:
             rows,source=provider()
             if len(rows)<350:raise ValueError("Fewer than 350 valid observations")
-            if len(rows)>1 and (dt.date.fromisoformat(rows[-1]["date"])-dt.date.fromisoformat(rows[0]["date"])).days>len(rows)*2.5:
-                print("Warning: source has material sampling gaps; do not interpolate")
+            gaps=[(dt.date.fromisoformat(rows[i]["date"])-dt.date.fromisoformat(rows[i-1]["date"])).days for i in range(1,len(rows))]
+            recent_gaps=gaps[-min(90,len(gaps)):]
+            daily_ratio=sum(g==1 for g in recent_gaps)/len(recent_gaps) if recent_gaps else 0
+            if daily_ratio<0.85:
+                raise RuntimeError("Provider returns sampled/non-daily observations (daily cadence ratio %.2f); rejecting as daily history"%daily_ratio)
             latest=rows[-1]["date"]
             if (TODAY-dt.date.fromisoformat(latest)).days>10:
                 raise RuntimeError("Upstream's last observed date is stale: "+latest)
             # Do not merge unrelated prices/sampled index values from different providers.
-            payload={"status":"ok","source":source,"asOf":latest,"rows":rows}
+            payload={"status":"ok","source":source,"asOf":latest,"frequency":"daily","dataQuality":"daily verified observations; not forward-filled","rows":rows}
             encoded=json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n"
             if not FILE.exists() or FILE.read_text(encoding="utf-8")!=encoded:
                 FILE.write_text(encoded,encoding="utf-8")
