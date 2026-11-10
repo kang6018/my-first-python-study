@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),KEY='cycle-terminal-v2-'+(window.__CT_ACCOUNT_ID__||'guest'),OLD='cycle-terminal-v1-'+(window.__CT_ACCOUNT_ID__||'guest'),HALVINGS=[['2012','2012-11-28','#8fb7fd'],['2016','2016-07-09','#f3ba6b'],['2020','2020-05-11','#49d5ac'],['2024','2024-04-20','#c998fd']],DAYS=86400000;
-const presets={crypto:[['BINANCE:BTCUSDT','D'],['BINANCE:ETHUSDT','D'],['CRYPTOCAP:BTC.D','D'],['CRYPTOCAP:USDT.D','D'],['CRYPTOCAP:TOTAL3','D'],['BINANCE:SOLUSDT','D']],macro:[['BINANCE:BTCUSDT','D'],['TVC:DXY','D'],['TVC:US10Y','D'],['NASDAQ:NDX','D'],['OANDA:XAUUSD','D'],['SP:SPX','D']],cycle:[['BINANCE:BTCUSDT','W'],['BINANCE:BTCUSDT','M'],['CRYPTOCAP:BTC.D','W'],['CRYPTOCAP:TOTAL','W'],['TVC:DXY','W'],['NASDAQ:NDX','W']]};
+const presets={crypto:[['BINANCE:BTCUSDT','D'],['BINANCE:ETHUSDT','D'],['CRYPTOCAP:BTC.D','D'],['CRYPTOCAP:USDT.D','D'],['CRYPTOCAP:TOTAL3','D'],['BINANCE:SOLUSDT','D'],['BINANCE:HYPEUSDT','D']],macro:[['BINANCE:BTCUSDT','D'],['TVC:DXY','D'],['TVC:US10Y','D'],['NASDAQ:NDX','D'],['OANDA:XAUUSD','D'],['SP:SPX','D']],cycle:[['BINANCE:BTCUSDT','W'],['BINANCE:BTCUSDT','M'],['CRYPTOCAP:BTC.D','W'],['CRYPTOCAP:TOTAL','W'],['TVC:DXY','W'],['NASDAQ:NDX','W']]};
 const defaults=()=>({charts:presets.crypto.map(([symbol,interval])=>({symbol,interval})),cols:2,height:360,preset:'crypto',light:false,macroMemo:'',strategy:{phase:'Not configured',mood:'Not configured',riskExposure:'',reviewDate:'',thesis:'',invalidations:'',riskPlan:'',rules:[{phase:'Early Expansion',mood:'Extreme Fear',action:'Review gradual entry (example)'},{phase:'Late Expansion',mood:'Extreme Greed',action:'Review risk reduction (example)'},{phase:'Bear Market',mood:'Extreme Fear',action:'Manage liquidity and observe basing (example)'}]},journal:[],checks:{},history:[],historySource:''});
 let state=defaults(),price=null,fear=[],funding=null,oi=null,oiObservedAt=0,history=[],historySource='',fetched={},lastHistoryRefresh=0,refreshBusy=false;
 function readStorage(){try{const parsed=JSON.parse(localStorage.getItem(KEY));if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)){const initial=defaults();state={...initial,...parsed,strategy:{...initial.strategy,...(parsed.strategy||{})}};if(!Array.isArray(state.charts)||!state.charts.length||state.charts.length>16)state.charts=initial.charts;if(!Array.isArray(state.journal))state.journal=[];if(!Array.isArray(state.strategy.rules))state.strategy.rules=initial.strategy.rules;if(!Array.isArray(state.history))state.history=[]}else{const old=JSON.parse(localStorage.getItem(OLD));if(old&&Array.isArray(old.charts)&&old.charts.length<=16&&old.charts.length>0){state.charts=old.charts;state.cols=old.cols||2;state.height=old.height||360;state.preset=old.preset||'custom';state.light=!!old.light;const memo=localStorage.getItem('cycle-terminal-journal-'+(window.__CT_ACCOUNT_ID__||'guest'));if(memo)state.journal=[{id:String(Date.now()),date:new Date().toISOString().slice(0,16),title:'Imported V1 note',phase:'Wait and observe',price:'',horizon:'30',evidence:memo,action:'',review:''}]}}}catch(e){console.warn('Unable to read saved settings:',e)}// Translate only known legacy sample defaults; never rewrite free-form user notes.
@@ -26,6 +26,13 @@ function readStorage(){try{const parsed=JSON.parse(localStorage.getItem(KEY));if
    &&state.charts.slice(0,5).every((c,i)=>c.symbol===presets.crypto[i][0])
    &&state.charts[5].symbol==='NASDAQ:NDX'){
    state.charts[5]={...state.charts[5],symbol:'BINANCE:SOLUSDT'};
+ }
+
+ // Move only the unchanged six-asset crypto preset to seven assets;
+ // preserve any custom chart layout or user-added symbols.
+ if(state.preset==='crypto'&&Array.isArray(state.charts)&&state.charts.length===6
+  &&state.charts.every((c,i)=>c.symbol===presets.crypto[i][0])){
+  state.charts.push({symbol:'BINANCE:HYPEUSDT',interval:state.charts[5].interval||'D'});
  }
  history=normalizeHistory(state.history);historySource=state.historySource||''}
 function persist(notify=false){try{localStorage.setItem(KEY,JSON.stringify(state));if(notify)toast('Saved to this browser.');return true}catch(e){toast('Unable to save. Check browser permissions or export a JSON backup.');return false}}
@@ -56,6 +63,7 @@ function mountOverview(force=false){
  // Four external-chart-restricted instruments use broker CFDs / cash proxies.
  // The US10Y yield uses source-labelled FRED daily observations, not a surrogate ETF.
  const data=[
+  {name:'Bitcoin / USD · Macro Anchor',symbol:'COINBASE:BTCUSD',category:'RISK APPETITE',description:'Coinbase BTC/USD spot · crypto benchmark against macro conditions',original:'COINBASE:BTCUSD'},
   {name:'DXY · US Dollar Index',symbol:'TVC:DXY',category:'USD & LIQUIDITY',description:'TradingView DXY index · not total global liquidity',original:'TVC:DXY'},
   {name:'US M2 Money Stock',symbol:'FRED:M2SL',native:'fred',category:'USD & LIQUIDITY',description:'FRED M2SL · monthly · seasonally adjusted USD billions · delayed publication',sourceUrl:'https://fred.stlouisfed.org/series/M2SL',interval:'M'},
   {name:'Federal Reserve Total Assets',symbol:'FRED:WALCL',native:'fred',category:'USD & LIQUIDITY',description:'FRED WALCL · weekly Fed balance sheet · USD millions, not net liquidity',sourceUrl:'https://fred.stlouisfed.org/series/WALCL',interval:'W'},
