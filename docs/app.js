@@ -718,8 +718,16 @@ function renderStrategy(){
 function initStrategy(){$('addRule').onclick=()=>{state.strategy.rules.push({phase:'',mood:'',action:''});renderStrategy();persist()};$('saveStrategy').onclick=()=>{for(const k of ['phase','mood','riskExposure','reviewDate','thesis','invalidations','riskPlan'])state.strategy[k]=$(k).value;persist();toast('투자 전략을 저장했습니다.');renderOverview()}}
 function journalForm(record){const r=record||{id:'',date:localDateTime(),phase:'Wait and Observe',price:'',horizon:'30',title:'',evidence:'',action:'',review:''};for(const k of ['id','date','phase','price','horizon','title','evidence','action','review'])$('journal'+k[0].toUpperCase()+k.slice(1)).value=r[k]??'';if(!$('journalPhase').value)$('journalPhase').value='Wait and observe';$('journalDirection').value=r.direction||'';$('journalEditorTitle').textContent=record?'판단 기록 수정':'새 판단 기록'}
 function localDateTime(){const date=new Date();return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16)}
-function renderJournal(){const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||Number(b.id?.split('-')[0])||0)-(Number(a.createdAt)||Number(a.id?.split('-')[0])||0));$('journalCount').textContent=sorted.length+'건';$('journalList').replaceChildren();if(!sorted.length){$('journalList').innerHTML='<div class="plot-placeholder">아직 판단 기록이 없습니다. 첫 번째 기록을 작성해 보세요.</div>';return}sorted.forEach(r=>{const node=document.createElement('div');node.className='journal-entry';const title=document.createElement('strong');title.textContent=r.title||'제목 없음';const meta=document.createElement('div');meta.className='meta';meta.textContent=r.date+' · '+strategyKoDisplay(r.phase)+(Number(r.price)>0?' · '+money(r.price):'');const p=document.createElement('p');p.textContent=(r.evidence||'').slice(0,260)||'작성된 판단 근거가 없습니다';const actions=document.createElement('div');actions.className='actions';actions.append(btn('수정',()=>{journalForm(r);window.scrollTo({top:0,behavior:'smooth'})}),btn('삭제',()=>{if(confirm('이 판단 기록을 삭제할까요?')){state.journal=state.journal.filter(e=>e.id!==r.id);persist();renderJournal();renderOverview()}},'secondary remove'));node.append(title,meta,p,actions);$('journalList').append(node)})}
-function initJournal(){journalForm();$('saveJournal').onclick=()=>{const r={};for(const k of ['id','date','phase','price','horizon','title','evidence','action','review'])r[k]=$('journal'+k[0].toUpperCase()+k.slice(1)).value;if(!r.title.trim())return toast('분석 제목을 입력해 주세요.');if(!r.date)return toast('판단 날짜와 시간을 선택해 주세요.');r.direction=$('journalDirection').value;if(!r.id){r.id=String(Date.now())+'-'+Math.floor(Math.random()*10000);r.createdAt=Date.now()}else{r.createdAt=state.journal.find(e=>e.id===r.id)?.createdAt||Number(r.id.split('-')[0])||Date.now()}if(state.journal.some(e=>e.id===r.id))state.journal=state.journal.map(e=>e.id===r.id?r:e);else state.journal.push(r);persist();toast('판단 기록을 저장했습니다.');renderJournal();renderOverview();journalForm()};$('cancelJournal').onclick=()=>journalForm();$('useCurrentPrice').onclick=()=>{if(!price)return toast('BTC 시세를 불러올 수 없습니다. 기준 가격을 직접 입력해 주세요.');$('journalPrice').value=price.value;toast('현재 BTC 가격을 입력했습니다.')};$('exportJournal').onclick=()=>{const keys=['date','title','phase','price','horizon','evidence','action','review'];const headers=['판단일시','분석제목','사이클국면','BTC기준가격','관측기간','판단근거','대응계획','사후분석'];const csv=[headers.join(','),...state.journal.map(r=>keys.map(k=>'"'+String(r[k]??'').replaceAll('"','""')+'"').join(','))].join('\r\n');download('cycle-journal.csv','\uFEFF'+csv,'text/csv')}}
+function renderJournal(){const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||Number(b.id?.split('-')[0])||0)-(Number(a.createdAt)||Number(a.id?.split('-')[0])||0));$('journalCount').textContent=sorted.length+'건';$('journalList').replaceChildren();if(!sorted.length){$('journalList').innerHTML='<div class="plot-placeholder">아직 판단 기록이 없습니다. 첫 번째 기록을 작성해 보세요.</div>';return}sorted.forEach(r=>{const node=document.createElement('div');node.className='journal-entry';const title=document.createElement('strong');title.textContent=r.title||'제목 없음';const meta=document.createElement('div');meta.className='meta';meta.textContent=r.date+' · '+strategyKoDisplay(r.phase)+(Number(r.price)>0?' · '+money(r.price):'');const p=document.createElement('p');p.textContent=(r.evidence||'').slice(0,260)||'작성된 판단 근거가 없습니다';const actions=document.createElement('div');actions.className='actions';actions.append(btn('수정',()=>{journalForm(r);window.scrollTo({top:0,behavior:'smooth'})}),btn('삭제',()=>{if(confirm('이 판단 기록을 삭제할까요?')){state.journal=state.journal.filter(e=>e.id!==r.id);persist();renderJournal();renderOverview()}},'secondary remove'));node.append(title,meta,p,actions);$('journalList').append(node)});renderV11Journal()}
+function initJournal(){journalForm();$('saveJournal').onclick=()=>{const r={};for(const k of ['id','date','phase','price','horizon','title','evidence','action','review'])r[k]=$('journal'+k[0].toUpperCase()+k.slice(1)).value;if(!r.title.trim())return toast('분석 제목을 입력해 주세요.');if(!r.date)return toast('판단 날짜와 시간을 선택해 주세요.');r.direction=$('journalDirection').value;if(!r.id){
+ r.id=String(Date.now())+'-'+Math.floor(Math.random()*10000);r.createdAt=Date.now();
+ r.assessmentSnapshot=state.v11Assessment?.savedAt?JSON.parse(JSON.stringify(state.v11Assessment)):null;
+ r.originalEvidence=r.evidence; // Preserve the initial hypothesis on subsequent edits.
+}else{
+ const previous=state.journal.find(e=>e.id===r.id);
+ r.createdAt=previous?.createdAt||Number(r.id.split('-')[0])||Date.now();
+ r.assessmentSnapshot=previous?.assessmentSnapshot||null;r.originalEvidence=previous?.originalEvidence??previous?.evidence??r.evidence;
+}if(state.journal.some(e=>e.id===r.id))state.journal=state.journal.map(e=>e.id===r.id?r:e);else state.journal.push(r);persist();toast('판단 기록을 저장했습니다.');renderJournal();renderOverview();journalForm()};$('cancelJournal').onclick=()=>journalForm();$('useCurrentPrice').onclick=()=>{if(!price)return toast('BTC 시세를 불러올 수 없습니다. 기준 가격을 직접 입력해 주세요.');$('journalPrice').value=price.value;toast('현재 BTC 가격을 입력했습니다.')};$('exportJournal').onclick=()=>{const keys=['date','title','phase','price','horizon','evidence','action','review'];const headers=['판단일시','분석제목','사이클국면','BTC기준가격','관측기간','판단근거','대응계획','사후분석'];const csv=[headers.join(','),...state.journal.map(r=>keys.map(k=>'"'+String(r[k]??'').replaceAll('"','""')+'"').join(','))].join('\r\n');download('cycle-journal.csv','\uFEFF'+csv,'text/csv')}}
 function renderSources(){
  const root=$('dataSources');if(!root)return;
  // Show fetch/connectivity separately from observations; a dated snapshot is never marked live.
@@ -1153,7 +1161,7 @@ function renderV4Divergence(){
 function v4JournalResult(r){const start=String(r.date||'').slice(0,10),days=Number(r.horizon)||30;if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return {status:'Date invalid'};const target=v4ISO(v4DateUTC(start)+days*DAYS);const recentDay=v4ISO(Date.now());const manual=Number(r.price);const inferred=v4PriceAt(start,3);const base=manual>0?{price:manual,date:start,manual:true}:inferred;if(!base)return {status:'Reference price unavailable',target};if(recentDay<target)return {status:'Awaiting verification',target,base};const end=v4PriceAt(target,3);if(!end||end.date>recentDay)return {status:'End-price unavailable',target,base};return {status:'Verification available',target,base,end,change:(end.price/base.price-1)*100}}
 function renderV4Journal(){const statusKo={'Date invalid':'날짜 오류','Reference price unavailable':'기준 가격 없음','Awaiting verification':'검증 대기','End-price unavailable':'결과 가격 없음','Verification available':'검증 완료'};if(!$('journalReviewRows'))return;const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));let ready=0,pending=0,positive=0,changes=[],scored=0,hits=0;const rows=sorted.map(r=>{const ev=v4JournalResult(r);if(ev.status==='Verification available'&&['up','down','flat'].includes(r.direction)){scored++;const c=ev.change;if((r.direction==='up'&&c>0)||(r.direction==='down'&&c<0)||(r.direction==='flat'&&Math.abs(c)<=5))hits++}if(ev.status==='Verification available'){ready++;if(ev.change>0)positive++;changes.push(ev.change)}else pending++;const v=ev.change;return `<tr><td><b>${escapeHTML(r.date||'')}</b><div class="v4-muted">${escapeHTML(r.title||'제목 없음')}</div></td><td>${escapeHTML(String(r.horizon||30))}일</td><td>${ev.base?money(ev.base.price):'—'}</td><td>${ev.end?`${ev.end.date} / ${money(ev.end.price)}`:'—'}</td><td class="${Number.isFinite(v)?v>=0?'positive':'negative':''}">${Number.isFinite(v)?(v>=0?'+':'')+fmt(v,2)+'%':'—'}</td><td>${escapeHTML(statusKo[ev.status]||ev.status)}</td></tr>`});
 $('journalReviewRows').innerHTML=rows.join('')||'<tr><td colspan="6" class="v4-muted">No decisions yet. Add your first research entry above.</td></tr>';
-$('journalReviewStats').innerHTML=[v4Metric('전체 판단 기록',sorted.length+'건','현재 브라우저에 저장됨'),v4Metric('검증 가능 기록',ready+'건','결과 확인일의 가격 확보'),v4Metric('방향 예측 적중률',scored?fmt(hits/scored*100,0)+'%':'—',scored?hits+' / '+scored+'건 방향 예측':'방향 예측 기록 없음'),v4Metric('평균 BTC 가격 변동률',changes.length?(changes.reduce((a,b)=>a+b,0)/changes.length>=0?'+':'')+fmt(changes.reduce((a,b)=>a+b,0)/changes.length,2)+'%':'—','검증 완료 기록의 단순 평균 · 실제 매매 수익률 아님')].join('');}
+$('journalReviewStats').innerHTML=[v4Metric('전체 판단 기록',sorted.length+'건','현재 브라우저에 저장됨'),v4Metric('검증 가능 기록',ready+'건','결과 확인일의 가격 확보'),v4Metric('방향 예측 적중률',scored?fmt(hits/scored*100,0)+'%':'—',scored?hits+' / '+scored+'건 방향 예측':'방향 예측 기록 없음'),v4Metric('평균 BTC 가격 변동률',changes.length?(changes.reduce((a,b)=>a+b,0)/changes.length>=0?'+':'')+fmt(changes.reduce((a,b)=>a+b,0)/changes.length,2)+'%':'—','검증 완료 기록의 단순 평균 · 실제 매매 수익률 아님')].join('');renderV11Calibration();}
 function v4DataStatus(name,value,note){const ok=/Connected|Fallback connected/.test(value),stale=/snapshot|not connected|separate/.test(value);return `<tr><td>${escapeHTML(name)}</td><td><span class="v4-tag ${ok?'ok':stale?'stale':'bad'}">${ok?'Connected':stale?'Limited':'Check required'}</span></td><td>${escapeHTML(value)}</td><td class="v4-muted">${escapeHTML(note)}</td></tr>`}
 function renderV4Health(){if(!$('dataHealthRows'))return;const lastPrice=price?'Current price · observed at fetch time':'Price unavailable';const lastFear=fear.length?'Latest observation date: '+v4ISO(fear.at(-1).x):'Source refresh required';const lastHistory=history.length?'Last historical observation: '+history.at(-1).date:'CSV import available';$('dataHealthRows').innerHTML=[v4DataStatus('BTC Spot',fetched.price||'Not fetched',lastPrice),v4DataStatus('Fear·Greed',fetched.fear||'Not fetched',lastFear),v4DataStatus('BTC Price History',fetched.history||(history.length?'Local saved history':'Not fetched'),lastHistory),v4DataStatus('Block Height',fetched.block||'Not fetched','Block production times can vary'),v4DataStatus('ETF and institutional holdings',fetched.institution||'Snapshot shown · no API connected','Historical snapshot or custom HTTPS API')].join('')}
 function renderV4All(){renderV4Cycle();renderV4Divergence();renderV4Journal();renderV4Health()}
@@ -1477,7 +1485,83 @@ function renderV11Assessment(){
   '저장: '+state.v11Assessment.savedAt.slice(0,16).replace('T',' ')+' UTC':'미저장 · 수치는 직접 입력한 의견';
 }
 
-readStorage();initFinalCleanup();v11InitAssessment();v11InitCycle();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
+
+function v11InitHoldings(){
+ const page=$('strategyPage'),journal=page?.querySelector('.journal-integrated');if(!page||!journal)return;
+ const panel=v11CreatePanel('BTC 수량 관리','달러 수익률과 별개로 실제 보유 BTC가 줄었는지 확인합니다. 수량은 직접 입력하며 거래소와 연결되지 않습니다.','ct-v11-holdings');
+ const form=document.createElement('div');form.className='ct-v11-holdings-grid';
+ for(const [id,title] of [['initial','기준 BTC 수량'],['current','현재 BTC 수량']]){
+  const label=document.createElement('label');label.textContent=title;
+  const input=document.createElement('input');input.type='number';input.min='0';input.step='0.00000001';
+  input.placeholder='0.00000000';input.dataset.v11Hold=id;
+  input.value=state.v11Holdings?.[id]??'';
+  label.append(input);form.append(label);
+ }
+ const measure=v11Metric('BTC QUANTITY VS HOLD','v11QuantityChange');form.append(measure);
+ const footer=document.createElement('div');footer.className='ct-v11-actions';
+ const save=document.createElement('button');save.type='button';save.className='btn primary';save.textContent='수량 저장';
+ const detail=document.createElement('small');detail.id='v11QuantityLabel';detail.className='muted';
+ save.addEventListener('click',()=>{
+  const initial=form.querySelector('[data-v11-hold="initial"]').value;
+  const current=form.querySelector('[data-v11-hold="current"]').value;
+  if(initial===''||current===''||Number(initial)<=0||Number(current)<0||!Number.isFinite(Number(initial))||!Number.isFinite(Number(current))){
+   toast('기준 BTC는 0보다 크게, 현재 수량은 0 이상으로 입력하세요.');return;
+  }
+  state.v11Holdings={initial:Number(initial),current:Number(current),savedAt:new Date().toISOString()};
+  persist();renderV11Holdings();toast('BTC 수량을 이 브라우저에 저장했습니다.');
+ });
+ footer.append(save,detail);panel.append(form,footer);journal.before(panel);renderV11Holdings();
+}
+function renderV11Holdings(){
+ const val=$('v11QuantityChange');if(!val)return;
+ const h=state.v11Holdings||{},initial=Number(h.initial),current=Number(h.current);
+ if(!Number.isFinite(initial)||initial<=0||!Number.isFinite(current)||current<0){
+  val.textContent='Not recorded';$('v11QuantityLabel').textContent='기준 수량과 현재 수량을 직접 입력하세요.';return;
+ }
+ const change=current-initial;
+ val.textContent=(change>=0?'+':'')+change.toFixed(8)+' BTC';
+ val.style.color=change>=0?'#9bcaa5':'#db9d96';
+ $('v11QuantityLabel').textContent='단순 보유 기준 '+initial.toFixed(8)+' BTC 대비 '+(change>=0?'+':'')+fmt(change/initial*100,2)+'% · '+(h.savedAt||'').slice(0,10)+' · 수수료 및 세금은 보유 수량에 포함된 경우만 반영';
+}
+function renderV11Journal(){
+ const root=$('journalList');if(!root)return;
+ const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
+ const cards=root.querySelectorAll('.journal-entry');
+ cards.forEach((card,i)=>{
+  const r=sorted[i];if(!r)return;
+  if(r.assessmentSnapshot?.savedAt){
+   const detail=document.createElement('details');detail.className='ct-clean-details';
+   const summary=document.createElement('summary');summary.textContent='최초 심리 판단 · '+r.assessmentSnapshot.savedAt.slice(0,10);
+   const info=document.createElement('pre');info.className='ct-v11-snapshot';
+   const v=r.assessmentSnapshot;
+   info.textContent='사이클: '+(v.phase||'미기록')+'\n확신도: '+(v.confidence||'—')+'% · 틀릴 확률: '+(v.wrongProbability||'—')+
+   '%\n3개월: '+(v.direction3||'—')+' · 6개월: '+(v.direction6||'—')+'\n보유 수량 위험: '+(v.quantityRisk||'—')+
+   '\n시장 심리: '+(v.fearAtSave??'—')+'/100';
+   detail.append(summary,info);card.append(detail);
+  }
+ });
+}
+function renderV11Calibration(){
+ const root=$('journalReviewStats');if(!root)return;
+ const samples=[];
+ for(const r of state.journal){
+  const p=Number(r.assessmentSnapshot?.wrongProbability);
+  if(r.assessmentSnapshot?.wrongProbability===''||!Number.isFinite(p)||p<0||p>100)continue;
+  if(!['up','down','flat'].includes(r.direction))continue;
+  const result=v4JournalResult(r);
+  if(result.status!=='Verification available')continue;
+  const wrong=r.direction==='up'?result.change<=0:r.direction==='down'?result.change>=0:Math.abs(result.change)>5;
+  samples.push(Math.pow(p/100-(wrong?1:0),2));
+ }
+ const panel=document.getElementById('v11Calibration');if(panel)panel.remove();
+ const metric=document.createElement('div');metric.id='v11Calibration';metric.className='ct-v11-calibration';
+ metric.textContent=samples.length?
+ '확신 보정 · Brier score '+fmt(samples.reduce((a,b)=>a+b,0)/samples.length,3)+' ('+samples.length+'건, 낮을수록 좋음). 선택한 결과 확인 기간의 실제 방향을 평가합니다.':
+ '확신 보정 · 검증 완료된 전망과 틀릴 확률 기록이 쌓이면 Brier score를 표시합니다.';
+ root.after(metric);
+}
+
+readStorage();initFinalCleanup();v11InitAssessment();v11InitHoldings();v11InitCycle();v11InitOverview();v11InitMacro();v11InitQuality();applyTheme();initInstitutional();initInstitutionEndpoint();initSeasonality();initCommunity();initNav();initCharts();initCycle();initSentiment();initMacro();initStrategy();initJournal();initV4();restoreChecks();renderCycle();renderOverview();setPage('overview');renderSources();connectLivePrice();fetchQuickPrice();setTimeout(()=>{loadMarketSeries();if(!document.hidden)refreshAll(false)},400);
 setInterval(()=>{if(!document.hidden&&!livePriceConnected)fetchQuickPrice()},5000);
 setInterval(()=>{if(!document.hidden)refreshAll(false)},120000);
 setInterval(()=>{if(!document.hidden&&!$('communityPage').classList.contains('hidden'))fetchCommunityNews()},600000);
