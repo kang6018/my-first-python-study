@@ -590,13 +590,13 @@ function renderPsychologyEngine(){
  if(recentPrice&&Number.isFinite(measures.return30)){
   const change=measures.return30;
   labels.push('BTC 30일 '+(change>=0?'+':'')+fmt(change,1)+'%');
-  if(change>=10)add('support','BTC 30일 가격 추세 상승','일일 종가 기준 수익률: +'+fmt(change,1)+'%. 상승세의 지속 가능성은 별도 근거로 확인해야 합니다.');
+  if(change>=10)add('support','BTC 30일 가격 추세 상승','관측 가격 기준 수익률: +'+fmt(change,1)+'%. 상승세의 지속 가능성은 별도 근거로 확인해야 합니다.');
   else if(change<=-10)add('counter','BTC 30일 가격 추세 약세','일일 종가 기준 수익률: '+fmt(change,1)+'%. 낮은 심리 점수는 실제 하락 위험을 반영할 수 있습니다.');
   else add('support','BTC 30일 가격 횡보','30일 가격 변화: '+(change>=0?'+':'')+fmt(change,1)+'%. 이 기간만으로 뚜렷한 방향을 단정할 수 없습니다.');
   if(recentFear&&latestFear.y<=24&&change>5)add('support','가격과 투자 심리의 괴리 가능성','극단적 공포와 BTC의 30일 가격 상승이 공존합니다. 심리가 가격을 따라가는지 관찰해야 합니다.');
   if(recentFear&&latestFear.y>=75&&change<0)add('counter','낙관적 심리와 실제 가격이 충돌','탐욕 지수가 높지만 BTC의 30일 수익률은 음수입니다. 두 지표가 엇갈립니다.');
  }else add('counter','최근 가격 추세 확인 불가','BTC 과거 일일 종가가 없거나 너무 오래됐거나 30일 비교 구간이 부족합니다.');
- if(recentPrice&&v11PriceQuality().daily&&Number.isFinite(measures.rsi14)){
+ if(recentPrice&&v11PriceQuality().daily&&!historySource.includes('Blockchain.com')&&Number.isFinite(measures.rsi14)){
   const rsi=measures.rsi14;
   if(rsi>=70)add('counter','일일 RSI 과열 가능성','14일 RSI '+fmt(rsi,1)+'; 강한 추세에서는 과매수 구간이 지속될 수 있습니다.');
   else if(rsi<=30)add('support','일일 RSI 과매도 가능성','14일 RSI '+fmt(rsi,1)+'; 과매도 상태만으로 반등을 보장할 수 없습니다.');
@@ -674,8 +674,8 @@ const m=computedBtcMeasures();
  const etfAsOf=liveInstitution?.etf?.length?liveInstitution.etf.at(-1)[0]:etfExternal?etfExternal.at(-1)[0]:etfAuto?.rows?.length?etfAuto.rows.at(-1)[0]:'2026-11-06 과거 스냅샷';
  const indicators=[
   metric('공포·탐욕 지수',last?last.y+'/100 · '+fearLabel(last.y):'데이터 확인 중',last?new Date(last.x).toLocaleDateString('en-US')+' 관측일':'Alternative.me 데이터 연동',!!last),
-  metric('BTC 7일 수익률',signed(m.return7),m.latest?'BTC 일일 종가 · '+m.latest:'과거 종가 불러오는 중',Number.isFinite(m.return7)),
-  metric('BTC 30일 수익률',signed(m.return30),m.latest?'BTC 일일 종가 · '+m.latest:'과거 종가 불러오는 중',Number.isFinite(m.return30)),
+  metric('BTC 7일 수익률',signed(m.return7),m.latest?'BTC 관측 가격 · '+m.latest:'과거 종가 불러오는 중',Number.isFinite(m.return7)),
+  metric('BTC 30일 수익률',signed(m.return30),m.latest?'BTC 관측 시장가격 · '+m.latest:'과거 종가 불러오는 중',Number.isFinite(m.return30)),
   metric('30일 실현 변동성',Number.isFinite(m.volatility30)?fmt(m.volatility30,1)+'%':'가격 데이터 확인 중','일일 로그수익률의 연율화 표준편차',Number.isFinite(m.volatility30)),
   metric('14일 RSI',Number.isFinite(m.rsi14)?fmt(m.rsi14,1):'가격 데이터 확인 중','14일 종가 변동으로 계산한 RSI',Number.isFinite(m.rsi14)),
   metric('200주 이동평균선 대비 괴리',signed(m.maGap),Number.isFinite(m.ma200w)?'200주 평균: '+money(m.ma200w):'200주 가격 데이터 필요',Number.isFinite(m.maGap)),
@@ -735,7 +735,7 @@ function renderSources(){
   {name:'TradingView charts',description:'Third-party charts',value:'Available as embeds',kind:'info'},
   {name:'Bitcoin spot price',description:'Live websocket / 5-second fallback',value:fetched.price||'Not checked',kind:/Connected|live|stream/i.test(fetched.price||'')?'ok':'check'},
   {name:'Fear & Greed Index',description:'Alternative.me · daily publication',value:fetched.fear||'Not checked',kind:/Connected|cache/i.test(fetched.fear||'')?'ok':'check'},
-  {name:'BTC daily history',description:'Historical close observations',value:fetched.history||(history.length?'Cached '+history.length+' observations':'Not checked'),kind:/Connected|cached|local/i.test(fetched.history||(history.length?'cached':''))?'ok':'check'},
+  {name:'BTC daily history',description:'Dated BTC/USD market prices',value:fetched.history||(history.length?'Cached '+history.length+' observations':'Not checked'),kind:/Connected|cached|local/i.test(fetched.history||(history.length?'cached':''))?'ok':'check'},
   {name:'Bitcoin block height',description:'mempool.space',value:fetched.block||'Not checked',kind:/Connected/i.test(fetched.block||'')?'ok':'check'},
   {name:'ETF & institutional holdings',description:'Dated snapshot or external API',value:fetched.institution||'Historical snapshot',kind:/Connected/i.test(fetched.institution||'')?'ok':'snapshot'},
   ...([
@@ -1038,7 +1038,7 @@ function v4SetEmpty(id,text){const el=$(id);if(el)el.innerHTML=`<div class="v4-e
 function renderV4Cycle(){if(!$('cycleMetricCards'))return;const rows=[],metrics=[];for(const [label,start] of HALVINGS){const begin=dayNum(start);const prices=history.filter(r=>{const dd=dayNum(r.date)-begin;return dd>=0&&dd<=1460});const base=v4PriceAt(start,7);if(!base||prices.length<15){rows.push(`<tr><td>${label}</td><td colspan="5" class="v4-muted">Insufficient price data · load verified daily closes</td></tr>`);continue}let max=-Infinity,peak=null,mdd=0;for(const r of prices){if(r.price>max){max=r.price;peak=r}mdd=Math.min(mdd,(r.price/max-1)*100)}const last=prices.at(-1),returns=(last.price/base.price-1)*100;const range=prices[0].date+' ~ '+last.date;rows.push(`<tr><td>${label}</td><td>${escapeHTML(range)}</td><td>${peak.date}</td><td>${money(peak.price)}</td><td class="negative">${fmt(mdd,1)}%</td><td class="${returns>=0?'positive':'negative'}">${returns>=0?'+':''}${fmt(returns,1)}%</td></tr>`)}
 const latest=history.at(-1);const lastDay=latest?dayNum(latest.date):null;let weeks=[];if(latest){const dayMap=new Map(history.map(r=>[dayNum(r.date),r.price]));for(let i=199;i>=0;i--){const t=lastDay-7*i;let found=null;for(let d=0;d<=3;d++){if(dayMap.has(t-d)){found=dayMap.get(t-d);break}if(dayMap.has(t+d)){found=dayMap.get(t+d);break}}if(found!==null)weeks.push(found)}}
 const ma=weeks.length===200?weeks.reduce((a,b)=>a+b,0)/200:null;const ratio=ma&&latest?(latest.price/ma-1)*100:null;const current=history.filter(r=>r.date>='2024-04-20');let peak=null,mdd=null;if(current.length){peak=current.reduce((a,b)=>a.price>b.price?a:b);mdd=Math.min(...current.map((r,i)=>{const top=Math.max(...current.slice(0,i+1).map(x=>x.price));return (r.price/top-1)*100}))}
-metrics.push(v4Metric('Latest BTC Historical Observation',latest?.date||'—',history.length?historySource:'Historical series required'));
+metrics.push(v4Metric('Latest BTC Price Observation',latest?.date||'—',history.length?historySource:'Historical series required'));
 metrics.push(v4Metric('200-Week Moving Average',ma?money(ma):'—',ma?`Difference from latest price: ${ratio>=0?'+':''}${fmt(ratio,1)}%`:'200 weekly price observations required'));
 metrics.push(v4Metric('2024 Cycle Peak',peak?money(peak.price):'—',peak?peak.date:'Historical prices not loaded'));
 metrics.push(v4Metric('2024 Cycle Maximum Drawdown',mdd!==null?fmt(mdd,1)+'%':'—','Since the April 2024 peak'));
@@ -1156,7 +1156,7 @@ function renderV4Divergence(){
   guide.setAttribute('visibility','hidden');btcDot.setAttribute('visibility','hidden');
   fearDot.setAttribute('visibility','hidden');tooltip.hidden=true;
  });
- $('divergenceNote').textContent='관측일 기준 '+(days?days+'일':'전체 기간')+'에서 공통 자료 '+pair.length+'개 · '+first.date+' ~ '+last.date+' · 왼쪽: 공포·탐욕 0~100 · 오른쪽: BTC 실제 종가(USD). BTC는 실제 관측일 기준 ±2일 이내 가장 가까운 표본을 사용하며 보간하지 않습니다. 10일 초과 공백은 선을 끊습니다.';
+ $('divergenceNote').textContent='관측일 기준 '+(days?days+'일':'전체 기간')+'에서 공통 자료 '+pair.length+'개 · '+first.date+' ~ '+last.date+' · 왼쪽: 공포·탐욕 0~100 · 오른쪽: BTC 관측 시장가격(USD). BTC는 실제 관측일 기준 ±2일 이내 가장 가까운 표본을 사용하며 보간하지 않습니다. 10일 초과 공백은 선을 끊습니다.';
 }
 function v4JournalResult(r){const start=String(r.date||'').slice(0,10),days=Number(r.horizon)||30;if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return {status:'Date invalid'};const target=v4ISO(v4DateUTC(start)+days*DAYS);const recentDay=v4ISO(Date.now());const manual=Number(r.price);const inferred=v4PriceAt(start,3);const base=manual>0?{price:manual,date:start,manual:true}:inferred;if(!base)return {status:'Reference price unavailable',target};if(recentDay<target)return {status:'Awaiting verification',target,base};const end=v4PriceAt(target,3);if(!end||end.date>recentDay)return {status:'End-price unavailable',target,base};return {status:'Verification available',target,base,end,change:(end.price/base.price-1)*100}}
 function renderV4Journal(){const statusKo={'Date invalid':'날짜 오류','Reference price unavailable':'기준 가격 없음','Awaiting verification':'검증 대기','End-price unavailable':'결과 가격 없음','Verification available':'검증 완료'};if(!$('journalReviewRows'))return;const sorted=[...state.journal].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(Number(b.createdAt)||0)-(Number(a.createdAt)||0));let ready=0,pending=0,positive=0,changes=[],scored=0,hits=0;const rows=sorted.map(r=>{const ev=v4JournalResult(r);if(ev.status==='Verification available'&&['up','down','flat'].includes(r.direction)){scored++;const c=ev.change;if((r.direction==='up'&&c>0)||(r.direction==='down'&&c<0)||(r.direction==='flat'&&Math.abs(c)<=5))hits++}if(ev.status==='Verification available'){ready++;if(ev.change>0)positive++;changes.push(ev.change)}else pending++;const v=ev.change;return `<tr><td><b>${escapeHTML(r.date||'')}</b><div class="v4-muted">${escapeHTML(r.title||'제목 없음')}</div></td><td>${escapeHTML(String(r.horizon||30))}일</td><td>${ev.base?money(ev.base.price):'—'}</td><td>${ev.end?`${ev.end.date} / ${money(ev.end.price)}`:'—'}</td><td class="${Number.isFinite(v)?v>=0?'positive':'negative':''}">${Number.isFinite(v)?(v>=0?'+':'')+fmt(v,2)+'%':'—'}</td><td>${escapeHTML(statusKo[ev.status]||ev.status)}</td></tr>`});
@@ -1321,7 +1321,7 @@ function v11PriceQuality(){
  const sorted=[...gaps].sort((a,b)=>a-b),median=sorted[Math.floor(sorted.length/2)];
  const last=history.at(-1).date,age=dayNum(new Date().toISOString().slice(0,10))-dayNum(last);
  return {daily:daily>=0.85,ratio:daily,interval:median,age,last,
-  label:daily>=0.85?'Daily observations':'Sampled every '+median+' days (NOT daily)'};
+  label:daily>=0.85?'Daily observations ('+(historySource.includes('Blockchain.com')?'market average; NOT exchange close':'source-labelled prices')+')':'Sampled every '+median+' days (NOT daily)'};
 }
 function v11CycleFacts(){
  const halving='2024-04-20';
@@ -1547,10 +1547,14 @@ function renderV11Calibration(){
  for(const r of state.journal){
   const p=Number(r.assessmentSnapshot?.wrongProbability);
   if(r.assessmentSnapshot?.wrongProbability===''||!Number.isFinite(p)||p<0||p>100)continue;
-  if(!['up','down','flat'].includes(r.direction))continue;
+  const horizon=Number(r.horizon);
+  if(horizon!==90&&horizon!==180)continue;
+  const forecast=horizon===90?r.assessmentSnapshot?.direction3:r.assessmentSnapshot?.direction6;
+  const chosen=forecast==='상승'?'up':forecast==='하락'?'down':forecast==='횡보'?'flat':null;
+  if(!chosen||r.direction!==chosen)continue;
   const result=v4JournalResult(r);
   if(result.status!=='Verification available')continue;
-  const wrong=r.direction==='up'?result.change<=0:r.direction==='down'?result.change>=0:Math.abs(result.change)>5;
+  const wrong=chosen==='up'?result.change<=0:chosen==='down'?result.change>=0:Math.abs(result.change)>5;
   samples.push(Math.pow(p/100-(wrong?1:0),2));
  }
  const panel=document.getElementById('v11Calibration');if(panel)panel.remove();
